@@ -47,10 +47,50 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 **Decision:** theses use "stance" wording and carry a disclaimer, with no target prices or buy/sell calls. An OJK legal check happens before P3.
 **Consequences:** some wording constraints in the thesis format (PRD F7).
 
-## D-009. Product name avoids exchange trademarks (2026-10-18)
-**Decision:** no "IDX", "BEI", "KSEI" or "IHSG" in the product name, logo or domain. "Telaah" is a working name pending owner confirmation (PRD Q1).
+## D-009. Name: Sigi; no exchange trademarks (owner, 2026-10-19)
+**Decision:** the product is called **Sigi**. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully": research and transparency in one word. It also pairs with Sunrise, since both names are about light. No "IDX", "BEI", "KSEI" or "IHSG" in the name, logo or domain.
+**Consequences:** Kabupaten Sigi (Central Sulawesi) shares the name; no Indonesian investing product using it was found on 2026-10-18. Before launch, search the Indonesian trademark database (PDKI).
 
-## D-010. Reuse Sunrise's plumbing, not its ledger (2026-10-18; repo strategy still open)
+## D-010. Reuse Sunrise's plumbing, not its ledger (2026-10-18)
 **Context:** Sunrise already has a single-writer worker, scheduler, freshness and data-health tracking, retention, auth, a thesis format with a strict levels grammar, a macro engine, an evidence-validated AI brief channel, and a per-symbol page built from slices carrying `source`/`asOf`/`absent`.
-**Decision:** reuse these modules (ARCHITECTURE.md). Whether to fork the repo or copy modules into a fresh one is open (PRD Q2).
+**Decision:** reuse these modules (ARCHITECTURE.md §3). How to obtain them is settled by D-011.
 **Consequences:** Sunrise's crypto-specific assumptions (16:00 UTC daily close, BTC benchmark, held-position coupling) must be removed rather than carried over.
+
+## D-011. A fresh repository; modules copied from Sunrise (owner, 2026-10-19)
+**Context:** forking would carry Sunrise's history, its ledger code and roughly 22k lines that would all be deleted.
+**Decision:** Sigi starts as a new repository with its own history. Modules are copied by the manifest in ARCHITECTURE §7.
+- **Source:** by default, the public `sunrise` repository, whose history and content were already cleaned for publication. A module that is newer in the owner's private working copy is copied only file by file, after the leak scan in ARCHITECTURE §7.
+- **Never copied:** Sunrise's docs, agent and assistant config files, data folders, deployment scripts that contain host details, or migrations.
+
+**Consequences:**
+- Sigi's schema and migrations start clean.
+- Copied tests come along with their modules, and their bodies are rewritten wherever they encode crypto semantics.
+- Sunrise improvements don't flow to Sigi automatically; porting one is a deliberate copy.
+
+## D-012. The daily brief works like Sunrise's, adapted for a public site (owner, 2026-10-19)
+**Context:** Sunrise's brief:
+- a context exporter runs in a no-network container from the deployed image;
+- a sandboxed agent (no shell, read and write allowlists, web search allowed) writes one JSON file a day;
+- the web app validates the file with Zod, checks its evidence keys against the context, and marks it stale after 30 h.
+
+**Decision:** keep that mechanism and the existing subscription. Move the brief from P2 into P1 (PRD F12). Change what a public page needs changed:
+- the question becomes "what changed, and what is worth a closer look", with no actions such as trim, add or protect;
+- the stance values are `quiet`, `notable` and `watch`;
+- there are no price, target or size fields, and a recommendation-language check runs on every file;
+- individual holders are never in the context;
+- web content appears as links and short facts only.
+
+**Consequences:** the brief is a public statement made by an AI, so its validator is part of the product's safety, not a convenience (PRD R9). The owner can unpublish any brief.
+
+## D-013. No permission requests to BEI, KSEI or BI for now (owner, 2026-10-19)
+**Decision:** don't contact the data publishers at this stage.
+**Consequences:**
+- The portfolio phase relies on non-commercial use with citation (DATA-SOURCES S1, S6).
+- The KSEI local/foreign file (S2) stays admin-only, because its terms are unknown.
+- Commercial-readiness items 1–3 (PRD §9) cannot pass, so P3 is blocked until this decision is revisited.
+
+## D-014. Hosted on a subdomain of the owner's site (owner, 2026-10-19)
+**Decision:** serve Sigi from a subdomain; `sigi.ubaidillah.id` is proposed. It runs on the existing host, behind the same reverse proxy, TLS and rate limiting as the owner's other public services.
+**Consequences:**
+- A DNS record is needed at deploy time (an owner action).
+- The subdomain shares the parent site's reputation. Session cookies are host-only, never scoped to the parent domain.

@@ -1,6 +1,6 @@
 # Data-source register
 
-Every figure Telaah shows publicly must point to a row in this register (PRD C3). A row records where the data comes from, how we obtain it, what the terms allow, and how sure we are.
+Every figure Sigi shows publicly must point to a row in this register (PRD C3). A row records where the data comes from, how we obtain it, what the terms allow, and how sure we are.
 
 **Not legal advice.** Quotes are as read on the date shown. Labels: [H] primary source read, [M] secondary source or partial read, [L] inference.
 
@@ -95,6 +95,7 @@ Commercial reuse requires permission (*"For any potential commercial reuse of IM
 | TradingView "Top Stories" widget | Display only | cleared (S3) |
 | Publisher RSS feeds (e.g. Kontan, Bisnis, CNBC Indonesia) | Headline, publisher, time and link only; no article text | Portfolio phase: cleared [L]; product: re-check each publisher's terms |
 | MSCI and IDX press releases | Cited and linked in editorial content | cleared (quotation with a link) |
+| Web pages the brief agent cites (PRD F12) | Link plus a short factual statement in the agent's own words; never quoted article text; only figures that carry a link | Portfolio phase: cleared [L]; the validator requires a URL for every figure that isn't in the context |
 
 ## Excluded sources
 

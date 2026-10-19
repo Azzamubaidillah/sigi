@@ -1,6 +1,6 @@
 # Architecture (proposed)
 
-**Status:** proposal for P1. Nothing has been built. The module references point to the public `sunrise` repository (github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** proposal for P1. Nothing has been built. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
@@ -19,6 +19,11 @@ flowchart LR
     PUB[(Published tables)]
     WK[Worker<br/>macro fetch, thesis evaluation]
     WEB[Next.js read-only web]
+    CX[Brief context exporter<br/>no-network container]
+    AF[(Brief files<br/>context + analysis JSON)]
+  end
+  subgraph Agent sandbox
+    AG[Brief agent<br/>no shell, read/write allowlists]
   end
   subgraph Public sources
     BPS[BPS website tables]
@@ -37,6 +42,11 @@ flowchart LR
   TW --> UP
   PUB --> WEB
   WK --> PUB
+  PUB --> CX --> AF
+  AF --> AG
+  AG -- writes one analysis --> AF
+  WS[Web search and fetch] -.-> AG
+  AF -- validated: shape, evidence keys, language --> WEB
   TVW -. embedded in browser .-> WEB
 ```
 
@@ -99,6 +109,7 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | `/holders/[slug]` | Pages for corporate, fund and institution holders only (D-007) |
 | `/macro` | Indonesian macro dashboard with sector links |
 | `/theses`, `/theses/[slug]` | Theses, conditions-hit list, version history |
+| `/brief` | Today's brief, stale marker, rejected-file notice, inputs table (F12) |
 | `/data` | Data health, imports, gate results, sources and licences |
 | `/admin/*` | Import and thesis editing (owner only) |
 
@@ -109,3 +120,76 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 - **E2E (Playwright):** every public page renders with seeded data; a failing gate shows on `/data` and leaves the previous month published; absent states render.
 - **Accessibility:** Lighthouse ≥90 on every page.
 - **Licence check:** a build step fails if a page renders a figure whose source ID is missing from the register.
+- **Brief validator:** fixture analyses covering each rejection reason (unknown evidence key, wrong date, oversized file, recommendation language, schema violation), plus an acceptance fixture.
+
+## 7. Copy manifest from Sunrise (D-011)
+
+**Source:** the public `sunrise` repository. A file that is newer only in the owner's private working copy may be copied one file at a time, and only after the leak scan below passes on it. Copied tests travel with their module; their bodies are rewritten wherever they encode crypto semantics.
+
+### Copy and adapt
+
+| Area | Sunrise paths | Adaptation for Sigi |
+|---|---|---|
+| Tooling | `package.json`, `tsconfig.json`, `tsconfig.worker.json`, `next.config.ts`, `eslint.config.mjs`, `postcss.config.mjs`, `vitest.config.ts`, `drizzle.config.ts`, `Dockerfile`, `instrumentation.ts`, `instrumentation-node.ts` | Rename to `sigi`; drop dependencies of the dropped integrations; regenerate the lockfile; keep the `verify` script chain |
+| Request boundary and auth | `proxy.ts`, `src/security/{csrf,passcode,public-paths,request,session,throttle,throttle-store}.ts`, `app/login/`, `app/api/auth/` | Add the TradingView origins to the CSP; host-only session cookie; public pages need no session; admin routes do |
+| Worker | `worker/index.ts`, `src/worker/{schedule,runtime,retention,alerts}.ts`, `src/sync/{abort,retry,sleep-wake}.ts` | Rewrite the task list (macro fetch, news, thesis evaluation, retention); drop `value-points` and `plan-alerts` |
+| Database | `src/db/{client,read,migrate,integrity-thread}.ts` | Write `schema.ts` fresh (infrastructure tables plus Sigi's tables); migrations start at 0000 |
+| Health | `src/health-rules.ts`, `src/health.ts`, `src/freshness.ts`, `src/integrity.ts`, `src/views/sync-trends.ts`, `app/(dashboard)/data-health/`, `app/_sections/DataHealth.tsx`, `app/api/{health,freshness}/` | Replace the source list; add import runs, gate results and licence status |
+| Backups | `src/backup.ts` | Keep local rotating backups; an offsite target only if it is free |
+| Shared utilities | `src/{money,stable-id,pagination,logger,server-timing,config}.ts`, `src/views/table-sort.ts`, `app/_lib/{format,pages}.ts`, `app/_components/Localized.tsx` | Prune `config.ts`; rewrite the navigation in `pages.ts` |
+| Theses | `src/views/theses.ts`, `src/{thesis-folder,thesis-visibility,thesis-levels}.ts`, `app/(dashboard)/theses/`, `app/_sections/{Theses,ThesisReader}.tsx`, `scripts/publish-theses.sh` | Extend the levels grammar into typed conditions (PRD F7); remove the quote, holdings and order coupling |
+| Macro | `src/macro/{series,files}.ts`, `src/integrations/macro/`, `src/views/{macro,macro-indicators}.ts`, `app/(dashboard)/macro/`, `app/_sections/Macro.tsx` | Indonesian registry from DATA-SOURCES S4, S6, S7 and S8; sector links replace the "good for crypto" direction; drop the regime score and the separate AI macro review (folded into the brief) |
+| News | `src/news/feeds.ts`, `src/integrations/news/` | New feed list (S10): headline, publisher, time and link only |
+| Brief | `src/brief/{build,files}.ts`, `src/views/brief.ts`, `app/(dashboard)/brief/`, `app/_sections/Brief.tsx`, `app/_components/BriefCard.tsx`, `scripts/brief-context.ts`, `scripts/brief/{brief-run.sh,brief-prompt.md,brief-settings.json}`, `scripts/install-brief-schedule.sh` | §8. Host paths, user names and container names come from configuration, never literals |
+| Ticker page pattern | `src/views/coin.ts` (the slice type and its composition only) | Becomes `src/views/ticker.ts` with Sigi's own slices |
+| Upload flow | `app/api/imports/` | Becomes the admin upload for S1, S2 and macro tables, feeding the landing store |
+| Design system | `app/sunrise.css`, the generic parts of `app/_components/` and `components/` (cards, health badges, ages, drawers, command palette, preferences, refresh, sparkline, series chart), `components/ui/button.tsx` | Rename the stylesheet to `app/sigi.css`; restyle; leave out crypto-specific components such as asset icons and coin parts |
+| Verify gate | `scripts/verify-clean.ts` | Keep |
+
+### Never copied
+
+- **Ledger and account features:** portfolio, activity, analytics, calendar, journal, risk, wallets, dust, sold coins, staking, the exchange accounts; `src/{accounting,imports,dust,reconciliation}/`.
+- **Crypto data:** `src/{hyperliquid,positioning,events,market,assets}/`; `src/integrations/{aster,bitget,derivatives,evm,jupiter,solana,tokocrypto,market,events,fx}/`; screener, whales, positioning and coin pages; paper trading and backtests.
+- **Mobile:** the device pairing and mobile API (`app/api/{mobile,devices}/`, `src/security/{device-credential,device-store,mobile-auth,pairing-throttle-store}.ts`) and the iOS app.
+- **Not code:**
+  - Sunrise's `docs/` (its decision log is consulted, not copied);
+  - agent and assistant files (`AGENTS.md`, `CLAUDE.md`, `.claude/`, `.omp/`, `.mcp.json`, `RTK.md`, `TODO.md`);
+  - `data/`, `references/`, `dist-worker/`, `drizzle/` migrations;
+  - deployment scripts that carry host details (`scripts/deploy.sh`, the other `install-*-schedule.sh`, backup and `verify-*` host scripts).
+
+### Leak scan (blocks the first commit and every later copy)
+
+- gitleaks over the working tree.
+- A pattern scan for:
+  - IPv4 addresses;
+  - EVM addresses (`0x` followed by 40 hex characters);
+  - Solana-style base58 strings of 32–44 characters outside test fixtures;
+  - the owner's private domains and private project names;
+  - absolute home-directory paths.
+- Any hit stops the copy until it is explained or removed.
+
+## 8. Daily brief pipeline (D-012, PRD F12)
+
+It works the same way as Sunrise's brief, with the public-site changes marked **Sigi**.
+
+1. **Schedule:** a host cron entry runs the runner every hour. The runner acts only in its configured UTC hour; 23:00 UTC is 06:00 WIB, before the 09:00 WIB market open. A lock file prevents overlapping runs. The log is size-capped. If the agent credential is missing, the run is skipped and the skip is logged.
+2. **Export:**
+   - `scripts/brief-context.ts` runs in a throwaway container of the deployed worker image, with **no network** and read-only access to the database.
+   - It writes `brief/context/<date>.json`: every reading with `asOf`, `source`, evidence status and a `key` per citable item (e.g. `own:<CODE>:<YYYY-MM>`, `float:<CODE>`, `macro:<series>:<date>`, `thesis:<slug>`, `event:<id>`), plus an `absent` list.
+   - **Sigi:** individual holders are excluded at export time.
+3. **Agent:**
+   - The coding agent runs headless as an unprivileged user.
+   - It may read: the context, yesterday's analysis, the theses.
+   - It may use web search and fetch.
+   - It may write: only `brief/analysis/<date>.json`.
+   - It is denied: the shell, the database, the env files, the home directories, and edits anywhere else.
+   - The prompt is a versioned file in the repo.
+   - **Sigi:** the prompt states the public-site rules (no advice, no prices, targets or sizes, links rather than quotes, no individuals).
+4. **Validate (web):**
+   - A Zod schema checks the analysis.
+   - Its date must match the file name, and its `contextGeneratedAt` must match the context file.
+   - Every evidence key must exist in that context.
+   - The size cap applies.
+   - **Sigi:** a recommendation-language check runs, with a documented word list and its stated limits.
+   - The newest valid analysis is shown. A newer invalid file is named, with its reasons. A brief older than 30 h is marked stale.
+5. **Unpublish:** the owner can hide a brief from the admin page, and the page records the reason. This is the manual backstop for PRD R9.
