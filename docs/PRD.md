@@ -282,6 +282,7 @@ That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, r
 | R7 | Crowded market for commodity features | Low | Not competing there (§2) |
 | R8 | Scope creep and a stalled second project | High | Phase gates, hour budgets, the kill rule in §11 |
 | R9 | The AI brief states something false or advice-like on a public page | Medium | Evidence-key validation, a recommendation-language check, the stale marker, the rejected-file notice; the owner can unpublish a brief from the admin page |
+| R10 | The register omits large holders, so float estimates are overstated (seen 2026-10-22: no state holder for BBRI, BBNI or ADHI in the 2026-02-27 file, while BMRI and TLKM list Danantara) | High | Known issues recorded in DATA-SOURCES S1, with a caveat on every float figure. Before F3 publishes market-wide counts, add a reviewed list of known omissions that marks the affected companies' estimates "unreliable", and re-check each new month |
 
 ## 13. Open questions
 

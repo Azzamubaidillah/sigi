@@ -25,10 +25,10 @@ coverage/
 *.pem
 *.key
 
-# Runtime data
-data/
-backups/
-logs/
+# Runtime data (root only: `data/` unanchored also hid the app/data route)
+/data/
+/backups/
+/logs/
 *.db
 *.db-shm
 *.db-wal

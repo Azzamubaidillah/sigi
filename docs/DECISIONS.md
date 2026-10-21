@@ -101,7 +101,7 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 **Consequences:** concentration and float use the published percentage, which is unaffected by the share-count typo. The same hold path serves the month-over-month holder-count check (PRD F1).
 
 ## D-016. The S1 parser reads text positions and marked content; the real file is not committed (2026-10-22)
-**Context:** the PDF is an Excel sheet printed with tags. Its structure tree holds about 515,000 empty table rows and took 94 s to walk; text positions plus the marked-content sequence of each cell take about 2–7 s for the same 73 pages.
+**Context:** the PDF is an Excel sheet printed with tags. Its structure tree holds about 515,000 empty table rows and took 94 s to walk. Text positions plus the marked-content sequence of each cell take 1.5 s for the same 73 pages (measured on the development machine).
 **Decision:**
 - Parse with pdf.js (`pdfjs-dist` 6.4.299, pinned). Cells are the marked-content sequences, so a name drawn as two runs ("… UMBARAWATI" and "SE") stays one cell. Columns are placed by the page's own header row: date, code, issuer and investor by order left of the type column; categorical columns by centre; numbers by right edge, each within a tolerance.
 - Anything unplaceable, a page with rows but no header, a wrapped table cell, a malformed number or a second record date fails the file (`s1-pdf/1`). A changed layout gets a new parser version.
