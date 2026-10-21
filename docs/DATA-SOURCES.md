@@ -24,6 +24,8 @@ Status values:
 | Personal data | Lists individuals by name. See PRD C6 and §9 item 6 |
 | Status | **Portfolio phase: cleared** for non-commercial display, with full citation and access date. **Product: requires written permission** from BEI (and KSEI) |
 | Attribution | "Source: Data Kepemilikan Saham Perusahaan Terbuka di atas 1%, KSEI via PT Bursa Efek Indonesia, record date {date}, accessed {date}, {url}" |
+| Parsed counts (2026-02-27 file) | 7,257 rows, 955 issuers, 5,199 distinct holder names; 244 unclassified scrip rows with neither type nor local/foreign (D-016) [H] |
+| Known issues (2026-02-27 file) | 1. One row breaks total = scripless + scrip: MAYA, MAYAPADA KARUNIA PT (0 + 6,323,076,332 ≠ 6,023,326,332). The month is held for review and the row is published as is (D-015) [H]. 2. **Large state holdings are missing for some state-owned companies.** BBRI's largest listed holder is 3.63% and BBNI's 3.51%, and ADHI's holders sum to 7.37%, while BMRI and TLKM do list Danantara at 51.48% and 51.57%. So float estimates for the affected companies are far too high. Confirmed against an independent pdftotext read of the same file, so it is the source, not our parser [H]. The cause is not known [L]. 3. The record date is the month's last trading day (27 Feb 2026 was a Friday) [H] |
 
 ## S2. KSEI monthly holdings, local and foreign (Balancepos)
 

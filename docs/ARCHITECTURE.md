@@ -1,6 +1,6 @@
 # Architecture (proposed)
 
-**Status:** proposal for P1. Nothing has been built. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** M1 built 2026-10-22 (import pipeline, data health, ownership section, deploy skeleton). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
@@ -145,6 +145,30 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | Upload flow | `app/api/imports/` | Becomes the admin upload for S1, S2 and macro tables, feeding the landing store |
 | Design system | `app/sunrise.css`, the generic parts of `app/_components/` and `components/` (cards, health badges, ages, drawers, command palette, preferences, refresh, sparkline, series chart), `components/ui/button.tsx` | Rename the stylesheet to `app/sigi.css`; restyle; leave out crypto-specific components such as asset icons and coin parts |
 | Verify gate | `scripts/verify-clean.ts` | Keep |
+
+### Copy log
+
+**M1 (2026-10-22), from public `sunrise` at `312906f`.** The leak scan ran before the first commit.
+
+- **Copied, renamed `sunrise` → `sigi`, imports made extensionless:**
+  - `src/security/{csrf,passcode,request,session,throttle,throttle-store}.ts`, with the csrf, passcode, request, session, throttle and login-route tests;
+  - `src/db/{client,read,migrate}.ts`, with the read and migrate tests (Sunrise's price-index cases removed);
+  - `app/api/auth/{csrf,login,logout}/route.ts`;
+  - `scripts/{hash-passcode,migrate,verify-clean}.ts`;
+  - `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `vitest.config.ts`, `drizzle.config.ts`, the Prettier and ignore files.
+- **Written fresh instead:**
+  - `src/config.ts`: Sunrise's has 478 lines of exchange and wallet settings;
+  - `src/logger.ts`: redaction list trimmed;
+  - `proxy.ts`: every page public, a session only for `/admin` and `/api/admin`;
+  - `src/security/{admin-paths,owner-request}.ts`;
+  - `Dockerfile`: builds in the image;
+  - `scripts/container-start.sh`.
+- **Changed from the manifest:**
+  - No Tailwind, and `sunrise.css` (11,132 lines, nearly all for ledger pages) is not copied. `app/sigi.css` keeps Sunrise's colour tokens plus about 400 lines of primitives.
+  - `SigiDatabase` is declared as a type rather than `ReturnType<…>`.
+  - No `tsconfig.worker.json` and no worker until M3, because M1 has nothing to schedule. Until then, the landing store plus the rebuild check is the recovery path for published data.
+  - The data health page in M1 is built from import runs and gate results. Sunrise's sync-run health arrives with the worker.
+- **Not yet copied** (their milestones): worker, health rules, backups, theses, macro, news, brief and the design components.
 
 ### Never copied
 

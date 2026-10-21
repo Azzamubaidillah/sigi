@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.2 draft, 2026-10-19. **Status:** docs only; no code yet. **Owner:** Azzam Ubaidillah.
+**Version:** 0.3, 2026-10-22. **Status:** P1 started 2026-10-22; M1 built locally (§11). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -91,26 +91,26 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 ### F1. Monthly ownership import (admin)
 - Upload the monthly 1% PDF. The file is stored immutably with its SHA-256, size, upload time and the source URL entered by the admin.
 - A parser extracts rows into staging tables.
-- Validation gates must all pass before the month is published (fail-closed):
-  - the row count is within the expected band;
-  - every issuer's holder percentages sum to ≤100%;
-  - shares equal scripless plus scrip;
+- Validation gates decide every import. Any failure rejects it, any hold waits for the owner's written decision, and only a clean pass publishes on its own (fail-closed):
+  - the row count is within the expected band (3,000–15,000) and within 25% of the previous month;
+  - every issuer's holder percentages sum to ≤100%, plus half a hundredth per holder for rounding;
+  - shares equal scripless plus scrip: 1–5 rows that break this **hold** the month (the publisher's own file has one such row, D-015); more **reject** it;
   - every percentage is in (0, 100];
-  - investor type is one of the 9 known codes (CP, ID, IB, MF, SC, IS, PF, FD, OT);
-  - local/foreign is L, A or unclassified;
-  - the record date is newer than the last published month;
-  - a month-over-month sanity check flags issuers whose holder count changed by more than N and holds them for review.
-- Re-importing the same file is a no-op. A corrected file supersedes the old one with an audit row.
+  - every share code is four letters;
+  - investor type is one of the 9 known codes (CP, ID, IB, MF, SC, IS, PF, FD, OT) and local/foreign is L or A, or both are empty together (unclassified scrip, cover-letter note 4);
+  - the record date is newer than the last published month, or the owner marks the file as a correction of a published month;
+  - a month-over-month check **holds** the month if any issuer's count of holders above 1% changed by more than 5 (a placeholder until a few months of history exist).
+- Re-importing the same file is a no-op, unless every earlier run of it was rejected; a rejection can depend on state, so it may be gated again. A corrected file supersedes the old one with an audit row.
 - **Acceptance:**
-  - the 2026-02-27 file reproduces 7,257 rows, 955 issuers and 5,226 investors (the counts published by an independent public extraction; to be re-verified from our own parse);
-  - a corrupted or truncated file never publishes.
+  - the 2026-02-27 file reproduces 7,257 rows, 955 issuers and 5,199 distinct holder names. **Met 2026-10-22.** The independent extraction's 5,226 is inflated by names it garbled (D-016);
+  - a corrupted or truncated file never publishes. **Met:** tests cover a truncated file, a lost header, an unplaceable cell, a malformed number and mixed record dates.
 
 ### F2. Ticker ownership section
 - **Holders table:** name, type, local/foreign, shares, %; individuals shown as published (C6).
 - **Month-over-month changes:** new, exited, increased and decreased holders, with deltas.
 - **Concentration:** top holder %, top-3 %, HHI.
 - **Float estimate:** shares held by holders below 1%. It is labelled *"estimate from the >1% register, not the official free-float figure"*, because the regulatory definition also excludes controllers, affiliates, directors and treasury shares.
-- **Acceptance:** for a sample of 10 companies, the figures match a hand calculation from the source file.
+- **Acceptance:** for a sample of 10 companies, the figures match a hand calculation from the source file. **Met 2026-10-22:** AADI, AALI, ABBA, ACES, ADES, ADHI, BBCA, BMRI, MAYA and TLKM match an independent pdftotext extraction on holder count, top holder, top three, float estimate and HHI.
 
 ### F3. Investability and float tracker
 - **Market-wide view:** number of companies by float-estimate band; companies below 15%, grouped by the rule's tranche and deadline; month-over-month movement; the MSCI timeline.
@@ -260,14 +260,14 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 
 | Milestone | Scope | Budget |
 |---|---|---|
-| M1 | F1 import pipeline + F10 data health + F2 ownership section + deploy skeleton | 20 h |
+| M1 | F1 import pipeline + F10 data health + F2 ownership section + deploy skeleton. **Built 2026-10-22** (not yet deployed; see README) | 20 h |
 | M2 | F3 tracker + F4 holder explorer + F9 market page | 15 h |
 | M3 | F6 macro dashboard | 12 h |
 | M4 | F7 theses + condition evaluation | 10 h |
 | M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page | 8 h |
 | M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain | 10 h |
 
-That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, re-estimate everything before continuing. **Start date:** not set by the owner.
+That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, re-estimate everything before continuing. **Start date:** 2026-10-22 (owner: "start now").
 
 ## 12. Risks
 
@@ -295,4 +295,4 @@ Resolved by the owner on 2026-10-19:
 | Q4, permission emails | Not now | D-013 |
 | Q5, hosting | A subdomain of the owner's site | D-014 |
 
-Still open: the start date, and the exact subdomain (D-014 proposes `sigi.ubaidillah.id`; it needs a DNS record at deploy time).
+Start date: 2026-10-22. Still open: the exact subdomain (D-014 proposes `sigi.ubaidillah.id`; it needs a DNS record at deploy time).

@@ -1,0 +1,389 @@
+/*
+ * Sigi's stylesheet. Tokens and element defaults come from Sunrise's
+ * foundation (globals.css); the primitives are Sigi's own, kept small.
+ *
+ *   tokens      custom properties, light and dark (follows the system)
+ *   base        element defaults
+ *   primitives  shell, panels, tables, forms, badges
+ *   states      semantic tones; last so they win without !important
+ */
+@layer tokens, base, primitives, states;
+
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+    --canvas: #f6f8fb;
+    --surface: #ffffff;
+    --panel: #f1f5f9;
+    --raised: #e8eef6;
+    --text: #0b1530;
+    --muted: #60708d;
+    --line: #dbe3ee;
+    --positive: #12a967;
+    --negative: #e63b45;
+    --warning: #9a6200;
+    --info: #0f62cc;
+    --info-soft: rgb(22 119 255 / 9%);
+    --action: #1b6fd6;
+    --action-hover: #1060c4;
+    --shadow: rgb(28 55 90 / 9%);
+    --torch: #d9480f;
+    --mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --canvas: #121927;
+      --surface: #1a2434;
+      --panel: #253246;
+      --raised: #314158;
+      --text: #f6f8fc;
+      --muted: #9eacc1;
+      --line: #3b4a60;
+      --positive: #35c982;
+      --negative: #ff626b;
+      --warning: #ffb62e;
+      --info: #4c94ff;
+      --info-soft: rgb(76 148 255 / 14%);
+      --shadow: rgb(0 0 0 / 28%);
+      --torch: #ff8a4c;
+    }
+  }
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-height: 100%;
+    background: var(--canvas);
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    color: var(--text);
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  a {
+    color: var(--info);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+
+  input,
+  textarea,
+  select {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.4rem 0.55rem;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--info);
+    outline: 3px solid var(--info-soft);
+  }
+}
+
+@layer primitives {
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+  }
+
+  .masthead {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1.5rem;
+  }
+
+  .brand {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+
+  .brand::before {
+    content: "";
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.45rem;
+    border-radius: 50%;
+    background: var(--torch);
+    box-shadow: 0 0 0.6rem var(--torch);
+  }
+
+  .masthead nav {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .masthead nav a {
+    color: var(--muted);
+  }
+
+  .masthead nav a[aria-current="page"] {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .page-header {
+    display: grid;
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .lede {
+    color: var(--muted);
+    max-width: 70ch;
+    margin: 0;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px var(--shadow);
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .panel > h2 {
+    margin-bottom: 0.75rem;
+  }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .figures div {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .figures dt {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .figures dd {
+    margin: 0.15rem 0 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  table.data th,
+  table.data td {
+    text-align: left;
+    padding: 0.4rem 0.55rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  table.data th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  table.data td.num,
+  table.data th.num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .mono {
+    font-family: var(--mono);
+    font-size: 0.85em;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  .citation {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: 0.75rem 0 0;
+  }
+
+  .notice {
+    border-left: 3px solid var(--warning);
+    background: var(--panel);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0 6px 6px 0;
+    margin: 0 0 1rem;
+  }
+
+  .absent {
+    color: var(--muted);
+    font-style: italic;
+    margin: 0;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--raised);
+    color: var(--text);
+  }
+
+  .stack {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .form {
+    display: grid;
+    gap: 0.8rem;
+    max-width: 34rem;
+  }
+
+  .form label {
+    display: grid;
+    gap: 0.25rem;
+    font-weight: 600;
+  }
+
+  .form .check {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-weight: 400;
+  }
+
+  .button {
+    display: inline-block;
+    border: 0;
+    border-radius: 6px;
+    background: var(--action);
+    color: #fff;
+    padding: 0.45rem 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .button:hover {
+    background: var(--action-hover);
+  }
+
+  .button:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  .button.secondary {
+    background: var(--raised);
+    color: var(--text);
+  }
+
+  .spaced {
+    margin-top: 1rem;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .flag {
+    margin-left: 0.35rem;
+  }
+
+  .filter {
+    width: 100%;
+    max-width: 22rem;
+    margin-bottom: 0.75rem;
+  }
+
+  footer.site {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+}
+
+@layer states {
+  .tone-positive,
+  .badge.pass {
+    color: var(--positive);
+  }
+
+  .tone-negative,
+  .badge.fail {
+    color: var(--negative);
+  }
+
+  .badge.hold {
+    color: var(--warning);
+  }
+}

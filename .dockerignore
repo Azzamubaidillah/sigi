@@ -1,0 +1,11 @@
+.git
+node_modules
+.next
+data
+fixtures-private
+.env
+.env.*
+!.env.example
+.omp-sessions*
+.claude
+.mcp.json

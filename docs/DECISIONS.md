@@ -94,3 +94,16 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 **Consequences:**
 - A DNS record is needed at deploy time (an owner action).
 - The subdomain shares the parent site's reputation. Session cookies are host-only, never scoped to the parent domain.
+
+## D-015. A source row that contradicts itself holds the month for review; it is never corrected (2026-10-22)
+**Context:** the 2026-02-27 file has one row (MAYA, holder MAYAPADA KARUNIA PT) whose total shares (6,023,326,332) are not scripless plus scrip (0 + 6,323,076,332). Under a hard "total = scripless + scrip" gate that one publisher typo would block the whole month.
+**Decision:** the shares-identity gate *holds* the month when 1–5 rows break the identity and *rejects* it above that (more than a few means a misread file, not typos). The owner approves or rejects a held month with a written reason, kept in `publish_audit`. Rows are stored exactly as published, with no CHECK constraint and no "fix"; the ticker page marks each such row "as published".
+**Consequences:** concentration and float use the published percentage, which is unaffected by the share-count typo. The same hold path serves the month-over-month holder-count check (PRD F1).
+
+## D-016. The S1 parser reads text positions and marked content; the real file is not committed (2026-10-22)
+**Context:** the PDF is an Excel sheet printed with tags. Its structure tree holds about 515,000 empty table rows and took 94 s to walk; text positions plus the marked-content sequence of each cell take about 2–7 s for the same 73 pages.
+**Decision:**
+- Parse with pdf.js (`pdfjs-dist` 6.4.299, pinned). Cells are the marked-content sequences, so a name drawn as two runs ("… UMBARAWATI" and "SE") stays one cell. Columns are placed by the page's own header row: date, code, issuer and investor by order left of the type column; categorical columns by centre; numbers by right edge, each within a tolerance.
+- Anything unplaceable, a page with rows but no header, a wrapped table cell, a malformed number or a second record date fails the file (`s1-pdf/1`). A changed layout gets a new parser version.
+- The real file names individuals, so it stays out of the repository. Tests and the CI rebuild check use synthetic PDFs built to the real geometry (`src/ownership/s1-fixture.ts`). The real-file test runs when `SIGI_S1_REAL_PDF` points at a local copy.
+**Evidence:** on the 2026-02-27 file the parser gives 7,257 rows, 955 issuers and 5,199 distinct holder names. Every numeric field matches the independent extraction cited in PRD F1. That extraction differs from ours in name fields on 59 rows of five issuers (CARS, JIHD, SCCO, SMAR, ULTJ), where a long issuer name overflows into the holder column and its text comes out garbled ("AP TTb BkERJAYA …"). Those garbled names are why it counts 5,226 holders.
