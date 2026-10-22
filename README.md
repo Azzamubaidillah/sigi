@@ -45,6 +45,10 @@ Sign in at `/login`. Then, at `/admin`, upload the monthly file *Data Kepemilika
 
 ## Deploy
 
-`docker build -t sigi .` then run with a volume on `/opt/sigi/data` and an env file setting `SIGI_PUBLIC_ORIGIN` (https), `SIGI_TRUSTED_PROXY=true`, `SIGI_PASSCODE_HASH` and `SIGI_SESSION_SECRET`. Publish port 3220 on loopback only, behind the host's TLS reverse proxy. The container migrates the database before it serves.
+Production runs as a Dokploy application, built from the `Dockerfile` on the host. `scripts/deploy.sh` runs `pnpm verify`, uploads the committed `HEAD` as a drop deployment, waits for Dokploy's build and checks the public pages. Host details come from a git-ignored `.env.deploy`; the Dokploy API key comes from the macOS Keychain. Production setup:
+
+- **Network:** the service uses the host's network. It listens on `127.0.0.1:3220` (`SIGI_BIND_HOST=127.0.0.1`), and nginx terminates TLS in front of it with rate limits and a 26 MB upload limit on `/api/admin/`.
+- **Data:** the host's data directory and its `.env` (owner `1000`, mode `600`) are bind-mounted into the container. That `.env` sets `SIGI_PUBLIC_ORIGIN`, `SIGI_TRUSTED_PROXY=true`, `SIGI_PASSCODE_HASH` and `SIGI_SESSION_SECRET`.
+- **Start-up:** the container migrates the database before it serves.
 
 Not investment advice.
