@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "verify:clean": "tsx scripts/verify-clean.ts"
+    "verify:clean": "tsx scripts/verify-clean.ts",
+    "holders:candidates": "tsx scripts/holder-candidates.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

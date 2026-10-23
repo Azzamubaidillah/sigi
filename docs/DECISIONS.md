@@ -107,3 +107,38 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 - Anything unplaceable, a page with rows but no header, a wrapped table cell, a malformed number or a second record date fails the file (`s1-pdf/1`). A changed layout gets a new parser version.
 - The real file names individuals, so it stays out of the repository. Tests and the CI rebuild check use synthetic PDFs built to the real geometry (`src/ownership/s1-fixture.ts`). The real-file test runs when `SIGI_S1_REAL_PDF` points at a local copy.
 **Evidence:** on the 2026-02-27 file the parser gives 7,257 rows, 955 issuers and 5,199 distinct holder names. Every numeric field matches the independent extraction cited in PRD F1. That extraction differs from ours in name fields on 59 rows of five issuers (CARS, JIHD, SCCO, SMAR, ULTJ), where a long issuer name overflows into the holder column and its text comes out garbled ("AP TTb BkERJAYA …"). Those garbled names are why it counts 5,226 holders.
+
+## D-017. Free float is shown as an upper bound under the exchange's definition (2026-10-23; supersedes the "held below 1%" estimate of D-006)
+**Context:** under Peraturan Bursa I-A (as reported by the press), free float is shares held by holders of less than 5% who are not the controller or its affiliates, directors, commissioners, treasury or locked-up shares. v0.3 showed "held below 1%" as the float estimate. That treats every 1–5% holder as not free, which is the wrong direction. On the 2026-02-27 file it put 568 companies under 15%, against the exchange's 328 as of 2026-03-31.
+**Decision:**
+- The headline figure is 100% minus every holder of 5% or more, with one holder's rows added together first. The register cannot see affiliates, insiders, treasury or lock-ups below 5%, which only lower the official figure, so the official figure is at most this.
+- A bound under 15% means certainly below the minimum. A bound of 15% or more decides nothing.
+- "Held below 1%" stays on the page as a separate, labelled figure.
+- The tranche needs market cap, which Sigi lacks (C1; F5 blocked), so the page lists the tranches still possible given the bound.
+**Evidence:** 219 companies certainly below 15% on the 2026-02-27 file: a floor on the official 328, as the definition requires. YUPI's bound is 10.00%; the company disclosed 10% as of 2026-08-31.
+
+## D-018. Holder identity: mechanical normalisation plus a reviewed alias table; pages only for institutions (2026-10-23)
+**Decision:**
+- **Key:** a holder's key is its published name with case, full stops, commas and spacing folded. Word order is never touched.
+- **Merges:** a reviewed row in `HOLDER_ALIASES` merges two keys, and a merge needs nothing more than that row. `pnpm holders:candidates` lists keys that become equal once the legal-form words are dropped and the remaining words sorted. A candidate becomes a row only if, after dropping just PT, TBK and THE, the words are the same and in the same order.
+- **Use of the key:** it groups rows for the 5% line, concentration, month-over-month changes and holder pages.
+- **Pages:** a holder gets a page only if every row published under its key, in every month, carries an institutional type. One individual or unclassified row means no page (C6, fail-closed).
+**Evidence:** the 2026-02-27 file gave 36 candidate groups, from which 33 rows were added. Three groups were rejected:
+- word order differs: "MANDIRI INVESTASI BERSAMA PT" against "PT INVESTASI BERSAMA MANDIRI";
+- two different individuals;
+- a word added: "PENTA COSMOPOLITAN CORPORATION".
+
+2,784 institutional holders have pages; 2,364 holders (individuals or unclassified) do not.
+
+## D-019. A register listing under 15% above 1% gets no float figure (2026-10-23)
+**Context:** in the 2026-02-27 file, five companies' holders above 1% total under 15%: BBRI 5.86%, ADHI 7.37%, BBNI 7.95%, BBTN 9.98% and NCKL 12.03%. Each is missing a known controlling holder: the state or Danantara for the first four, and Harita for NCKL, listed at 3.16%. Their "bound" would be about 100%.
+**Decision:** such a company is marked "register incomplete". It gets no float figure, it is excluded from float screens and counts with the reason stated, and it is listed separately on the investability page. This is a rule, not a hand-kept list, so a new month is checked the same way.
+**Limit:** an omission at a company whose remaining holders still total over 15% is not caught. That is PRD R10.
+
+## D-020. Production: Dokploy on the existing host, kept out of search engines until launch (2026-10-23)
+**Decision:**
+- **Hosting:** the same pattern as Sunrise. A Dokploy application (`sigi-web`) is built from the Dockerfile from a drop upload. It runs on the host network, bound to `127.0.0.1:3220`, with bind mounts for the data directory and an owner-only `.env`. nginx terminates TLS with Let's Encrypt and applies rate limits: 10 requests per second for pages, 10 a minute for the login. The upload limit is 26 MB on `/api/admin/`.
+- **Deploys:** `scripts/deploy.sh` runs `pnpm verify`, uploads the committed HEAD and checks the public pages. Host details live in the git-ignored `.env.deploy`; the Dokploy key stays in the Keychain.
+- **Search engines:** `X-Robots-Tag: noindex, nofollow` until the M6 launch.
+- **Admin passcode:** kept in the owner's Keychain (service `sigi-admin-passcode`); only its hash is on the host.
+- **TradingView:** the market page embeds TradingView widgets (S3). The CSP allows their loader and frames, and a privacy notice discloses what TradingView receives.

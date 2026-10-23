@@ -6,13 +6,23 @@ import { usePathname } from "next/navigation";
 const links = [
   {
     href: "/",
-    label: "Companies",
+    label: "Market",
     matches: (path: string) => path === "/" || path.startsWith("/t/"),
+  },
+  {
+    href: "/investability",
+    label: "Investability",
+    matches: (path: string) => path === "/investability",
+  },
+  {
+    href: "/holders",
+    label: "Holders",
+    matches: (path: string) => path.startsWith("/holders"),
   },
   {
     href: "/data",
     label: "Data & sources",
-    matches: (path: string) => path === "/data",
+    matches: (path: string) => path === "/data" || path === "/privacy",
   },
 ];
 

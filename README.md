@@ -4,14 +4,12 @@ A research site for Indonesian listed companies. It covers who owns each company
 
 *Sigi* is a torch; *menyigi* means "to light up" and "to investigate carefully" (KBBI).
 
-**Status:** phase P1, started 2026-10-22. Milestone M1 is built:
+**Status:** phase P1, started 2026-10-22, live (not yet indexed by search engines) at https://sigi.ubaidillah.id.
 
-- the monthly >1% holders import, with validation gates and fail-closed publishing (PRD F1);
-- a data health and sources page (F10);
-- an ownership section per company (F2);
-- a container image.
+- **M1** (deployed 2026-10-23): the monthly >1% holders import with validation gates and fail-closed publishing (PRD F1), data health and sources (F10), ownership per company (F2), and the Dokploy deployment.
+- **M2** (built 2026-10-23): the investability tracker against the 15% free-float rule (F3), the holder explorer for institutions (F4), and the market page with the ownership screen and TradingView widgets (F9).
 
-It is not deployed yet.
+Data appears once the owner uploads the monthly files at `/admin`.
 
 | Doc | Purpose |
 |---|---|

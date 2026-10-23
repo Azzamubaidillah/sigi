@@ -12,7 +12,10 @@ function contentSecurityPolicy(nonce: string): string {
     "default-src 'self'",
     // No 'strict-dynamic': it makes the browser ignore 'self', and Next
     // emits some chunk scripts without the nonce (Sunrise D-177).
-    `script-src 'self' 'nonce-${nonce}'`,
+    // TradingView's embed loader (DATA-SOURCES S3); its widgets render in
+    // frames from TradingView's own hosts.
+    `script-src 'self' 'nonce-${nonce}' https://s3.tradingview.com`,
+    "frame-src https://www.tradingview-widget.com https://s.tradingview.com https://www.tradingview.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",

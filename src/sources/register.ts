@@ -43,7 +43,7 @@ export const SOURCES = {
     url: "https://www.tradingview.com/widget/",
     status: "cleared",
     terms: "Display-only embeds with TradingView's attribution kept intact.",
-    live: false,
+    live: true,
   },
   S4: {
     name: "BPS website tables",

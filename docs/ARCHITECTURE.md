@@ -1,6 +1,6 @@
 # Architecture (proposed)
 
-**Status:** M1 built 2026-10-22 (import pipeline, data health, ownership section, deploy skeleton). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
@@ -103,10 +103,11 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 
 | Route | Content |
 |---|---|
-| `/` | Market page: index and sector widgets; ownership screens; investability summary |
-| `/investability` | Float tracker, tranche deadlines, MSCI timeline, methodology |
-| `/t/[code]` | Ticker page: our slices plus widget slots |
-| `/holders/[slug]` | Pages for corporate, fund and institution holders only (D-007) |
+| `/` | Market page: IHSG chart and IDX screener (TradingView widgets); the ownership screen with URL filters (built, M2) |
+| `/investability` | Sigi's count against the exchange's, bands of the float bound, companies certainly below 15% with possible deadlines, timeline, methodology (built, M2) |
+| `/t/[code]` | Ticker page: free-float bound and rule status, holders, month-over-month changes (built; widget slots in M6) |
+| `/holders`, `/holders/[slug]` | Pages for corporate, fund and institution holders only (D-007, D-018; built, M2) |
+| `/privacy` | What the site and the TradingView widgets receive (built, M2) |
 | `/macro` | Indonesian macro dashboard with sector links |
 | `/theses`, `/theses/[slug]` | Theses, conditions-hit list, version history |
 | `/brief` | Today's brief, stale marker, rejected-file notice, inputs table (F12) |

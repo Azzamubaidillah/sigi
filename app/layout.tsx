@@ -34,7 +34,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               come from the monthly register of holders above 1% published by PT
               Bursa Efek Indonesia with data from PT Kustodian Sentral Efek
               Indonesia; see <Link href="/data">Data &amp; sources</Link> for
-              every source and its terms.
+              every source and its terms, and the{" "}
+              <Link href="/privacy">privacy notice</Link>. Charts and the price
+              screener are TradingView widgets.
             </p>
           </footer>
         </div>

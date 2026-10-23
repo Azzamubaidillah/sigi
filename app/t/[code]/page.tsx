@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { S1Citation } from "@/app/_components/Citation";
+import { HolderName } from "@/app/_components/HolderName";
 import {
   formatDate,
   formatHhi,
@@ -11,12 +12,22 @@ import {
   formatShares,
   formatSharesChange,
 } from "@/app/_lib/format";
+import {
+  localForeignLabel,
+  possibleDeadlines,
+  typeLabel,
+} from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
-import { INVESTOR_TYPE_LABELS, type InvestorType } from "@/src/ownership/gates";
+import {
+  FREE_FLOAT_MINIMUM_HUNDREDTHS,
+  possibleTranches,
+} from "@/src/investability/rule";
 import type { HolderChange } from "@/src/ownership/metrics";
+import { loadHolderLinks } from "@/src/views/holders";
 import {
   ABSENCE_TEXT,
   type ChangesSlice,
+  type CompanyFigures,
   loadTickerOwnership,
 } from "@/src/views/ownership";
 
@@ -32,16 +43,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return { title: code ? `${code} ownership` : "Not found" };
 }
 
-function typeLabel(type: string | null): string {
-  if (type === null) return "Unclassified (scrip)";
-  return INVESTOR_TYPE_LABELS[type as InvestorType] ?? type;
-}
+type Links = ReadonlyMap<string, string>;
 
-function localForeignLabel(value: string | null): string {
-  return value === "L" ? "Local" : value === "A" ? "Foreign" : "Unclassified";
-}
-
-function ChangeTable({ title, rows }: { title: string; rows: HolderChange[] }) {
+function ChangeTable({
+  title,
+  rows,
+  links,
+}: {
+  title: string;
+  rows: HolderChange[];
+  links: Links;
+}) {
   if (rows.length === 0) return null;
   return (
     <>
@@ -59,8 +71,10 @@ function ChangeTable({ title, rows }: { title: string; rows: HolderChange[] }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.investorName}>
-                <td>{row.investorName}</td>
+              <tr key={row.key}>
+                <td>
+                  <HolderName name={row.investorName} links={links} />
+                </td>
                 <td className="num">
                   {row.beforeHundredths === null
                     ? "—"
@@ -90,7 +104,7 @@ function ChangeTable({ title, rows }: { title: string; rows: HolderChange[] }) {
   );
 }
 
-function Changes({ slice }: { slice: ChangesSlice }) {
+function Changes({ slice, links }: { slice: ChangesSlice; links: Links }) {
   if (slice.kind === "absent") {
     return <p className="absent">{ABSENCE_TEXT[slice.reason]}</p>;
   }
@@ -106,16 +120,75 @@ function Changes({ slice }: { slice: ChangesSlice }) {
         Against {formatDate(previous.recordDate)}: {changes.entered.length} new,{" "}
         {changes.exited.length} gone, {changes.increased.length} up,{" "}
         {changes.decreased.length} down, {changes.unchanged} unchanged. Holders
-        are matched by name as published; crossing 1% shows as new or gone.
+        are matched by name as published (see{" "}
+        <Link href="/investability#methodology">methodology</Link>); crossing 1%
+        shows as new or gone.
       </p>
       {moved > 0 ? (
         <>
-          <ChangeTable title="New above 1%" rows={changes.entered} />
-          <ChangeTable title="No longer above 1%" rows={changes.exited} />
-          <ChangeTable title="Increased" rows={changes.increased} />
-          <ChangeTable title="Decreased" rows={changes.decreased} />
+          <ChangeTable
+            title="New above 1%"
+            rows={changes.entered}
+            links={links}
+          />
+          <ChangeTable
+            title="No longer above 1%"
+            rows={changes.exited}
+            links={links}
+          />
+          <ChangeTable
+            title="Increased"
+            rows={changes.increased}
+            links={links}
+          />
+          <ChangeTable
+            title="Decreased"
+            rows={changes.decreased}
+            links={links}
+          />
         </>
       ) : null}
+    </div>
+  );
+}
+
+function FreeFloat({ figures }: { figures: CompanyFigures }) {
+  if (figures.registerIncomplete) {
+    return (
+      <p className="notice">
+        The register lists only {formatPercent(figures.sumHundredths)} above 1%
+        for this company, too little to be complete: a known controlling holder
+        is missing for every company like this in the files checked so far. No
+        free-float figure is given; see{" "}
+        <Link href="/data">Data &amp; sources</Link>.
+      </p>
+    );
+  }
+  const bound = figures.freeFloatUpperBoundHundredths;
+  const tranches = possibleTranches(bound);
+  return (
+    <div className="stack">
+      {bound < FREE_FLOAT_MINIMUM_HUNDREDTHS ? (
+        <p className="notice">
+          <strong>Below the 15% minimum.</strong> Even counted generously, free
+          float is at most {formatPercent(bound)}. Its deadline depends on
+          market capitalisation, which Sigi does not have, so it is one of:{" "}
+          {possibleDeadlines(tranches).join("; ")}.
+        </p>
+      ) : (
+        <p className="muted">
+          The register does not show this company below the 15% minimum. The
+          official figure can still be lower than the bound shown here.
+        </p>
+      )}
+      <p className="citation">
+        Free float upper bound: 100% minus every holder of 5% or more, the
+        exchange&apos;s definition as far as the register can see. The official
+        figure also excludes shares below 5% held by the controller&apos;s
+        affiliates, directors, commissioners, treasury and lock-ups, so it is
+        this figure or lower.{" "}
+        <Link href="/investability#methodology">Methodology</Link>.
+      </p>
     </div>
   );
 }
@@ -123,7 +196,8 @@ function Changes({ slice }: { slice: ChangesSlice }) {
 export default async function TickerPage({ params }: Params) {
   const code = shareCodeOf((await params).code);
   if (!code) notFound();
-  const ownership = loadTickerOwnership(loadConfig().databasePath, code);
+  const { databasePath } = loadConfig();
+  const ownership = loadTickerOwnership(databasePath, code);
 
   if (ownership.kind === "absent") {
     return (
@@ -140,7 +214,8 @@ export default async function TickerPage({ params }: Params) {
     );
   }
 
-  const { concentration } = ownership;
+  const { figures } = ownership;
+  const links = loadHolderLinks(databasePath);
   const mismatched = ownership.holdings.filter(
     (holding) =>
       holding.sharesTotal !== holding.sharesScripless + holding.sharesScrip,
@@ -149,8 +224,8 @@ export default async function TickerPage({ params }: Params) {
     <>
       <div className="page-header">
         <h1>
-          <span className="mono">{ownership.shareCode}</span> ·{" "}
-          {ownership.issuerName}
+          <span className="mono">{figures.shareCode}</span> ·{" "}
+          {figures.issuerName}
         </h1>
         <p className="lede">
           Holders above 1% on {formatDate(ownership.month.recordDate)}.{" "}
@@ -159,36 +234,36 @@ export default async function TickerPage({ params }: Params) {
       </div>
 
       <section className="panel">
-        <h2>Ownership</h2>
+        <h2>Ownership and free float</h2>
         <dl className="figures">
           <div>
-            <dt>Float estimate</dt>
-            <dd>{formatPercent(ownership.floatEstimateHundredths)}</dd>
+            <dt>Free float, upper bound</dt>
+            <dd>
+              {figures.registerIncomplete
+                ? "not given"
+                : formatPercent(figures.freeFloatUpperBoundHundredths)}
+            </dd>
           </div>
           <div>
             <dt>Largest holder</dt>
-            <dd>{formatPercent(concentration.topHundredths)}</dd>
+            <dd>{formatPercent(figures.topHundredths)}</dd>
           </div>
           <div>
-            <dt>Three largest</dt>
-            <dd>{formatPercent(concentration.topThreeHundredths)}</dd>
+            <dt>Held below 1%</dt>
+            <dd>{formatPercent(figures.heldBelowOneHundredths)}</dd>
           </div>
           <div>
             <dt>HHI, holders above 1%</dt>
-            <dd>{formatHhi(concentration.hhi)}</dd>
+            <dd>{formatHhi(figures.hhi)}</dd>
           </div>
           <div>
             <dt>Holders above 1%</dt>
-            <dd>{concentration.holders}</dd>
+            <dd>{figures.holders}</dd>
           </div>
         </dl>
-        <p className="citation">
-          Float estimate from the &gt;1% register, not the official free-float
-          figure: the official definition also excludes controllers, affiliates,
-          directors and treasury shares, some of which may sit below 1%. It is
-          also only as complete as the register, which has been seen to omit
-          large holders; see <Link href="/data">Data &amp; sources</Link>.
-        </p>
+        <div className="spaced">
+          <FreeFloat figures={figures} />
+        </div>
       </section>
 
       <section className="panel">
@@ -224,7 +299,9 @@ export default async function TickerPage({ params }: Params) {
                   holding.sharesScripless + holding.sharesScrip;
                 return (
                   <tr key={holding.rowNumber}>
-                    <td>{holding.investorName}</td>
+                    <td>
+                      <HolderName name={holding.investorName} links={links} />
+                    </td>
                     <td>{typeLabel(holding.investorType)}</td>
                     <td>{localForeignLabel(holding.localForeign)}</td>
                     <td>{holding.domicile ?? "—"}</td>
@@ -257,7 +334,7 @@ export default async function TickerPage({ params }: Params) {
 
       <section className="panel">
         <h2>Changes since the previous month</h2>
-        <Changes slice={ownership.changes} />
+        <Changes slice={ownership.changes} links={links} />
       </section>
     </>
   );

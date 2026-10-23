@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.3, 2026-10-22. **Status:** P1 started 2026-10-22; M1 built locally (§11). **Owner:** Azzam Ubaidillah.
+**Version:** 0.4, 2026-10-23. **Status:** P1 started 2026-10-22; M1 deployed, M2 built (§11). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -109,19 +109,20 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 - **Holders table:** name, type, local/foreign, shares, %; individuals shown as published (C6).
 - **Month-over-month changes:** new, exited, increased and decreased holders, with deltas.
 - **Concentration:** top holder %, top-3 %, HHI.
-- **Float estimate:** shares held by holders below 1%. It is labelled *"estimate from the >1% register, not the official free-float figure"*, because the regulatory definition also excludes controllers, affiliates, directors and treasury shares.
-- **Acceptance:** for a sample of 10 companies, the figures match a hand calculation from the source file. **Met 2026-10-22:** AADI, AALI, ABBA, ACES, ADES, ADHI, BBCA, BMRI, MAYA and TLKM match an independent pdftotext extraction on holder count, top holder, top three, float estimate and HHI.
+- **Free float, upper bound** (D-017): 100% minus every holder of 5% or more, rows of one holder added together. This follows the exchange's definition (holders under 5% who are not controllers, affiliates, directors, commissioners, treasury or locked-up shares) as far as the register can see, so the official figure is this bound or lower. "Held below 1%" is shown beside it as a separate figure. *(Changed 2026-10-23: v0.3 used "held below 1%" as the float estimate. That is not the official definition, since holders of 1–5% count as free float, and on the 2026-02-27 file it put 568 companies under 15% against the exchange's 328.)*
+- **Register incomplete** (D-019): when the holders above 1% add up to less than 15%, no float figure is given and the page says why.
+- **Acceptance:** for a sample of 10 companies, the figures match a hand calculation from the source file. **Met 2026-10-22:** AADI, AALI, ABBA, ACES, ADES, ADHI, BBCA, BMRI, MAYA and TLKM match an independent pdftotext extraction on holder count, top holder, top three, held below 1% and HHI.
 
 ### F3. Investability and float tracker
-- **Market-wide view:** number of companies by float-estimate band; companies below 15%, grouped by the rule's tranche and deadline; month-over-month movement; the MSCI timeline.
-- **Per company:** float estimate, applicable tranche (needs market cap; see the F5 dependency), deadline, trend.
-- **Methodology page:** states the definition gap between our estimate and the official figure.
-- **Acceptance:** our market-wide count is shown next to the latest official IDX figure (e.g. 358 of 918 as of 2026-09-30), with the difference explained on the methodology page. It is never presented as the official number.
+- **Market-wide view:** number of companies by band of the float upper bound; companies certainly below 15%; month-over-month crossings of the 15% line; the timeline of rule deadlines and MSCI dates.
+- **Per company:** the bound, whether it is certainly below 15%, and the tranches still possible. The tranche itself needs market cap (see the F5 dependency), so the page shows each possible deadline with its condition.
+- **Methodology** (on `/investability`): the definition gap between the bound and the official figure.
+- **Acceptance:** our market-wide count is shown next to the exchange's count nearest in date (328 as of 2026-03-31) and its latest (358 of 918 as of 2026-09-30), with the difference explained, and never presented as the official number. **Met 2026-10-23** (M2): 219 companies certainly below 15% on the 2026-02-27 file, a floor on the official count as the definition requires. Cross-check: YUPI's bound is 10.00%; YUPI itself disclosed 10% free float as of 2026-08-31 (Kontan, 2026-10-09).
 
 ### F4. Holder explorer (corporates, funds and institutions only)
 - Holder pages for non-individual holders: the companies they hold, % held, and month-over-month changes.
-- Name normalisation through a reviewed alias table: deterministic, documented and versioned. It never fuzzy-merges automatically.
-- **Acceptance:** each alias decision is a reviewed row with a reason; holder pages for individuals do not exist (C6).
+- Name normalisation through a reviewed alias table: deterministic, documented and versioned. It never fuzzy-merges automatically (D-018).
+- **Acceptance:** each alias decision is a reviewed row with a reason; holder pages for individuals do not exist (C6). **Met 2026-10-23:** 33 reviewed rows from 36 candidate groups; a holder gets a page only if every row published under it carries an institutional type, so individuals and unclassified holders never do. Tests cover both.
 
 ### F5. Local/foreign composition (blocked until KSEI's terms are cleared)
 - Per ticker: local versus foreign share by the 9 investor types, and month-over-month change.
@@ -163,10 +164,10 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 - **Acceptance:** with any one source missing, the page still renders, and each missing section shows its absent reason.
 
 ### F9. Market page
-- IHSG and sector index charts (widgets).
-- The TradingView IDX screener widget, labelled as third-party.
-- **Our ownership screens**, filtering on our own data: float estimate, concentration, foreign % (when F5 is cleared), month-over-month changes, holder types. Filters are stored in the URL.
-- **Acceptance:** every one of our screens shows its as-of month and the number of companies that were excluded and why.
+- The IHSG chart (TradingView advanced chart, `IDX:COMPOSITE`), labelled as third-party. Sector index charts are deferred to the macro dashboard (M3), where each sector sits beside the series linked to it.
+- The TradingView IDX screener widget, labelled as third-party. It opens on valuation columns rather than "overview", whose technical buy/sell ratings would read as advice next to our content.
+- **Our ownership screen**, filtering on our own data: free-float bound, largest holder, holder type, any foreign holder above 1%, holders changed since the previous month, and sorting. Filters are stored in the URL (a plain GET form, so it works without JavaScript).
+- **Acceptance:** every one of our screens shows its as-of month and the number of companies that were excluded and why. **Met 2026-10-23:** a float filter excludes registers that are incomplete, and the change filter excludes companies with nothing to compare; each is counted with its reason.
 
 ### F10. Data health and provenance
 - Per source: last import, file hash, row counts, gate results, licence status, and the next expected publication date.
@@ -260,8 +261,8 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 
 | Milestone | Scope | Budget |
 |---|---|---|
-| M1 | F1 import pipeline + F10 data health + F2 ownership section + deploy skeleton. **Built 2026-10-22** (not yet deployed; see README) | 20 h |
-| M2 | F3 tracker + F4 holder explorer + F9 market page | 15 h |
+| M1 | F1 import pipeline + F10 data health + F2 ownership section + deploy skeleton. **Built 2026-10-22; deployed 2026-10-23** at https://sigi.ubaidillah.id (Dokploy) | 20 h |
+| M2 | F3 tracker + F4 holder explorer + F9 market page. **Built 2026-10-23** | 15 h |
 | M3 | F6 macro dashboard | 12 h |
 | M4 | F7 theses + condition evaluation | 10 h |
 | M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page | 8 h |
@@ -282,7 +283,7 @@ That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, r
 | R7 | Crowded market for commodity features | Low | Not competing there (§2) |
 | R8 | Scope creep and a stalled second project | High | Phase gates, hour budgets, the kill rule in §11 |
 | R9 | The AI brief states something false or advice-like on a public page | Medium | Evidence-key validation, a recommendation-language check, the stale marker, the rejected-file notice; the owner can unpublish a brief from the admin page |
-| R10 | The register omits large holders, so float estimates are overstated (seen 2026-10-22: no state holder for BBRI, BBNI or ADHI in the 2026-02-27 file, while BMRI and TLKM list Danantara) | High | Known issues recorded in DATA-SOURCES S1, with a caveat on every float figure. Before F3 publishes market-wide counts, add a reviewed list of known omissions that marks the affected companies' estimates "unreliable", and re-check each new month |
+| R10 | The register omits large holders, so float estimates are overstated (2026-02-27 file: BBRI, BBNI, BBTN, ADHI and NCKL each miss a known controlling holder, while BMRI and TLKM list Danantara) | High | **Mitigated in M2:** a company whose holders above 1% total under 15% gets no float figure, is counted separately on every screen and page, and every such case so far is a known omission (D-019). An omission at a company that still lists more than 15% is not caught; re-check each new month with the low-total list |
 
 ## 13. Open questions
 
@@ -296,4 +297,4 @@ Resolved by the owner on 2026-10-19:
 | Q4, permission emails | Not now | D-013 |
 | Q5, hosting | A subdomain of the owner's site | D-014 |
 
-Start date: 2026-10-22. Still open: the exact subdomain (D-014 proposes `sigi.ubaidillah.id`; it needs a DNS record at deploy time).
+Start date: 2026-10-22. Subdomain: `sigi.ubaidillah.id` (DNS added by the owner, 2026-10-23). Production is kept out of search engines (`X-Robots-Tag: noindex`) until the M6 launch.

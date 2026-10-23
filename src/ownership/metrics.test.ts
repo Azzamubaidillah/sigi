@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   compareMonths,
   concentration,
-  floatEstimateHundredths,
+  freeFloatUpperBoundHundredths,
+  heldBelowOnePercentHundredths,
   type Holding,
 } from "./metrics";
 
@@ -51,17 +52,43 @@ describe("concentration", () => {
   });
 });
 
-describe("float estimate", () => {
-  it("is what the >1% holders leave", () => {
+describe("held below 1%", () => {
+  it("is what the >1% holders leave, never negative after rounding", () => {
     expect(
-      floatEstimateHundredths([holding("A", 7_968), holding("B", 218)]),
+      heldBelowOnePercentHundredths([holding("A", 7_968), holding("B", 218)]),
     ).toBe(1_814);
+    expect(
+      heldBelowOnePercentHundredths([holding("A", 5_001), holding("B", 5_001)]),
+    ).toBe(0);
+  });
+});
+
+describe("free float upper bound", () => {
+  it("removes holders of 5% or more and keeps those below 5", () => {
+    // 5.00% exactly is a major holder; 4.99% is free float by definition.
+    expect(
+      freeFloatUpperBoundHundredths([
+        holding("A", 6_000),
+        holding("B", 500),
+        holding("C", 499),
+      ]),
+    ).toBe(3_500);
   });
 
-  it("is never negative when rounded percentages overshoot 100", () => {
+  it("adds a holder's rows together before applying the 5% line", () => {
+    // Two accounts of 3% each are one 6% holder, and not free float.
     expect(
-      floatEstimateHundredths([holding("A", 5_001), holding("B", 5_001)]),
-    ).toBe(0);
+      freeFloatUpperBoundHundredths([holding("A", 300), holding("A", 300)]),
+    ).toBe(9_400);
+  });
+
+  it("treats spellings that differ only in case, stops and commas as one holder", () => {
+    expect(
+      freeFloatUpperBoundHundredths([
+        holding("PT. Contoh Jaya", 300),
+        holding("PT CONTOH JAYA", 300),
+      ]),
+    ).toBe(9_400);
   });
 });
 
