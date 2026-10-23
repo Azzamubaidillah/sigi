@@ -38,6 +38,30 @@ latest() {
     node -e 'let t="";process.stdin.on("data",c=>t+=c).on("end",()=>{const d=JSON.parse(t).result.data.json[0]??{};process.stdout.write(`${d.deploymentId??""} ${d.status??""} ${d.logPath??""}`)})'
 }
 
+# Dokploy reports "done" once it has updated the swarm service, before the
+# swarm has swapped the container. Waits for the swarm's rollout as well.
+rolled_out() {
+  service=$(api_get application.one "{\"applicationId\":\"$1\"}" |
+    node -e 'let t="";process.stdin.on("data",c=>t+=c).on("end",()=>process.stdout.write(JSON.parse(t).result.data.json.appName))')
+  attempt=0
+  while :; do
+    state=$(ssh "$SIGI_DEPLOY_HOST" "docker service inspect '$service' --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}'")
+    case $state in
+      completed) return 0 ;;
+      paused | rollback_*)
+        echo "$2 rollout $state; see docker service ps $service on the host" >&2
+        exit 1
+        ;;
+    esac
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 36 ]; then
+      echo "$2 rollout still $state after three minutes" >&2
+      exit 1
+    fi
+    sleep 5
+  done
+}
+
 # Builds and starts one application from the uploaded bundle, and waits.
 deploy_app() {
   app=$1
@@ -53,7 +77,7 @@ deploy_app() {
     set -- $(latest "$app")
     if [ "${1:-}" != "$before" ]; then
       case ${2:-} in
-        done) return 0 ;;
+        done) break ;;
         error | cancelled)
           echo "$label deployment $2; build log on the host: ${3:-}" >&2
           exit 1
@@ -66,6 +90,7 @@ deploy_app() {
       exit 1
     fi
   done
+  rolled_out "$app" "$label"
 }
 
 echo "==> verify"
@@ -84,20 +109,24 @@ ssh "$SIGI_DEPLOY_HOST" 'docker builder prune -af >/dev/null 2>&1; docker image 
 
 deploy_app "$SIGI_DOKPLOY_APP" web
 
-# The new container migrates before it listens; give it a minute to answer.
+# The new container migrates before it listens; give it two minutes.
 echo "==> checking $SIGI_PUBLIC_URL"
+round() {
+  for path in / /data /investability /holders; do
+    curl -s -o /dev/null -w "$path %{http_code}  " "$SIGI_PUBLIC_URL$path"
+  done
+}
 attempt=0
-until [ "$(curl -s -o /dev/null -w '%{http_code}' "$SIGI_PUBLIC_URL/data")" = 200 ]; do
+codes=$(round)
+while [ "$(printf '%s' "$codes" | grep -o ' 200 ' | wc -l | tr -d ' ')" != 4 ]; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 24 ]; then
-    echo "$SIGI_PUBLIC_URL/data did not answer 200 within two minutes" >&2
+    echo "pages did not all answer 200 within two minutes: $codes" >&2
     exit 1
   fi
   sleep 5
+  codes=$(round)
 done
-codes=$(for path in / /data /investability /holders; do
-  curl -s -o /dev/null -w "$path %{http_code}  " "$SIGI_PUBLIC_URL$path"
-done)
 echo "    $codes"
 
 deploy_app "$SIGI_DOKPLOY_WORKER_APP" worker
