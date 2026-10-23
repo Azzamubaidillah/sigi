@@ -1,4 +1,4 @@
-import { INVESTOR_TYPES, type InvestorType } from "../ownership/gates";
+import { classKey, typeLabel } from "../ownership/investor-classes";
 import {
   compareMonths,
   type Concentration,
@@ -47,6 +47,7 @@ export interface CompanyFigures {
   registerIncomplete: boolean;
   /** Holders above 1% classed as foreign, together. */
   foreignHundredths: number;
+  /** Investor types present, as `classKey`s (so both taxonomies compare). */
   types: string[];
   /** Null when the company is not in the previous month, or there is none. */
   changes: Pick<
@@ -73,12 +74,12 @@ export function companyFigures(
     heldBelowOneHundredths: heldBelowOnePercentHundredths(company.holdings),
     registerIncomplete: totals.sumHundredths < LOW_COVERAGE_HUNDREDTHS,
     foreignHundredths: company.holdings
-      .filter((holding) => holding.localForeign === "A")
+      .filter((holding) => holding.localForeign === "F")
       .reduce((total, holding) => total + holding.percentHundredths, 0),
     types: [
       ...new Set(
         company.holdings.flatMap((h) =>
-          h.investorType ? [h.investorType] : [],
+          h.investorType ? [classKey(typeLabel(h.investorType))] : [],
         ),
       ),
     ],
@@ -103,7 +104,8 @@ export interface ScreenFilters {
   floatMin: number | null;
   floatMax: number | null;
   topMin: number | null;
-  type: InvestorType | null;
+  /** A `classKey`, e.g. "mutualfunds". */
+  type: string | null;
   foreign: boolean;
   changed: boolean;
   sort: ScreenSort;
@@ -132,9 +134,7 @@ export function parseScreenFilters(params: SearchParams): ScreenFilters {
     floatMin: percentParam(params, "floatMin"),
     floatMax: percentParam(params, "floatMax"),
     topMin: percentParam(params, "topMin"),
-    type: (INVESTOR_TYPES as readonly string[]).includes(type)
-      ? (type as InvestorType)
-      : null,
+    type: /^[a-z]{2,80}$/.test(type) ? type : null,
     foreign: single(params, "foreign") === "1",
     changed: single(params, "changed") === "1",
     sort: sort in SORTS ? (sort as ScreenSort) : "code",
@@ -155,6 +155,8 @@ export type CompanyScreen =
       total: number;
       excluded: ScreenExclusion[];
       companies: CompanyFigures[];
+      /** Investor types present in the month, for the type filter. */
+      typeOptions: { key: string; label: string }[];
     };
 
 /** Figures for every company in the latest month, against the month before. */
@@ -201,7 +203,8 @@ export function loadCompanyScreen(
 ): CompanyScreen {
   const snapshot = loadSnapshot(databasePath);
   const latest = snapshot ? latestFigures(snapshot) : null;
-  if (!latest) return { kind: "absent", reason: "no_published_month" };
+  if (!snapshot || !latest)
+    return { kind: "absent", reason: "no_published_month" };
 
   const usesFloat =
     filters.floatMin !== null ||
@@ -269,6 +272,17 @@ export function loadCompanyScreen(
       count: noPrevious,
     });
   }
+  const typeOptions = new Map<string, string>();
+  for (const company of snapshot.companies
+    .get(latest.month.recordDate)
+    ?.values() ?? []) {
+    for (const holding of company.holdings) {
+      if (holding.investorType) {
+        const label = typeLabel(holding.investorType);
+        typeOptions.set(classKey(label), label);
+      }
+    }
+  }
   return {
     kind: "list",
     month: latest.month,
@@ -276,6 +290,9 @@ export function loadCompanyScreen(
     total: latest.figures.length,
     excluded,
     companies,
+    typeOptions: [...typeOptions]
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
   };
 }
 

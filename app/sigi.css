@@ -373,8 +373,15 @@
   .screen label {
     display: grid;
     gap: 0.25rem;
+    min-width: 0;
     font-size: 0.85rem;
     font-weight: 600;
+  }
+
+  /* Investor-type labels run long ("Commanditaire Vennootschap (CV) Or ..."). */
+  .screen select {
+    width: 100%;
+    min-width: 0;
   }
 
   .screen .check {
@@ -420,7 +427,7 @@
     color: var(--negative);
   }
 
-  .badge.hold {
+  .badge.warn {
     color: var(--warning);
   }
 }

@@ -12,12 +12,9 @@ import {
   formatShares,
   formatSharesChange,
 } from "@/app/_lib/format";
-import {
-  localForeignLabel,
-  possibleDeadlines,
-  typeLabel,
-} from "@/app/_lib/labels";
+import { localForeignLabel, possibleDeadlines } from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
+import { typeLabel } from "@/src/ownership/investor-classes";
 import {
   FREE_FLOAT_MINIMUM_HUNDREDTHS,
   possibleTranches,

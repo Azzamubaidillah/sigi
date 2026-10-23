@@ -6,17 +6,8 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 
-/** Failed-login counters per scope (an address, or the global ceiling). */
-export const loginAttempts = sqliteTable("login_attempts", {
-  scope: text("scope").primaryKey(),
-  failureCount: integer("failure_count").notNull(),
-  firstFailureAt: integer("first_failure_at").notNull(),
-  lockedUntil: integer("locked_until"),
-  updatedAt: integer("updated_at").notNull(),
-});
-
 /**
- * Every uploaded source file, once. The bytes live in the landing directory
+ * Every fetched source file, once. The bytes live in the landing directory
  * under their SHA-256 and are never modified or deleted: published tables are
  * derived from them and can be rebuilt from them (PRD F10).
  */
@@ -26,20 +17,28 @@ export const sourceFiles = sqliteTable("source_files", {
   originalName: text("original_name").notNull(),
   byteSize: integer("byte_size").notNull(),
   storedName: text("stored_name").notNull(),
-  /** Where the owner downloaded it; required for the citation (S1). */
+  /** The exchange's URL for the file; part of the citation (S1). */
   sourceUrl: text("source_url").notNull(),
-  /** YYYY-MM-DD the owner downloaded it; required for the citation (S1). */
+  /** YYYY-MM-DD the worker fetched it, in Jakarta time; part of the citation. */
   accessedOn: text("accessed_on").notNull(),
-  uploadedAt: integer("uploaded_at").notNull(),
+  fetchedAt: integer("fetched_at").notNull(),
 });
 
-export const importOutcomes = [
-  "rejected",
-  "held",
-  "published",
-  "superseded",
-] as const;
+export const importOutcomes = ["rejected", "published", "superseded"] as const;
 export type ImportOutcome = (typeof importOutcomes)[number];
+
+/** One check of the exchange's ownership-data page by the worker. */
+export const fetchRuns = sqliteTable("fetch_runs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  startedAt: integer("started_at").notNull(),
+  finishedAt: integer("finished_at").notNull(),
+  outcome: text("outcome", { enum: ["ok", "failed"] }).notNull(),
+  /** Monthly >1% files listed on the page. */
+  listed: integer("listed").notNull(),
+  /** Files downloaded and imported in this run. */
+  fetched: integer("fetched").notNull(),
+  error: text("error"),
+});
 
 /** One attempt to turn a landed file into a published month. */
 export const importRuns = sqliteTable(
@@ -61,7 +60,7 @@ export const importRuns = sqliteTable(
     issuerCount: integer("issuer_count"),
     holderCount: integer("holder_count"),
     contentHash: text("content_hash"),
-    /** The owner declared this file a correction of an already-published month. */
+    /** The file re-issues an already-published month, which it then replaces. */
     correction: integer("correction", { mode: "boolean" }).notNull(),
   },
   (table) => [
@@ -77,8 +76,8 @@ export const gateResults = sqliteTable(
       .notNull()
       .references(() => importRuns.id),
     gate: text("gate").notNull(),
-    /** "pass", "fail", or "hold" (passes the hard checks but needs review). */
-    verdict: text("verdict", { enum: ["pass", "fail", "hold"] }).notNull(),
+    /** "pass"; "warn" publishes with the finding shown; "fail" rejects (D-021). */
+    verdict: text("verdict", { enum: ["pass", "warn", "fail"] }).notNull(),
     detail: text("detail").notNull(),
   },
   (table) => [primaryKey({ columns: [table.importRunId, table.gate] })],
@@ -134,9 +133,9 @@ export const ownershipHoldings = sqliteTable(
     ...holdingColumns,
   },
   // No CHECK that total = scripless + scrip: rows are stored exactly as
-  // published, and the publisher's own file breaks that identity (the
-  // 2026-02-27 file has one such row). The gate holds such a month for the
-  // owner's review instead, and the ticker page flags the row (D-015).
+  // published, and the publisher's own files break that identity (one row in
+  // each of 2026-02-27 and 2026-03-31). The gate publishes up to a few such
+  // rows with a warning, and the ticker page flags the row (D-015, D-021).
   (table) => [
     primaryKey({ columns: [table.recordDate, table.rowNumber] }),
     index("ownership_holdings_code_idx").on(table.shareCode, table.recordDate),
@@ -147,9 +146,7 @@ export const ownershipHoldings = sqliteTable(
 export const publishAudit = sqliteTable("publish_audit", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   at: integer("at").notNull(),
-  action: text("action", {
-    enum: ["publish", "supersede", "approve", "reject"],
-  }).notNull(),
+  action: text("action", { enum: ["publish", "supersede"] }).notNull(),
   recordDate: text("record_date"),
   importRunId: integer("import_run_id")
     .notNull()

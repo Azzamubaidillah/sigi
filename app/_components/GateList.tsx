@@ -7,20 +7,23 @@ const gateNames: Record<string, string> = {
   percent_range: "Percent range",
   percent_sum: "Percent sum per company",
   shares_identity: "Scripless + scrip = total",
-  classification: "Investor type and local/foreign",
+  classification: "Investor types",
   holder_count_change: "Holder count change",
 };
 
 export function GateList({ gates }: { gates: GateRow[] }) {
   if (gates.length === 0) return <span className="muted">—</span>;
-  const failing = gates.filter((gate) => gate.verdict !== "pass");
+  const failed = gates.filter((gate) => gate.verdict === "fail").length;
+  const warned = gates.filter((gate) => gate.verdict === "warn").length;
+  const summary =
+    failed > 0
+      ? `${failed} of ${gates.length} failed`
+      : warned > 0
+        ? `All passed, ${warned} with a warning`
+        : `All ${gates.length} passed`;
   return (
     <details>
-      <summary>
-        {failing.length === 0
-          ? `All ${gates.length} passed`
-          : `${failing.length} of ${gates.length} need attention`}
-      </summary>
+      <summary>{summary}</summary>
       <ul>
         {gates.map((gate) => (
           <li key={gate.gate}>

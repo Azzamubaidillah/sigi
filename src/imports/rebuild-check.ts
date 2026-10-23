@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 
 import { contentHash, type HashableHolding } from "../ownership/content-hash";
-import { parseS1Pdf } from "../ownership/s1-pdf";
+import { parseS1Xlsx } from "../ownership/s1-xlsx";
 import { readLandedFile } from "./landing";
 
 export interface RebuildMonth {
@@ -69,7 +69,7 @@ export async function checkRebuild(
         month.storedName,
         month.sha256,
       );
-      const parsed = await parseS1Pdf(bytes);
+      const parsed = parseS1Xlsx(bytes);
       if (parsed.ok) reparsedHash = contentHash(parsed.recordDate, parsed.rows);
       else error = parsed.error;
     } catch (cause) {

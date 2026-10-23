@@ -3,9 +3,7 @@ import Link from "next/link";
 import { S1Citation } from "@/app/_components/Citation";
 import { TradingViewWidget } from "@/app/_components/TradingViewWidget";
 import { formatDate, formatHhi, formatPercent } from "@/app/_lib/format";
-import { typeLabel } from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
-import { INVESTOR_TYPES } from "@/src/ownership/gates";
 import {
   ABSENCE_TEXT,
   type CompanyFigures,
@@ -23,7 +21,13 @@ function percentValue(hundredths: number | null): string {
   return hundredths === null ? "" : String(hundredths / 100);
 }
 
-function ScreenForm({ filters }: { filters: ScreenFilters }) {
+function ScreenForm({
+  filters,
+  typeOptions,
+}: {
+  filters: ScreenFilters;
+  typeOptions: { key: string; label: string }[];
+}) {
   return (
     <form className="screen" method="get" action="/">
       <label>
@@ -62,9 +66,9 @@ function ScreenForm({ filters }: { filters: ScreenFilters }) {
         Has a holder of type
         <select name="type" defaultValue={filters.type ?? ""}>
           <option value="">Any</option>
-          {INVESTOR_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {typeLabel(type)}
+          {typeOptions.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
             </option>
           ))}
         </select>
@@ -161,7 +165,7 @@ export default async function MarketPage({ searchParams }: Props) {
           <p className="absent">{ABSENCE_TEXT[screen.reason]}</p>
         ) : (
           <>
-            <ScreenForm filters={filters} />
+            <ScreenForm filters={filters} typeOptions={screen.typeOptions} />
             <p className="muted spaced">
               As of {formatDate(screen.month.recordDate)}
               {screen.previous

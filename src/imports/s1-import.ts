@@ -6,20 +6,25 @@ import {
   type GateResult,
   outcomeOf,
   type PreviousMonth,
-  recordDateGate,
   runGates,
 } from "../ownership/gates";
-import { parseS1Pdf, S1_PARSER_VERSION, type S1Row } from "../ownership/s1-pdf";
+import {
+  parseS1Xlsx,
+  S1_PARSER_VERSION,
+  type S1Row,
+} from "../ownership/s1-xlsx";
 import { landFile } from "./landing";
 
 export const S1_SOURCE_ID = "S1";
 
-export interface S1Upload {
+export interface S1File {
   bytes: Uint8Array;
   originalName: string;
+  /** The exchange's URL for the file. */
   sourceUrl: string;
-  /** YYYY-MM-DD */
+  /** YYYY-MM-DD, Jakarta time. */
   accessedOn: string;
+  /** The file replaces an already-published month. */
   correction: boolean;
 }
 
@@ -83,7 +88,7 @@ function previousMonth(
 }
 
 /**
- * Makes a held or freshly gated run the published month for its record date,
+ * Makes a freshly gated run the published month for its record date,
  * replacing (and marking superseded) whatever run published that date before.
  * Runs inside the caller's transaction.
  */
@@ -91,8 +96,6 @@ function publishRun(
   sqlite: Database.Database,
   runId: number,
   at: number,
-  action: "publish" | "approve",
-  reason: string | null,
 ): void {
   const run = sqlite
     .prepare(
@@ -126,9 +129,9 @@ function publishRun(
       .prepare(
         `INSERT INTO publish_audit
            (at, action, record_date, import_run_id, replaced_import_run_id, reason)
-         VALUES (?, 'supersede', ?, ?, ?, ?)`,
+         VALUES (?, 'supersede', ?, ?, ?, 'the exchange published a new file for this month')`,
       )
-      .run(at, run.recordDate, runId, replaced, reason);
+      .run(at, run.recordDate, runId, replaced);
   }
   sqlite
     .prepare(
@@ -154,14 +157,11 @@ function publishRun(
     )
     .run(run.recordDate, runId);
   sqlite
-    .prepare("UPDATE import_runs SET outcome = 'published' WHERE id = ?")
-    .run(runId);
-  sqlite
     .prepare(
-      `INSERT INTO publish_audit (at, action, record_date, import_run_id, reason)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO publish_audit (at, action, record_date, import_run_id)
+       VALUES (?, 'publish', ?, ?)`,
     )
-    .run(at, action, run.recordDate, runId, reason);
+    .run(at, run.recordDate, runId);
 }
 
 function stageRows(
@@ -193,20 +193,20 @@ function stageRows(
 }
 
 /**
- * Lands, parses, gates and (only if every gate passes) publishes one monthly
- * >1% holders file (PRD F1). The same bytes uploaded twice are a no-op.
+ * Lands, parses, gates and (unless a gate fails) publishes one monthly >1%
+ * holders workbook (PRD F1). The same bytes again are a no-op.
  */
 export async function importS1File(
   sqlite: Database.Database,
   landingDirectory: string,
-  upload: S1Upload,
+  file: S1File,
   now: () => number = Date.now,
 ): Promise<S1ImportResult> {
   const startedAt = now();
-  const landed = await landFile(landingDirectory, upload.bytes, "pdf");
+  const landed = await landFile(landingDirectory, file.bytes, "xlsx");
   // Same bytes again: a no-op, unless every earlier run of them was rejected.
-  // A rejection can depend on state (no "correction" tick, an older month not
-  // yet published), so a rejected file may be gated again.
+  // A rejection can depend on state (an older month not yet published), so a
+  // rejected file is gated again when it is seen again.
   const live = sqlite
     .prepare(
       `SELECT min(id) FROM import_runs
@@ -218,7 +218,7 @@ export async function importS1File(
     return { kind: "duplicate", sha256: landed.sha256, importRunId: live };
   }
 
-  const parsed = await parseS1Pdf(upload.bytes);
+  const parsed = parseS1Xlsx(file.bytes);
   const finishedAt = now();
   const gates = parsed.ok
     ? runGates({
@@ -226,30 +226,30 @@ export async function importS1File(
         rows: parsed.rows,
         previous: previousMonth(sqlite, parsed.recordDate),
         ...publishedState(sqlite, parsed.recordDate),
-        correction: upload.correction,
+        correction: file.correction,
       })
     : [];
   const outcome: ImportOutcome = parsed.ok ? outcomeOf(gates) : "rejected";
 
   const runId = sqlite
     .transaction((): number => {
-      // Provenance is the first upload's: the file is the same file.
+      // Provenance is the first fetch's: the same bytes are the same file.
       sqlite
         .prepare(
           `INSERT INTO source_files
            (sha256, source_id, original_name, byte_size, stored_name,
-            source_url, accessed_on, uploaded_at)
+            source_url, accessed_on, fetched_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (sha256) DO NOTHING`,
         )
         .run(
           landed.sha256,
           S1_SOURCE_ID,
-          upload.originalName,
-          upload.bytes.byteLength,
+          file.originalName,
+          file.bytes.byteLength,
           landed.storedName,
-          upload.sourceUrl,
-          upload.accessedOn,
+          file.sourceUrl,
+          file.accessedOn,
           startedAt,
         );
       const rows = parsed.ok ? parsed.rows : [];
@@ -268,8 +268,7 @@ export async function importS1File(
             S1_PARSER_VERSION,
             startedAt,
             finishedAt,
-            // Recorded as gated; publishRun flips it once the month is live.
-            outcome === "published" ? "held" : outcome,
+            outcome,
             parsed.ok ? null : parsed.error,
             parsed.ok ? parsed.recordDate : null,
             parsed.ok ? rows.length : null,
@@ -278,7 +277,7 @@ export async function importS1File(
               ? new Set(rows.map((row) => row.investorName)).size
               : null,
             parsed.ok ? contentHash(parsed.recordDate, rows) : null,
-            upload.correction ? 1 : 0,
+            file.correction ? 1 : 0,
           ).lastInsertRowid,
       );
       const insertGate = sqlite.prepare(
@@ -289,8 +288,7 @@ export async function importS1File(
         insertGate.run(id, gate.gate, gate.verdict, gate.detail);
       }
       stageRows(sqlite, id, rows);
-      if (outcome === "published")
-        publishRun(sqlite, id, finishedAt, "publish", null);
+      if (outcome === "published") publishRun(sqlite, id, finishedAt);
       return id;
     })
     .immediate();
@@ -304,62 +302,4 @@ export async function importS1File(
     recordDate: parsed.ok ? parsed.recordDate : null,
     gates,
   };
-}
-
-export type ReviewResult =
-  | { ok: true; outcome: "published" | "rejected" }
-  | { ok: false; error: string };
-
-/**
- * The owner's decision on a held month: publish it, or reject it. Either way
- * the reason is kept in the audit trail. Approval re-checks the record date
- * against what is published now, since another month may have gone live while
- * this one waited.
- */
-export function reviewHeldRun(
-  sqlite: Database.Database,
-  runId: number,
-  decision: "approve" | "reject",
-  reason: string,
-  now: () => number = Date.now,
-): ReviewResult {
-  return sqlite
-    .transaction((): ReviewResult => {
-      const run = sqlite
-        .prepare(
-          `SELECT outcome, record_date AS recordDate, correction
-           FROM import_runs WHERE id = ? AND source_id = ?`,
-        )
-        .get(runId, S1_SOURCE_ID) as
-        | { outcome: string; recordDate: string | null; correction: number }
-        | undefined;
-      if (!run) return { ok: false, error: `no import run ${runId}` };
-      if (run.outcome !== "held" || run.recordDate === null) {
-        return { ok: false, error: `run ${runId} is ${run.outcome}, not held` };
-      }
-      const at = now();
-      if (decision === "reject") {
-        sqlite
-          .prepare("UPDATE import_runs SET outcome = 'rejected' WHERE id = ?")
-          .run(runId);
-        sqlite
-          .prepare(
-            `INSERT INTO publish_audit (at, action, record_date, import_run_id, reason)
-           VALUES (?, 'reject', ?, ?, ?)`,
-          )
-          .run(at, run.recordDate, runId, reason);
-        return { ok: true, outcome: "rejected" };
-      }
-      const gate = recordDateGate({
-        recordDate: run.recordDate,
-        ...publishedState(sqlite, run.recordDate),
-        correction: run.correction === 1,
-      });
-      if (gate.verdict !== "pass") {
-        return { ok: false, error: `cannot publish now: ${gate.detail}` };
-      }
-      publishRun(sqlite, runId, at, "approve", reason);
-      return { ok: true, outcome: "published" };
-    })
-    .immediate();
 }

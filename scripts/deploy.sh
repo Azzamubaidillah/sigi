@@ -1,7 +1,8 @@
 #!/bin/sh
-# Deploys the committed HEAD to Dokploy as a "drop" (uploaded source) build.
-# Dokploy builds the Dockerfile on the host and replaces the service; the
-# container migrates before it serves (scripts/container-start.sh).
+# Deploys the committed HEAD to Dokploy as "drop" (uploaded source) builds of
+# two applications from the one Dockerfile: the web (default stage), then the
+# worker (build stage `worker`). The web migrates before it serves
+# (scripts/container-start.sh); the worker waits for that.
 #
 # Host details are not in this repository. They come from `.env.deploy`
 # (git-ignored), which sets:
@@ -9,7 +10,8 @@
 #   SIGI_DEPLOY_PATH        host directory holding data/, .env and .deploy/
 #   SIGI_DOKPLOY_URL        Dokploy's public URL (for status reads)
 #   SIGI_DOKPLOY_LOCAL_URL  Dokploy as the host reaches it (for the upload)
-#   SIGI_DOKPLOY_APP        the Dokploy applicationId
+#   SIGI_DOKPLOY_APP        the web's Dokploy applicationId
+#   SIGI_DOKPLOY_WORKER_APP the worker's Dokploy applicationId
 #   SIGI_PUBLIC_URL         the site's public origin, checked after the deploy
 # The Dokploy API key is read from the macOS Keychain (service dokploy-api-key)
 # and reaches the host on ssh's stdin, never on a command line.
@@ -32,8 +34,38 @@ api_get() {
 }
 
 latest() {
-  api_get deployment.all "{\"applicationId\":\"$SIGI_DOKPLOY_APP\"}" |
+  api_get deployment.all "{\"applicationId\":\"$1\"}" |
     node -e 'let t="";process.stdin.on("data",c=>t+=c).on("end",()=>{const d=JSON.parse(t).result.data.json[0]??{};process.stdout.write(`${d.deploymentId??""} ${d.status??""} ${d.logPath??""}`)})'
+}
+
+# Builds and starts one application from the uploaded bundle, and waits.
+deploy_app() {
+  app=$1
+  label=$2
+  before=$(latest "$app" | cut -d' ' -f1)
+  echo "==> building and starting the $label"
+  printf 'x-api-key: %s\n' "$KEY" | ssh "$SIGI_DEPLOY_HOST" "curl -sS --fail-with-body -o /dev/null -H @- \
+    -F applicationId=$app -F 'zip=@$SIGI_DEPLOY_PATH/.deploy/sigi.zip;type=application/zip' \
+    '$SIGI_DOKPLOY_LOCAL_URL/api/trpc/application.dropDeployment'"
+  attempt=0
+  while :; do
+    sleep 5
+    set -- $(latest "$app")
+    if [ "${1:-}" != "$before" ]; then
+      case ${2:-} in
+        done) return 0 ;;
+        error | cancelled)
+          echo "$label deployment $2; build log on the host: ${3:-}" >&2
+          exit 1
+          ;;
+      esac
+    fi
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 180 ]; then
+      echo "$label deployment did not finish within 15 minutes" >&2
+      exit 1
+    fi
+  done
 }
 
 echo "==> verify"
@@ -46,33 +78,11 @@ git archive --format=zip -o "$bundle" HEAD
 echo "==> uploading $commit ($(wc -c <"$bundle" | tr -d ' ') bytes)"
 ssh "$SIGI_DEPLOY_HOST" "mkdir -p '$SIGI_DEPLOY_PATH/.deploy'"
 scp -q "$bundle" "$SIGI_DEPLOY_HOST:$SIGI_DEPLOY_PATH/.deploy/sigi.zip"
-# The host has little disk to spare; build cache from earlier builds goes first.
+# The host has little disk to spare; build cache from earlier builds goes
+# first. The worker's build then reuses the web's dependency layers.
 ssh "$SIGI_DEPLOY_HOST" 'docker builder prune -af >/dev/null 2>&1; docker image prune -f >/dev/null 2>&1; true'
 
-before=$(latest | cut -d' ' -f1)
-echo "==> building and starting on the host"
-printf 'x-api-key: %s\n' "$KEY" | ssh "$SIGI_DEPLOY_HOST" "curl -sS --fail-with-body -o /dev/null -H @- \
-  -F applicationId=$SIGI_DOKPLOY_APP -F 'zip=@$SIGI_DEPLOY_PATH/.deploy/sigi.zip;type=application/zip' \
-  '$SIGI_DOKPLOY_LOCAL_URL/api/trpc/application.dropDeployment'"
-attempt=0
-while :; do
-  sleep 5
-  set -- $(latest)
-  if [ "${1:-}" != "$before" ]; then
-    case ${2:-} in
-      done) break ;;
-      error | cancelled)
-        echo "deployment $2; build log on the host: ${3:-}" >&2
-        exit 1
-        ;;
-    esac
-  fi
-  attempt=$((attempt + 1))
-  if [ "$attempt" -ge 180 ]; then
-    echo "deployment did not finish within 15 minutes" >&2
-    exit 1
-  fi
-done
+deploy_app "$SIGI_DOKPLOY_APP" web
 
 # The new container migrates before it listens; give it a minute to answer.
 echo "==> checking $SIGI_PUBLIC_URL"
@@ -85,9 +95,12 @@ until [ "$(curl -s -o /dev/null -w '%{http_code}' "$SIGI_PUBLIC_URL/data")" = 20
   fi
   sleep 5
 done
-codes=$(for path in / /data /login /admin; do
+codes=$(for path in / /data /investability /holders; do
   curl -s -o /dev/null -w "$path %{http_code}  " "$SIGI_PUBLIC_URL$path"
 done)
 echo "    $codes"
+
+deploy_app "$SIGI_DOKPLOY_WORKER_APP" worker
+
 ssh "$SIGI_DEPLOY_HOST" 'docker builder prune -af >/dev/null 2>&1; df -h / | awk "NR==2 {print \"    \" \$4 \" free on /\"}"'
 echo "==> deployed $commit"

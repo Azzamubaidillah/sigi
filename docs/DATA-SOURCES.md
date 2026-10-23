@@ -6,7 +6,7 @@ Every figure Sigi shows publicly must point to a row in this register (PRD C3). 
 
 Status values:
 - **cleared** (may be shown publicly in the stated phase);
-- **admin-only** (stored, not shown, until the terms are clear);
+- **withheld** (not fetched or shown until the terms are clear);
 - **excluded**.
 
 ---
@@ -15,17 +15,17 @@ Status values:
 
 | Field | Value |
 |---|---|
-| Publisher | PT Bursa Efek Indonesia (BEI/IDX) website, Announcements; data provided by PT Kustodian Sentral Efek Indonesia (KSEI) under OJK decision KDK No. 1/KDK.04/2026 and OJK letter S-20/PM.1/2026 |
-| Content | Per issuer and holder: record date, share code, issuer name, holder name, investor type (CP, ID, IB, MF, SC, IS, PF, FD, OT), local/foreign, nationality, domicile, scripless shares, scrip shares, total shares, percentage. The 2026-02-27 file has 73 PDF pages, about 7,257 rows, 955 issuers and 5,226 holders (counts from an [independent public extraction](https://github.com/aryakdaniswara/idx-stock-ownership) [M]) |
-| Format and cadence | A PDF exported from Excel (headline "Pemegang saham diatas 1% (KSEI) [Semua Emiten Saham]"); monthly since 2026-03-03 |
-| Access | **Downloaded by hand from the IDX announcements page, then uploaded through our admin import (F1).** No automated fetching: the IDX terms forbid scraping or crawling |
+| Publisher | PT Bursa Efek Indonesia (BEI/IDX) website, [share-ownership data page](https://www.idx.co.id/id/perusahaan-tercatat/data-kepemilikan-saham/) (and, until June 2026, Announcements); data provided by PT Kustodian Sentral Efek Indonesia (KSEI) under OJK decision KDK No. 1/KDK.04/2026 and OJK letter S-20/PM.1/2026 |
+| Content | Per issuer and holder: record date, share code, issuer name, holder name, investor type (KSEI codes CP, ID, IB, MF, SC, IS, PF, FD, OT to March 2026; about 35 classification labels such as "Corporate" or "Mutual Funds" from April 2026), local/foreign, nationality, domicile, scripless shares, scrip shares, total shares, percentage. The 2026-02-27 file has 73 PDF pages, about 7,257 rows, 955 issuers and 5,226 holders (counts from an [independent public extraction](https://github.com/aryakdaniswara/idx-stock-ownership) [M]) |
+| Format and cadence | An Excel workbook, one sheet, titled on the page "Pemegang Saham di Atas 1% per {date}" (D-022); monthly since 2026-03-03. The earlier announcements carried the same table as a PDF exported from Excel ("Pemegang saham diatas 1% (KSEI) [Semua Emiten Saham]") |
+| Access | **Fetched automatically, once a day, by owner decision (D-021).** The page and its file store sit behind Cloudflare, which refuses plain HTTP clients; Sigi's worker drives a real Chrome under Xvfb, reads the page's file list and opens each new workbook in a tab. **This breaches the IDX terms below** ("tidak diperkenankan menggunakan metode web scrapping/crawling"); the owner accepts that, and the risk that the shared host's IP is blocked (PRD R11). Checked working from the host on 2026-10-24 [H] |
 | Terms (IDX website) | *"Penggunaan Informasi dan atau data termasuk pengutipan Informasi dan atau data bukan untuk tujuan komersial diperbolehkan dengan menyebutkan sumbernya secara lengkap yang disertai tanggal akses … dan tidak diperkenankan menggunakan metode web scrapping/crawling."* Commercial use or distribution needs prior written permission from BEI and/or the original owner of the data. [idx.co.id/id/syarat-penggunaan](https://www.idx.co.id/id/syarat-penggunaan), quoted via search on 2026-10-18 [M] |
-| Terms (KSEI cover letter inside the PDF) | *"Seluruh Data dan Informasi pada email dengan subject Data Kepemilikan Saham Perusahaan Terbuka di atas 1%, hanya dapat digunakan oleh PT Bursa Efek Indonesia (BEI) sesuai dengan tujuan penggunaan sebagaimana tercantum dalam Keputusan OJK dan Penetapan OJK."* Read from the 2026-03-03 PDF on 2026-10-18 [H]. The OJK decision's stated purpose is to provide the data **to the public**, so our reading is that public non-commercial reuse with citation follows the IDX website terms [L] |
+| Terms (KSEI cover letter inside the March 2026 PDF) | *"Seluruh Data dan Informasi pada email dengan subject Data Kepemilikan Saham Perusahaan Terbuka di atas 1%, hanya dapat digunakan oleh PT Bursa Efek Indonesia (BEI) sesuai dengan tujuan penggunaan sebagaimana tercantum dalam Keputusan OJK dan Penetapan OJK."* Read from the 2026-03-03 PDF on 2026-10-18 [H]. The OJK decision's stated purpose is to provide the data **to the public**, so our reading is that public non-commercial reuse with citation follows the IDX website terms [L] |
 | Personal data | Lists individuals by name. See PRD C6 and §9 item 6 |
-| Status | **Portfolio phase: cleared** for non-commercial display, with full citation and access date. **Product: requires written permission** from BEI (and KSEI) |
+| Status | **Portfolio phase: cleared** for non-commercial display, with full citation and access date; the access method breaches the terms by owner decision (D-021). **Product: requires written permission** from BEI (and KSEI) |
 | Attribution | "Source: Data Kepemilikan Saham Perusahaan Terbuka di atas 1%, KSEI via PT Bursa Efek Indonesia, record date {date}, accessed {date}, {url}" |
-| Parsed counts (2026-02-27 file) | 7,257 rows, 955 issuers, 5,199 distinct holder names; 244 unclassified scrip rows with neither type nor local/foreign (D-016) [H] |
-| Known issues (2026-02-27 file) | 1. One row breaks total = scripless + scrip: MAYA, MAYAPADA KARUNIA PT (0 + 6,323,076,332 ≠ 6,023,326,332). The month is held for review and the row is published as is (D-015) [H]. 2. **Known controlling holders are missing for five companies:** BBRI (largest listed holder 3.63%), BBNI (3.51%), BBTN (4.95%) and ADHI (2.68%), none listing the state or Danantara, while BMRI and TLKM do list Danantara at 51.48% and 51.57%; and NCKL, whose controller Harita Jayaraya is listed at only 3.16%. In each, the holders above 1% total under 15%, which Sigi now treats as "register incomplete" (D-019). An independent pdftotext read of the same file confirms it is the source, not our parser [H]. The cause is not known [L]. 3. The record date is the month's last trading day (27 Feb 2026 was a Friday) [H]. 4. Spelling varies across rows ("PT X" vs "X PT"): 36 candidate groups, of which 33 merges were reviewed (D-018) [H] |
+| Parsed counts | 2026-02-27: 7,257 rows, 955 issuers, 5,199 distinct holder names; 244 unclassified rows (D-016, D-022). 2026-03-31 to 2026-09-30: 7,154–7,213 rows and 955–961 issuers a month; 219–255 unclassified rows, except 560 in April. From May, 10–22 rows a month have local/foreign but no type [H] |
+| Known issues (2026-02-27 file) | 1. One row breaks total = scripless + scrip: MAYA, MAYAPADA KARUNIA PT (0 + 6,323,076,332 ≠ 6,023,326,332). The row is published as is, with a warning on `/data` (D-015, D-021); 2026-03-31 has one such row too (SMRA) [H]. 2. **Known controlling holders are missing for five companies:** BBRI (largest listed holder 3.63%), BBNI (3.51%), BBTN (4.95%) and ADHI (2.68%), none listing the state or Danantara, while BMRI and TLKM do list Danantara at 51.48% and 51.57%; and NCKL, whose controller Harita Jayaraya is listed at only 3.16%. In each, the holders above 1% total under 15%, which Sigi now treats as "register incomplete" (D-019). An independent pdftotext read of the same file confirms it is the source, not our parser [H]. The cause is not known [L]. 3. The record date is the month's last trading day (27 Feb 2026 was a Friday) [H]. 4. Spelling varies across rows ("PT X" vs "X PT"): 36 candidate groups, of which 33 merges were reviewed (D-018) [H] |
 
 ## S2. KSEI monthly holdings, local and foreign (Balancepos)
 
@@ -34,9 +34,9 @@ Status values:
 | Publisher | KSEI, ["Unduh Kepemilikan Efek (Lokal-Asing)"](https://web.ksei.co.id/archive_download/holding_composition) |
 | Content | Per security: date, code, type, number of securities, **month-end price**, holdings by 9 investor types (IS, CP, PF, IB, ID, MF, SC, FD, OT) for local and foreign separately, plus totals. Inspected 2026-10-18 [H]: `BalanceposEfek20260930.zip` contains one pipe-delimited `.txt` file, 3,752 lines, header beginning `Date|Code|Type|Sec. Num|Price|Local IS|…` |
 | Cadence | Monthly; the latest at inspection was 2026-09-30 |
-| Access | Manual download, then admin upload |
+| Access | Not fetched |
 | Terms | **Not found.** The KSEI policy page returned HTTP 500 on 2026-10-18. The site footer says "© 2015 PT Kustodian Sentral Efek Indonesia - All rights reserved" [H] |
-| Status | **admin-only** until KSEI's terms are found or permission is given (PRD F5, Q4) |
+| Status | **withheld** until KSEI's terms are found or permission is given (PRD F5, Q4) |
 
 ## S3. TradingView widgets (display layer)
 

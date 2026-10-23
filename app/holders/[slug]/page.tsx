@@ -10,8 +10,8 @@ import {
   formatShares,
   formatSharesChange,
 } from "@/app/_lib/format";
-import { typeLabel } from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
+import { typeLabel } from "@/src/ownership/investor-classes";
 import { loadHolder } from "@/src/views/holders";
 
 type Params = { params: Promise<{ slug: string }> };

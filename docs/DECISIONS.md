@@ -17,7 +17,7 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 - Price, chart, fundamentals and screener *display* comes from TradingView widgets (D-004).
 - Our own analytics run on ownership, macro and thesis data.
 
-## D-003. No scraping; official files arrive by manual download and admin upload (2026-10-18)
+## D-003. No scraping; official files arrive by manual download and admin upload (2026-10-18; for S1, superseded by D-021)
 **Context:** the IDX website terms forbid scraping and crawling even for non-commercial use. The ownership files are published monthly.
 **Decision:** the owner downloads each monthly file by hand and uploads it through an authenticated import page. No collector touches idx.co.id. KSEI and Bank Indonesia files are handled the same way until their terms are known.
 **Consequences:** about 24 manual uploads a year. In return the import page gets fail-closed validation, hashing and an audit trail (PRD F1), which is where the engineering value is.
@@ -95,12 +95,12 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 - A DNS record is needed at deploy time (an owner action).
 - The subdomain shares the parent site's reputation. Session cookies are host-only, never scoped to the parent domain.
 
-## D-015. A source row that contradicts itself holds the month for review; it is never corrected (2026-10-22)
+## D-015. A source row that contradicts itself holds the month for review; it is never corrected (2026-10-22; the hold became a published warning in D-021)
 **Context:** the 2026-02-27 file has one row (MAYA, holder MAYAPADA KARUNIA PT) whose total shares (6,023,326,332) are not scripless plus scrip (0 + 6,323,076,332). Under a hard "total = scripless + scrip" gate that one publisher typo would block the whole month.
 **Decision:** the shares-identity gate *holds* the month when 1–5 rows break the identity and *rejects* it above that (more than a few means a misread file, not typos). The owner approves or rejects a held month with a written reason, kept in `publish_audit`. Rows are stored exactly as published, with no CHECK constraint and no "fix"; the ticker page marks each such row "as published".
 **Consequences:** concentration and float use the published percentage, which is unaffected by the share-count typo. The same hold path serves the month-over-month holder-count check (PRD F1).
 
-## D-016. The S1 parser reads text positions and marked content; the real file is not committed (2026-10-22)
+## D-016. The S1 parser reads text positions and marked content; the real file is not committed (2026-10-22; superseded by D-022)
 **Context:** the PDF is an Excel sheet printed with tags. Its structure tree holds about 515,000 empty table rows and took 94 s to walk. Text positions plus the marked-content sequence of each cell take 1.5 s for the same 73 pages (measured on the development machine).
 **Decision:**
 - Parse with pdf.js (`pdfjs-dist` 6.4.299, pinned). Cells are the marked-content sequences, so a name drawn as two runs ("… UMBARAWATI" and "SE") stays one cell. Columns are placed by the page's own header row: date, code, issuer and investor by order left of the type column; categorical columns by centre; numbers by right edge, each within a tolerance.
@@ -135,10 +135,31 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 **Decision:** such a company is marked "register incomplete". It gets no float figure, it is excluded from float screens and counts with the reason stated, and it is listed separately on the investability page. This is a rule, not a hand-kept list, so a new month is checked the same way.
 **Limit:** an omission at a company whose remaining holders still total over 15% is not caught. That is PRD R10.
 
-## D-020. Production: Dokploy on the existing host, kept out of search engines until launch (2026-10-23)
+## D-020. Production: Dokploy on the existing host, kept out of search engines until launch (2026-10-23; the login, upload and passcode parts were removed by D-021)
 **Decision:**
 - **Hosting:** the same pattern as Sunrise. A Dokploy application (`sigi-web`) is built from the Dockerfile from a drop upload. It runs on the host network, bound to `127.0.0.1:3220`, with bind mounts for the data directory and an owner-only `.env`. nginx terminates TLS with Let's Encrypt and applies rate limits: 10 requests per second for pages, 10 a minute for the login. The upload limit is 26 MB on `/api/admin/`.
 - **Deploys:** `scripts/deploy.sh` runs `pnpm verify`, uploads the committed HEAD and checks the public pages. Host details live in the git-ignored `.env.deploy`; the Dokploy key stays in the Keychain.
 - **Search engines:** `X-Robots-Tag: noindex, nofollow` until the M6 launch.
 - **Admin passcode:** kept in the owner's Keychain (service `sigi-admin-passcode`); only its hash is on the host.
 - **TradingView:** the market page embeds TradingView widgets (S3). The CSP allows their loader and frames, and a privacy notice discloses what TradingView receives.
+
+## D-021. The monthly holder files are fetched automatically from idx.co.id; there is no admin (owner, 2026-10-24; supersedes D-003 for S1)
+**Context:** the owner does not want to upload anything or keep an admin; the site is to run without a human step. The files are on the exchange's [share-ownership data page](https://www.idx.co.id/id/perusahaan-tercatat/data-kepemilikan-saham/), behind Cloudflare: plain HTTP clients and headless browsers get 403, on the owner's Mac and on the host alike. Asked to choose between scraping idx.co.id, the KSEI composition file only (no holder names), or KSEI plus a frozen February snapshot, the owner chose scraping.
+**Decision:**
+- **Fetching:** a worker (`scripts/worker.ts`, its own Dokploy application `sigi-worker`) drives Google Chrome under Xvfb with the puppeteer stealth evasions, once a day. It reads the page's file list (`window.__NUXT__`), and for each monthly *Pemegang Saham di Atas 1%* workbook it has not imported, opens the file in a tab and takes it from Chrome's downloads, clicking the challenge checkbox when one shows; an in-page fetch of the file store gets a challenge or a cut-off body. Months are imported oldest first; the first error ends the run, which is recorded in `fetch_runs` and retried three hours later.
+- **No human step:** the admin area, sign-in, uploads, passcode and session code are removed, and the site is read-only (anything but GET and HEAD gets 405). A gate either fails, and the file is rejected with the previous month left live, or warns, and the file is published with the warning shown on `/data`. Nothing is held. Shares-identity breaks on up to five rows (D-015), an unrecognised investor type and a holder-count jump of more than five now warn. A file for an already-published month replaces it when the page lists it under a new URL (a re-issue); the replacement is audited.
+- **Terms, accepted by the owner:** the IDX terms say the site may not be used with "metode web scrapping/crawling". Sigi does it anyway, and says so on `/data` and in DATA-SOURCES S1. The load is one page view and at most one download per new file per day.
+**Consequences:**
+- **Blocking risk:** the host's IP is shared with Sunrise, the indexer and the owner's other sites. If the exchange or Cloudflare blocks it, all of them lose idx.co.id, not just Sigi. The owner accepted this.
+- **Fragility:** the fetch depends on Cloudflare's bot rules, the page's Nuxt state, and an unmaintained stealth plugin (puppeteer-extra-plugin-stealth 2.11.2, last released 2023). Any of these can break it; a failed run shows on `/data`, and the "next file expected by" notice turns into an overdue warning.
+- **Chrome in the container:** it runs with `--no-sandbox` (no user namespaces in the container) and visits only idx.co.id. The image takes Google's current stable Chrome at build time, unpinned, since looking like a current browser is the point.
+- **Permission:** C2's spirit (ask before taking) is not met for S1. D-013 (no permission requests for now) still stands; a written permission would retire this risk.
+**Evidence:** a run from the owner's Mac on 2026-10-24 imported all eight months listed (2026-02-27 to 2026-09-30); each landed file is byte-identical to the copy downloaded by hand. `pnpm rebuild:check` matched every month.
+
+## D-022. S1 is read from the exchange's XLSX workbook, not the PDF (2026-10-24; supersedes D-016)
+**Context:** the share-ownership data page offers each month as an Excel workbook. The exchange's announcements feed, where the PDFs were found, lists the 1% files only up to June 2026.
+**Decision:** `src/ownership/s1-xlsx.ts` (parser version `s1-xlsx/1`) reads the workbook's only sheet with the XLSX reader copied from Sunrise. It finds the header row by `SHARE_CODE` and requires the twelve known columns in order, accepting either name for column E: `INVESTOR_TYPE` (KSEI's nine codes, files to March 2026) or `INVESTOR_CLASSIFICATION` (about 35 labels in varying case, from April 2026). The PDF parser and `pdfjs-dist` are removed.
+- **Values as published:** local/foreign "A" (February 2026) is stored as "F", the later spelling. Percentages are rounded to hundredths: April 2026 carries full precision (36.108405090747539), every other month two decimals.
+- **Quirks of the real files, handled by rule:** the ticker TRUE is stored by Excel as a boolean; one April row leaves its scrip cell empty (read as zero, since its total equals its scripless holding); April has leftover `#DIV/0!` formulas in column O below the table (rows empty in the twelve columns are skipped). A value past column 12 on a holder row still fails the file.
+- **Investor types** are stored as published. `src/ownership/investor-classes.ts` says what each means: individual, institution, unclassified or unknown. "Sole Proprietorship" counts as an individual. An unknown label is never assumed institutional, so it gets no holder page (C6).
+**Evidence:** all eight files parse: 7,154–7,257 rows and 955–961 issuers a month. The 2026-02-27 workbook gives the PDF's 7,257 rows, 955 issuers and 5,199 holder names. No file has an unrecognised type. April 2026 has 560 unclassified rows against 219–255 in the other months.

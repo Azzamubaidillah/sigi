@@ -1,17 +1,19 @@
 # Architecture (proposed)
 
-**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and nothing is uploaded; the admin area is gone (D-021). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
 ```mermaid
 flowchart LR
   subgraph Owner
-    DL[Manual download<br/>1% PDF, KSEI zip, BI tables]
-    TW[Thesis markdown]
+    TW[Thesis markdown<br/>committed to the repository]
+  end
+  subgraph Exchange
+    IDX[idx.co.id share-ownership page<br/>behind Cloudflare]
   end
   subgraph App
-    UP[Admin import<br/>auth + size/type checks]
+    FW[Worker: Chrome under Xvfb<br/>daily check, tab downloads]
     LZ[(Landing store<br/>immutable, SHA-256)]
     PR[Parsers]
     ST[(Staging tables)]
@@ -32,14 +34,14 @@ flowchart LR
   end
   TVW[TradingView widgets<br/>display only]
 
-  DL --> UP --> LZ --> PR --> ST --> G
-  G -- all pass --> PUB
+  IDX --> FW --> LZ --> PR --> ST --> G
+  G -- pass or warn --> PUB
   G -- any fail --> X[Rejected with reasons<br/>shown on data health page]
   BPS --> WK
   WB --> WK
   FRED --> WK
   WK --> LZ
-  TW --> UP
+  TW --> WEB
   PUB --> WEB
   WK --> PUB
   PUB --> CX --> AF
@@ -50,8 +52,8 @@ flowchart LR
   TVW -. embedded in browser .-> WEB
 ```
 
-- **One writer:** the worker and the import handler are the only code that writes. The web app reads only, the same rule as Sunrise.
-- **Fail-closed publish:** a month's ownership data becomes visible only when every gate passes (PRD F1). A failed import never replaces the last good month.
+- **One writer:** the worker is the only code that writes data; the web container only migrates the schema at start. The web app reads only and answers GET and HEAD only, the same rule as Sunrise, with no sign-in.
+- **Fail-closed publish, no human step:** a month's ownership data becomes visible only when no gate fails; warnings publish and are shown (PRD F1). A failed import never replaces the last good month.
 - **Rebuildable:** published tables can be regenerated from the landing store. CI checks that the regenerated content hashes match (PRD F10).
 - **Widgets are outside the data path:** TradingView content renders in the visitor's browser and is never read by our code (D-004).
 
@@ -59,8 +61,8 @@ flowchart LR
 
 | Table family | Rows per month | Notes |
 |---|---|---|
-| Ownership (S1) | ~7,300 | One row per issuer–holder pair |
-| KSEI composition (S2) | ~3,750 | One row per security; admin-only until cleared |
+| Ownership (S1) | ~7,200 | One row per issuer–holder pair |
+| KSEI composition (S2) | ~3,750 | One row per security; not fetched until cleared |
 | Macro observations | < 1,000 | About 30 series |
 | Theses | Tens | Markdown plus typed conditions |
 
@@ -73,7 +75,7 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | Worker and scheduler | `worker/index.ts`, `src/worker/schedule.ts` (296 lines: in-flight guard, deadlines, backoff, drain on shutdown) | Keep; replace the task list |
 | Sync runs and freshness | `sync_runs` table, `src/health-rules.ts` (273), `src/health.ts` (574), the data-health page | Keep; add import-run and gate-result tables |
 | Retention | `src/worker/retention.ts` (253) | Keep the policy shape; ownership history is never pruned |
-| Auth | `proxy.ts`, `src/security/*`, `app/login` | Keep (single owner in P1). Add the TradingView origins to the CSP |
+| Request boundary | `proxy.ts`, `src/security/request.ts` | Keep the host boundary and CSP, with the TradingView origins. (The sign-in copied in M1 was removed in D-021) |
 | Thesis format | `src/views/theses.ts` (589: markdown to a typed block tree, never HTML), `src/thesis-levels.ts` (strict grammar) | Keep the parser. Extend the grammar with typed conditions (ownership, float, macro, date, price as manual check) |
 | Macro engine | `src/macro/series.ts`, `src/views/macro-indicators.ts` (183), `app/_sections/Macro.tsx` | Keep the engine and layout. Replace the 17 US/crypto series with the Indonesian registry; replace the "good for crypto" direction with sector links |
 | Per-symbol page | `src/views/coin.ts` (873; slices with `source`/`asOf`/`absent` and a closed enum of reasons) | Keep the pattern for the ticker page |
@@ -81,7 +83,7 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | Design system | `app/sunrise.css`, `app/_components/*`, `Localized` (en/id) | Keep; restyle |
 | Money and formatting | `src/money.ts` (exact decimals), `app/_lib/format.ts` | Keep |
 | `verify` gate | `package.json` `verify`, `scripts/verify-clean.ts` | Keep |
-| Spreadsheet import flow | `app/api/imports/*` | Reuse as the starting point for the admin upload |
+| Spreadsheet reader | `src/imports/xlsx.ts` | Reads the S1 workbook (D-022) |
 
 **Remove:** every ledger route and view (portfolio, activity, analytics, calendar, journal, risk, wallets, dust, sold, staking, exchange accounts), the accounting and imports logic tied to fills, all exchange and wallet integrations, Hyperliquid and derivatives, and `app/_lib/held-positions.ts` (replaced by a watchlist and coverage loader).
 
@@ -89,15 +91,17 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 
 ## 4. Import pipeline detail
 
-1. **Upload:** owner only; size cap; type check (PDF for S1, ZIP or TXT for S2, CSV/XLSX for macro tables). The admin enters the source URL and access date (needed for citation, S1).
-2. **Land:** write the file to the landing store under its SHA-256 and record provenance. Uploading the same hash again is a no-op.
+1. **Fetch (worker, daily):** open the exchange's share-ownership data page in Google Chrome under Xvfb, with the puppeteer stealth evasions; click the Cloudflare checkbox if one shows. Read the file list from `window.__NUXT__` and keep the monthly *Pemegang Saham di Atas 1%* workbooks on the exchange's `/Media/` store. Each one not yet imported by the current parser version is opened in a tab and taken from Chrome's downloads (an in-page fetch of the file store gets a challenge or a cut-off body), size-capped and checked to be a complete ZIP. Months go oldest first; the first error ends the run. Every run is a `fetch_runs` row (D-021).
+2. **Land:** write the file to the landing store under its SHA-256 and record provenance: the exchange's URL and the Jakarta access date, for the citation. The same hash again is a no-op.
 3. **Parse:** a deterministic parser per source and layout version.
-   - S1 is an Excel-generated PDF, so extract the text layout with a PDF text library and pin its version.
+   - S1 is an XLSX workbook; the header row and its twelve columns are checked (D-022).
    - S2 is pipe-delimited text with a fixed header; reject the file if the header doesn't match.
 4. **Stage:** typed rows plus the parser version.
-5. **Gate:** per-source checks (PRD F1). Results are stored per import.
-6. **Publish:** swap staging into the published tables in one transaction, with an audit row.
+5. **Gate:** per-source checks (PRD F1), each pass, warn or fail. Results are stored per import.
+6. **Publish:** unless a gate failed, swap staging into the published tables in one transaction, with an audit row. A re-issued month (a published record date under a new URL) replaces the old one.
 7. **Rebuild check (CI):** re-run 3–6 from the landing fixtures and compare content hashes.
+
+**Processes:** `sigi-web` (Next.js; migrates at start) and `sigi-worker` (`scripts/worker.ts`; waits until the schema is current, so only one process migrates). The schedule lives in `fetch_runs`: the next check is due one interval after the last finished run, three hours after a failed one, so restarts neither skip nor repeat checks. Chrome runs with `--no-sandbox` because the container has no user namespaces; it only visits idx.co.id.
 
 ## 5. Pages (P1)
 
@@ -111,13 +115,12 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | `/macro` | Indonesian macro dashboard with sector links |
 | `/theses`, `/theses/[slug]` | Theses, conditions-hit list, version history |
 | `/brief` | Today's brief, stale marker, rejected-file notice, inputs table (F12) |
-| `/data` | Data health, imports, gate results, sources and licences |
-| `/admin/*` | Import and thesis editing (owner only) |
+| `/data` | Data health: the worker's checks, imports, gate results with warnings, sources and licences |
 
 ## 6. Testing
 
 - **Unit:** parsers against fixture files (a real-layout sample per source); gate functions; concentration and float maths; thesis condition evaluation.
-- **Integration:** the full pipeline from upload through publish and rebuild, against a temporary database.
+- **Integration:** the full pipeline from a fetch run (with a stand-in for the exchange's page) through publish and rebuild, against a temporary database. The browser itself is exercised by running the worker once (`--once`), not in CI.
 - **E2E (Playwright):** every public page renders with seeded data; a failing gate shows on `/data` and leaves the previous month published; absent states render.
 - **Accessibility:** Lighthouse ≥90 on every page.
 - **Licence check:** a build step fails if a page renders a figure whose source ID is missing from the register.
@@ -132,7 +135,7 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | Area | Sunrise paths | Adaptation for Sigi |
 |---|---|---|
 | Tooling | `package.json`, `tsconfig.json`, `tsconfig.worker.json`, `next.config.ts`, `eslint.config.mjs`, `postcss.config.mjs`, `vitest.config.ts`, `drizzle.config.ts`, `Dockerfile`, `instrumentation.ts`, `instrumentation-node.ts` | Rename to `sigi`; drop dependencies of the dropped integrations; regenerate the lockfile; keep the `verify` script chain |
-| Request boundary and auth | `proxy.ts`, `src/security/{csrf,passcode,public-paths,request,session,throttle,throttle-store}.ts`, `app/login/`, `app/api/auth/` | Add the TradingView origins to the CSP; host-only session cookie; public pages need no session; admin routes do |
+| Request boundary and auth | `proxy.ts`, `src/security/{csrf,passcode,public-paths,request,session,throttle,throttle-store}.ts`, `app/login/`, `app/api/auth/` | Add the TradingView origins to the CSP. *(The sign-in half was copied in M1 and removed on 2026-10-24, D-021; the request boundary stays.)* |
 | Worker | `worker/index.ts`, `src/worker/{schedule,runtime,retention,alerts}.ts`, `src/sync/{abort,retry,sleep-wake}.ts` | Rewrite the task list (macro fetch, news, thesis evaluation, retention); drop `value-points` and `plan-alerts` |
 | Database | `src/db/{client,read,migrate,integrity-thread}.ts` | Write `schema.ts` fresh (infrastructure tables plus Sigi's tables); migrations start at 0000 |
 | Health | `src/health-rules.ts`, `src/health.ts`, `src/freshness.ts`, `src/integrity.ts`, `src/views/sync-trends.ts`, `app/(dashboard)/data-health/`, `app/_sections/DataHealth.tsx`, `app/api/{health,freshness}/` | Replace the source list; add import runs, gate results and licence status |
@@ -143,7 +146,7 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | News | `src/news/feeds.ts`, `src/integrations/news/` | New feed list (S10): headline, publisher, time and link only |
 | Brief | `src/brief/{build,files}.ts`, `src/views/brief.ts`, `app/(dashboard)/brief/`, `app/_sections/Brief.tsx`, `app/_components/BriefCard.tsx`, `scripts/brief-context.ts`, `scripts/brief/{brief-run.sh,brief-prompt.md,brief-settings.json}`, `scripts/install-brief-schedule.sh` | §8. Host paths, user names and container names come from configuration, never literals |
 | Ticker page pattern | `src/views/coin.ts` (the slice type and its composition only) | Becomes `src/views/ticker.ts` with Sigi's own slices |
-| Upload flow | `app/api/imports/` | Becomes the admin upload for S1, S2 and macro tables, feeding the landing store |
+| Upload flow | `app/api/imports/` | *Not copied: there are no uploads (D-021). The worker feeds the landing store.* |
 | Design system | `app/sunrise.css`, the generic parts of `app/_components/` and `components/` (cards, health badges, ages, drawers, command palette, preferences, refresh, sparkline, series chart), `components/ui/button.tsx` | Rename the stylesheet to `app/sigi.css`; restyle; leave out crypto-specific components such as asset icons and coin parts |
 | Verify gate | `scripts/verify-clean.ts` | Keep |
 
@@ -167,9 +170,15 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 - **Changed from the manifest:**
   - No Tailwind, and `sunrise.css` (11,132 lines, nearly all for ledger pages) is not copied. `app/sigi.css` keeps Sunrise's colour tokens plus about 400 lines of primitives.
   - `SigiDatabase` is declared as a type rather than `ReturnType<…>`.
-  - No `tsconfig.worker.json` and no worker until M3, because M1 has nothing to schedule. Until then, the landing store plus the rebuild check is the recovery path for published data.
-  - The data health page in M1 is built from import runs and gate results. Sunrise's sync-run health arrives with the worker.
-- **Not yet copied** (their milestones): worker, health rules, backups, theses, macro, news, brief and the design components.
+  - No `tsconfig.worker.json`: the worker (added 2026-10-24, D-021) runs through tsx like the other scripts. The landing store plus the rebuild check is the recovery path for published data.
+  - The data health page is built from fetch runs, import runs and gate results, not Sunrise's sync-run health rules.
+- **Not yet copied** (their milestones): health rules, backups, theses, macro, news, brief and the design components.
+
+**Automation (2026-10-24), from public `sunrise` at `312906f`.** The leak scan ran before the commit.
+
+- **Copied:** `src/imports/xlsx.ts` with its test. Changed: relationship targets resolve relative to `xl/`; a self-closing cell no longer swallows the next one; a null sheet name reads the only sheet; the resolved sheet name is returned.
+- **Removed (D-021):** everything sign-in: `src/security/{csrf,passcode,session,throttle,throttle-store,admin-paths,owner-request}.ts` and their tests, `app/api/auth/`, `app/login/`, `app/admin/`, `app/api/admin/`, `scripts/hash-passcode.ts`, the `login_attempts` table.
+- **Written fresh:** the worker (`scripts/worker.ts`, `src/fetch/`). Sunrise's scheduler is not copied: one daily task needs a loop and a `fetch_runs` row, not deadlines and backoff.
 
 ### Never copied
 
@@ -217,4 +226,4 @@ It works the same way as Sunrise's brief, with the public-site changes marked **
    - The size cap applies.
    - **Sigi:** a recommendation-language check runs, with a documented word list and its stated limits.
    - The newest valid analysis is shown. A newer invalid file is named, with its reasons. A brief older than 30 h is marked stale.
-5. **Unpublish:** the owner can hide a brief from the admin page, and the page records the reason. This is the manual backstop for PRD R9.
+5. **Unpublish:** the owner can hide a brief with a commit and deploy (there is no admin page), and the page records the reason. This is the manual backstop for PRD R9.

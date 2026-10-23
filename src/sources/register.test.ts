@@ -26,7 +26,7 @@ describe("source register", () => {
   it("marks a source live only if its status allows public display", () => {
     for (const [id, source] of Object.entries(SOURCES)) {
       if (source.live) {
-        expect([id, source.status]).not.toEqual([id, "admin-only"]);
+        expect([id, source.status]).not.toEqual([id, "withheld"]);
         expect([id, source.status]).not.toEqual([id, "excluded"]);
       }
     }

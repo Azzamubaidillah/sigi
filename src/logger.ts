@@ -2,28 +2,6 @@ import pino, { type Logger } from "pino";
 
 import type { SigiConfig } from "./config";
 
-export const redactedPaths = [
-  "passcode",
-  "password",
-  "secret",
-  "session",
-  "token",
-  "csrfToken",
-  "passcodeHash",
-  "sessionSecret",
-  "req.headers.authorization",
-  "req.headers.cookie",
-  "res.headers.set-cookie",
-  "*.passcode",
-  "*.password",
-  "*.secret",
-  "*.session",
-  "*.token",
-  "*.csrfToken",
-  "*.passcodeHash",
-  "*.sessionSecret",
-];
-
 /**
  * `error` is serialised like `err`. An Error's `message` and `stack` are
  * non-enumerable and pino applies its error serializer only to `err`, so
@@ -32,14 +10,19 @@ export const redactedPaths = [
 export const loggerSerializers = { error: pino.stdSerializers.err };
 
 export function createLogger(
-  processName: "sigi-web" | "sigi-cli",
+  processName: "sigi-worker" | "sigi-cli",
   config: Pick<SigiConfig, "logLevel" | "nodeEnv">,
 ): Logger {
   return pino({
     base: { process: processName },
     level: config.logLevel,
     serializers: loggerSerializers,
-    redact: { paths: redactedPaths, censor: "[REDACTED]" },
+    // Sigi holds no credentials; these are redacted in case a request object
+    // is ever logged whole.
+    redact: {
+      paths: ["*.headers.cookie", "*.headers.authorization"],
+      censor: "[REDACTED]",
+    },
     timestamp: pino.stdTimeFunctions.isoTime,
     transport:
       config.nodeEnv === "development"

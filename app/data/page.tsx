@@ -3,15 +3,19 @@ import type { Metadata } from "next";
 import { GateList } from "@/app/_components/GateList";
 import { formatDate, formatMonth, formatTimestamp } from "@/app/_lib/format";
 import { loadConfig } from "@/src/config";
+import { S1_PAGE_URL } from "@/src/fetch/idx-listing";
 import { SOURCES, STATUS_LABELS } from "@/src/sources/register";
-import { loadImportRuns, loadS1Health } from "@/src/views/data-health";
+import {
+  loadFetchRuns,
+  loadImportRuns,
+  loadS1Health,
+} from "@/src/views/data-health";
 
 export const metadata: Metadata = { title: "Data & sources" };
 
 const outcomeText = {
   published: "Published",
   superseded: "Superseded",
-  held: "Held for review",
   rejected: "Rejected",
 } as const;
 
@@ -19,15 +23,17 @@ export default function DataPage() {
   const { databasePath } = loadConfig();
   const health = loadS1Health(databasePath);
   const runs = loadImportRuns(databasePath);
+  const fetches = loadFetchRuns(databasePath);
   return (
     <>
       <div className="page-header">
         <h1>Data &amp; sources</h1>
         <p className="lede">
-          Where every figure comes from, when it was last imported, and what
-          each import&apos;s checks found. A month is published only when all of
-          its checks pass, or when the owner approves one held for review, with
-          the reason recorded.
+          Where every figure comes from, when it was last fetched, and what each
+          import&apos;s checks found. Files are fetched and imported
+          automatically; nobody reviews them by hand. A file that fails a check
+          is not published, and the previous month stays live. A file with a
+          warning is published, and the warning is shown here.
         </p>
       </div>
 
@@ -71,6 +77,52 @@ export default function DataPage() {
       </section>
 
       <section className="panel">
+        <h2>Checks of the exchange&apos;s page</h2>
+        {fetches.length === 0 ? (
+          <p className="absent">The page has not been checked yet.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Checked</th>
+                  <th>Outcome</th>
+                  <th className="num">Files listed</th>
+                  <th className="num">Fetched</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fetches.map((fetch) => (
+                  <tr key={fetch.id}>
+                    <td>{formatTimestamp(fetch.startedAt)}</td>
+                    <td>
+                      {fetch.outcome === "ok" ? (
+                        "OK"
+                      ) : (
+                        <span className="tone-negative">
+                          Failed: {fetch.error}
+                        </span>
+                      )}
+                    </td>
+                    <td className="num">{fetch.listed}</td>
+                    <td className="num">{fetch.fetched}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="citation">
+          A worker opens the exchange&apos;s{" "}
+          <a href={S1_PAGE_URL} rel="noreferrer">
+            share-ownership data page
+          </a>{" "}
+          once a day and imports every monthly file of holders above 1% it has
+          not imported yet, oldest first.
+        </p>
+      </section>
+
+      <section className="panel">
         <h2>Imports</h2>
         {runs.length === 0 ? (
           <p className="absent">No file has been imported yet.</p>
@@ -94,7 +146,9 @@ export default function DataPage() {
                     <td className="mono">#{run.id}</td>
                     <td>{formatTimestamp(run.startedAt)}</td>
                     <td>
-                      {run.originalName}
+                      <a href={run.sourceUrl} rel="noreferrer">
+                        {run.originalName}
+                      </a>
                       <br />
                       <span className="mono muted" title={run.sha256}>
                         sha256 {run.sha256.slice(0, 12)}…

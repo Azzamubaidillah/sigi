@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.4, 2026-10-23. **Status:** P1 started 2026-10-22; M1 deployed, M2 built (§11). **Owner:** Azzam Ubaidillah.
+**Version:** 0.5, 2026-10-24. **Status:** P1 started 2026-10-22; M1 and M2 deployed; the S1 import runs unattended (§11, D-021). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -56,16 +56,16 @@ The existing platforms (Stockbit, RTI Business, Invezgo, Sectors.app) already se
 - **No trading:** no brokerage, order routing or trading.
 - **No calls:** no buy/sell recommendations, signals, target prices or personalised advice (see risk R3).
 - **No market microstructure:** no intraday or real-time data, broker summary, "bandarmology" or order book; these need paid data.
-- **No paid data or APIs,** and no scraping (D-002, D-003).
-- **No reader accounts in the portfolio phase.** Only the owner signs in, to import data and write theses.
+- **No paid data or APIs** (D-002). Scraping only where the owner has decided to accept the risk: today, the monthly holder files on idx.co.id (D-021).
+- **No accounts at all.** Nobody signs in: data arrives by the worker, and theses are files in the repository, published by a deploy (D-021).
 
 ## 5. Hard constraints
 
 | ID | Constraint | Consequence |
 |---|---|---|
 | C1 | **No paid data or API** (owner decision 2026-10-18) | **No stored daily prices.** So no price-based screener of our own, no computed returns, and no automatic check of thesis price levels. Prices, charts, price/fundamental screening and fundamentals *display* come from TradingView widgets, which are display-only (DATA-SOURCES S3) |
-| C2 | **No scraping or crawling** of any site whose terms forbid it. The IDX terms forbid it even for non-commercial use | Official files (the monthly 1% PDF, the KSEI monthly holdings file) are **downloaded by hand and uploaded through an admin import page.** Twelve uploads a year per file |
-| C3 | **Every public figure has a source, an as-of date and a licence entry** in DATA-SOURCES.md | Data whose terms are unknown stays admin-only until it is cleared |
+| C2 | **No scraping or crawling** of any site whose terms forbid it, **except where the owner accepts the risk in a decision.** The IDX terms forbid it even for non-commercial use | The monthly >1% workbooks are **fetched automatically from idx.co.id once a day, by owner decision** (D-021): a breach of the IDX terms, accepted with its blocking risk to the shared host. The KSEI monthly holdings file is not fetched |
+| C3 | **Every public figure has a source, an as-of date and a licence entry** in DATA-SOURCES.md | Data whose terms are unknown is not shown until it is cleared |
 | C4 | **Non-commercial until the §9 gate passes**: no ads, paywall, paid tier or sponsorship | Monetisation design waits until Phase 3 |
 | C5 | **No exchange trademarks** (IDX, BEI, KSEI) in the product name, logo or domain | Naming (D-009) |
 | C6 | **Minimise personal data.** The ownership files list individual investors by name | Individuals appear only on the company ownership table, exactly as published, with source. There are no individual "investor profile" pages or cross-company search on individuals until the PDP review in §9 |
@@ -76,8 +76,8 @@ Full terms, quotes and verification status are in [DATA-SOURCES.md](DATA-SOURCES
 
 | Data | Source | Portfolio phase (non-commercial) | Product |
 |---|---|---|---|
-| Holders above 1%: name, type, local/foreign, shares, % (about 7,300 rows/month, PDF) | IDX announcements (KSEI data) | Allowed with citation [M/L] | Needs written permission from BEI (and KSEI) |
-| Local/foreign holdings by 9 investor types, month-end price, shares outstanding (about 3,750 rows/month, pipe-delimited text) | KSEI monthly download | **Admin-only until KSEI's terms are found** | Permission needed |
+| Holders above 1%: name, type, local/foreign, shares, % (about 7,200 rows/month, XLSX) | IDX share-ownership data page (KSEI data), fetched automatically (D-021) | Allowed with citation [M/L] | Needs written permission from BEI (and KSEI) |
+| Local/foreign holdings by 9 investor types, month-end price, shares outstanding (about 3,750 rows/month, pipe-delimited text) | KSEI monthly download | **Not used until KSEI's terms are found** | Permission needed |
 | Prices, charts, fundamentals, profile, IDX screener, economic calendar, news | TradingView widgets (IDX end-of-day) | Allowed with TradingView attribution | Allowed with attribution (commercial clause to re-check) |
 | CPI, GDP and other official statistics | BPS website tables (not the Web API) | Allowed with citation [H] | Allowed with citation [H] |
 | BI-Rate, JISDOR, FX reserves | Bank Indonesia website | Show with citation [L] | Permission needed, or replace |
@@ -88,22 +88,24 @@ Full terms, quotes and verification status are in [DATA-SOURCES.md](DATA-SOURCES
 
 Each feature lists acceptance criteria. "Absent" means the page shows a typed reason, never a zero or a blank.
 
-### F1. Monthly ownership import (admin)
-- Upload the monthly 1% PDF. The file is stored immutably with its SHA-256, size, upload time and the source URL entered by the admin.
-- A parser extracts rows into staging tables.
-- Validation gates decide every import. Any failure rejects it, any hold waits for the owner's written decision, and only a clean pass publishes on its own (fail-closed):
-  - the row count is within the expected band (3,000–15,000) and within 25% of the previous month;
-  - every issuer's holder percentages sum to ≤100%, plus half a hundredth per holder for rounding;
-  - shares equal scripless plus scrip: 1–5 rows that break this **hold** the month (the publisher's own file has one such row, D-015); more **reject** it;
-  - every percentage is in (0, 100];
-  - every share code is four letters;
-  - investor type is one of the 9 known codes (CP, ID, IB, MF, SC, IS, PF, FD, OT) and local/foreign is L or A, or both are empty together (unclassified scrip, cover-letter note 4);
-  - the record date is newer than the last published month, or the owner marks the file as a correction of a published month;
-  - a month-over-month check **holds** the month if any issuer's count of holders above 1% changed by more than 5 (a placeholder until a few months of history exist).
-- Re-importing the same file is a no-op, unless every earlier run of it was rejected; a rejection can depend on state, so it may be gated again. A corrected file supersedes the old one with an audit row.
+### F1. Monthly ownership import (unattended)
+- **Fetch:** once a day the worker opens the exchange's share-ownership data page in Chrome, lists the monthly *Pemegang Saham di Atas 1%* workbooks, and downloads each one not yet imported, oldest first (D-021). Every check is recorded with its outcome and shown on `/data`; a failed check is retried after three hours.
+- **Store:** each file is kept immutably with its SHA-256, size, fetch time, the exchange's URL and the access date (Jakarta time).
+- A parser extracts rows into staging tables (D-022).
+- Validation gates decide every import with no human step. A **fail** rejects the file and the previous month stays live; a **warn** publishes it with the finding shown on `/data`:
+  - the row count is within the expected band (3,000–15,000) and within 25% of the previous month (fail);
+  - every issuer's holder percentages sum to ≤100%, plus half a hundredth per holder for rounding (fail);
+  - shares equal scripless plus scrip: 1–5 rows that break this **warn** (the publisher's own files have one such row in February and in March 2026, D-015); more **fail**;
+  - every percentage is in (0, 100] (fail);
+  - every share code is four letters (fail);
+  - investor types are KSEI's nine codes (files to March 2026) or the classification labels used since April 2026; an unrecognised type **warns** and is treated as possibly a person (no holder page); empty types are unclassified at the source;
+  - the record date is newer than the last published month, or the file re-issues a published month under a new URL, which then replaces it with an audit row (fail otherwise);
+  - a month-over-month check **warns** if any issuer's count of holders above 1% changed by more than 5.
+- Re-importing the same file is a no-op, unless every earlier run of it was rejected.
 - **Acceptance:**
-  - the 2026-02-27 file reproduces 7,257 rows, 955 issuers and 5,199 distinct holder names. **Met 2026-10-22.** The independent extraction's 5,226 is inflated by names it garbled (D-016);
-  - a corrupted or truncated file never publishes. **Met:** tests cover a truncated file, a lost header, an unplaceable cell, a malformed number and mixed record dates.
+  - the 2026-02-27 file reproduces 7,257 rows, 955 issuers and 5,199 distinct holder names. **Met 2026-10-22** on the PDF; **met again 2026-10-24** on the XLSX edition (D-022);
+  - a corrupted or truncated file never publishes. **Met:** tests cover a truncated file, a non-workbook, a changed layout, a malformed number and mixed record dates; a download cut short is refused before import;
+  - all eight months listed on 2026-10-24 (2026-02-27 to 2026-09-30) import unattended. **Met 2026-10-24:** each landed file is byte-identical to a copy downloaded by hand, and the rebuild check matches every month.
 
 ### F2. Ticker ownership section
 - **Holders table:** name, type, local/foreign, shares, %; individuals shown as published (C6).
@@ -128,7 +130,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 - Per ticker: local versus foreign share by the 9 investor types, and month-over-month change.
 - Market-wide: the foreign ownership trend.
 - The KSEI file's month-end price and share count give a month-end market cap, which F3 needs to assign each company its tranche.
-- **Acceptance:** stays admin-only until DATA-SOURCES S2 is cleared. Until then, F3 shows "tranche unknown (market cap unavailable)".
+- **Acceptance:** not shown until DATA-SOURCES S2 is cleared. Until then, F3 shows "tranche unknown (market cap unavailable)".
 
 ### F6. Macro dashboard (Indonesia)
 - A typed series registry. Each series records unit, frequency, transform, source, licence, release calendar and **linked sectors with a written rationale** (e.g. coal → energy; palm oil → plantations; BI-Rate → banks and property; JISDOR → importers and USD-debt issuers).
@@ -138,7 +140,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
   - a series with no data shows an absent reason;
   - published values and our derived values (e.g. year-over-year) are labelled differently.
 
-### F7. Theses (written by the owner in the portfolio phase)
+### F7. Theses (written by the owner in the portfolio phase, as files in the repository)
 - **Format:** markdown body plus a structured header:
   - tickers and stance (a description, not a recommendation);
   - one-line thesis;
@@ -170,7 +172,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 - **Acceptance:** every one of our screens shows its as-of month and the number of companies that were excluded and why. **Met 2026-10-23:** a float filter excludes registers that are incomplete, and the change filter excludes companies with nothing to compare; each is counted with its reason.
 
 ### F10. Data health and provenance
-- Per source: last import, file hash, row counts, gate results, licence status, and the next expected publication date.
+- Per source: the worker's recent checks, last import, file hash, row counts, gate results with every warning, licence status, and the next expected publication date.
 - A public "sources and licences" page generated from the DATA-SOURCES register.
 - **Rebuild check:** re-deriving the published tables from the stored source files gives identical content hashes.
 - **Acceptance:** CI runs the rebuild check on fixture files.
@@ -246,9 +248,10 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
   - Lighthouse accessibility ≥90 on every page.
 - **Performance:** p95 server response ≤300 ms on the deployed host for our own pages; widgets load lazily.
 - **Security:**
-  - only the owner can sign in, to import and edit;
+  - no sign-in and no write path: the site serves GET and HEAD only;
   - strict CSP with an explicit allowance for the TradingView widget origins only;
-  - uploads are size-limited and type-checked;
+  - fetched files are size-limited and checked to be complete workbooks before import;
+  - the worker's Chrome visits only idx.co.id;
   - the brief agent runs as an unprivileged user with no shell, a read allowlist (context, yesterday's brief, theses) and a write allowlist of exactly the analysis folder, as Sunrise's does (ARCHITECTURE §8).
 - **Cost:** $0 data. Hosting on existing infrastructure. The brief runs on the owner's existing AI subscription, as Sunrise's does (no new paid API).
 - **Coverage at P1 exit:**
@@ -262,7 +265,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 | Milestone | Scope | Budget |
 |---|---|---|
 | M1 | F1 import pipeline + F10 data health + F2 ownership section + deploy skeleton. **Built 2026-10-22; deployed 2026-10-23** at https://sigi.ubaidillah.id (Dokploy) | 20 h |
-| M2 | F3 tracker + F4 holder explorer + F9 market page. **Built 2026-10-23** | 15 h |
+| M2 | F3 tracker + F4 holder explorer + F9 market page. **Deployed 2026-10-23.** Then, by owner decision on 2026-10-24, the S1 import was automated and the admin removed (D-021, D-022) | 15 h |
 | M3 | F6 macro dashboard | 12 h |
 | M4 | F7 theses + condition evaluation | 10 h |
 | M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page | 8 h |
@@ -278,12 +281,13 @@ That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, r
 | R2 | Personal data in the ownership files | Medium | C6; no individual profiles; PDP review before P3 |
 | R3 | Theses read as investment advice | Medium | Stance wording, a disclaimer on every thesis, no target prices; OJK check before P3 |
 | R4 | Monthly data makes the site feel static | Medium | Macro releases, thesis condition checks and events give weekly movement; publish an "update" note each month |
-| R5 | The PDF layout changes and breaks the parser | Medium | Fail-closed gates; fixture tests per known layout; the admin sees the exact failure |
+| R5 | The workbook layout or the exchange's page changes and breaks the import | Medium | Fail-closed gates; fixture tests per known layout; every failure is recorded and shown on `/data`, and the overdue notice shows when a month is late |
 | R6 | Dependence on TradingView widgets (terms, branding, symbol coverage) | Medium | Widgets are confined to clearly separated slots; our own features never depend on them |
 | R7 | Crowded market for commodity features | Low | Not competing there (§2) |
 | R8 | Scope creep and a stalled second project | High | Phase gates, hour budgets, the kill rule in §11 |
-| R9 | The AI brief states something false or advice-like on a public page | Medium | Evidence-key validation, a recommendation-language check, the stale marker, the rejected-file notice; the owner can unpublish a brief from the admin page |
+| R9 | The AI brief states something false or advice-like on a public page | Medium | Evidence-key validation, a recommendation-language check, the stale marker, the rejected-file notice; the owner can unpublish a brief with a commit and deploy |
 | R10 | The register omits large holders, so float estimates are overstated (2026-02-27 file: BBRI, BBNI, BBTN, ADHI and NCKL each miss a known controlling holder, while BMRI and TLKM list Danantara) | High | **Mitigated in M2:** a company whose holders above 1% total under 15% gets no float figure, is counted separately on every screen and page, and every such case so far is a known omission (D-019). An omission at a company that still lists more than 15% is not caught; re-check each new month with the low-total list |
+| R11 | idx.co.id or Cloudflare blocks the host's IP for scraping (D-021); the IP is shared with Sunrise, the indexer and the owner's other sites | High | One page view and at most one download per new file per day; failures are visible on `/data`. No fallback source carries holder names; a block stops new months until resolved. Accepted by the owner |
 
 ## 13. Open questions
 

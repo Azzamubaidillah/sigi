@@ -3,9 +3,7 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { loadConfig } from "@/src/config";
-import { requiresSession } from "@/src/security/admin-paths";
 import { validateRequestBoundary } from "@/src/security/request";
-import { sessionCookieName, verifySessionToken } from "@/src/security/session";
 
 function contentSecurityPolicy(nonce: string): string {
   return [
@@ -41,14 +39,22 @@ function securityHeaders(response: NextResponse, nonce: string): NextResponse {
 }
 
 /**
- * Every page is public except the owner's admin area. The host and origin
- * boundary applies to all requests; the session gate only to `/admin` and
- * `/api/admin`, whose handlers check the session again themselves.
+ * The site is read-only and has no accounts: every page is public, and only
+ * GET and HEAD are served. The host boundary still applies, so the app
+ * answers only under its configured origin.
  */
 export async function proxy(request: NextRequest) {
   const config = loadConfig();
-  const pathname = request.nextUrl.pathname;
   const nonce = randomUUID().replaceAll("-", "");
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return securityHeaders(
+      NextResponse.json(
+        { error: "Read-only" },
+        { status: 405, headers: { Allow: "GET, HEAD" } },
+      ),
+      nonce,
+    );
+  }
   const boundary = validateRequestBoundary(
     {
       method: request.method,
@@ -66,28 +72,6 @@ export async function proxy(request: NextRequest) {
       ),
       nonce,
     );
-  }
-
-  const gated = requiresSession(pathname);
-  if (gated || pathname === "/login") {
-    const authenticated = await verifySessionToken(
-      request.cookies.get(sessionCookieName)?.value,
-      config.sessionSecret,
-    );
-    if (gated && !authenticated) {
-      return securityHeaders(
-        pathname.startsWith("/api/")
-          ? NextResponse.json({ error: "Sign in first" }, { status: 401 })
-          : NextResponse.redirect(new URL("/login", config.origin)),
-        nonce,
-      );
-    }
-    if (pathname === "/login" && authenticated) {
-      return securityHeaders(
-        NextResponse.redirect(new URL("/admin", config.origin)),
-        nonce,
-      );
-    }
   }
 
   // Next reads the nonce from the request's CSP header and puts it on its own

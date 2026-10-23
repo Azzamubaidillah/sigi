@@ -1,13 +1,8 @@
 import { TRANCHES, type Tranche } from "@/src/investability/rule";
-import { INVESTOR_TYPE_LABELS, type InvestorType } from "@/src/ownership/gates";
 
-export function typeLabel(type: string | null): string {
-  if (type === null) return "Unclassified (scrip)";
-  return INVESTOR_TYPE_LABELS[type as InvestorType] ?? type;
-}
-
+/** "L" or "F" as published; February 2026's file wrote foreign as "A", normalised on import. */
 export function localForeignLabel(value: string | null): string {
-  return value === "L" ? "Local" : value === "A" ? "Foreign" : "Unclassified";
+  return value === "L" ? "Local" : value === "F" ? "Foreign" : "Unclassified";
 }
 
 /** "12.5% by 2027-03-31, 15% by 2028-03-31" for one tranche. */

@@ -8,22 +8,22 @@ import { afterEach, describe, expect, it } from "vitest";
 import { openDatabase } from "../db/client";
 import { migrateDatabase } from "../db/migrate";
 import {
-  buildS1FixturePdf,
+  buildS1Workbook,
   type FixtureRow,
   syntheticMonth,
 } from "../ownership/s1-fixture";
 import { checkRebuild } from "./rebuild-check";
-import { importS1File, reviewHeldRun, type S1ImportResult } from "./s1-import";
+import { importS1File, type S1ImportResult } from "./s1-import";
 
 // Months of ~3,300 rows: inside the real row-count band, so the gates run as
-// they do in production. Each parse takes a second or two.
+// they do in production.
 const ISSUERS = 600;
 const february = syntheticMonth(ISSUERS, 0);
 const march = syntheticMonth(ISSUERS, 1);
-const pdf = (rows: FixtureRow[], date: string) =>
-  buildS1FixturePdf(rows, { recordDate: date });
-const FEB = pdf(february, "27-Feb-2026");
-const MAR = pdf(march, "31-Mar-2026");
+const workbook = (rows: FixtureRow[], recordDate: string) =>
+  buildS1Workbook(rows, { recordDate });
+const FEB = workbook(february, "2026-02-27");
+const MAR = workbook(march, "2026-03-31");
 
 const directories: string[] = [];
 const databases: Database.Database[] = [];
@@ -42,14 +42,14 @@ function setup() {
   migrateDatabase(db);
   const landing = path.join(directory, "landing");
   let clock = Date.UTC(2026, 9, 1);
-  const upload = (bytes: Uint8Array, correction = false) =>
+  const fetched = (bytes: Uint8Array, correction = false) =>
     importS1File(
       sqlite,
       landing,
       {
         bytes,
-        originalName: "holders.pdf",
-        sourceUrl: "https://www.idx.co.id/id/berita/pengumuman/",
+        originalName: "peng-satu-persen.xlsx",
+        sourceUrl: "https://www.idx.co.id/Media/x/peng-satu-persen.xlsx",
         accessedOn: "2026-10-01",
         correction,
       },
@@ -61,7 +61,7 @@ function setup() {
         "SELECT record_date AS recordDate, import_run_id AS runId FROM ownership_months ORDER BY record_date",
       )
       .all() as { recordDate: string; runId: number }[];
-  return { sqlite, landing, upload, published };
+  return { sqlite, landing, fetched, published };
 }
 
 function imported(result: S1ImportResult) {
@@ -72,8 +72,8 @@ function imported(result: S1ImportResult) {
 
 describe("S1 import", { timeout: 60_000 }, () => {
   it("publishes a clean month, and the same file again changes nothing", async () => {
-    const { sqlite, upload, published } = setup();
-    const first = imported(await upload(FEB));
+    const { sqlite, fetched, published } = setup();
+    const first = imported(await fetched(FEB));
     expect(first.outcome).toBe("published");
     expect(published()).toEqual([
       { recordDate: "2026-02-27", runId: first.importRunId },
@@ -82,7 +82,7 @@ describe("S1 import", { timeout: 60_000 }, () => {
       sqlite.prepare("SELECT count(*) FROM ownership_holdings").pluck().get(),
     ).toBe(february.length);
 
-    expect(await upload(FEB)).toEqual({
+    expect(await fetched(FEB)).toEqual({
       kind: "duplicate",
       sha256: first.sha256,
       importRunId: first.importRunId,
@@ -93,18 +93,13 @@ describe("S1 import", { timeout: 60_000 }, () => {
   });
 
   it("never lets a failing month replace the last good one", async () => {
-    const { sqlite, upload, published } = setup();
-    await upload(FEB);
+    const { sqlite, fetched, published } = setup();
+    await fetched(FEB);
     const broken = march.map((row, index) =>
       index === 0 ? { ...row, percentHundredths: 9_999 } : row,
     );
-    const result = imported(await upload(pdf(broken, "31-Mar-2026")));
+    const result = imported(await fetched(workbook(broken, "2026-03-31")));
     expect(result.outcome).toBe("rejected");
-    expect(
-      result.gates.find((gate) => gate.gate === "percent_sum"),
-    ).toMatchObject({
-      verdict: "fail",
-    });
     expect(published().map((month) => month.recordDate)).toEqual([
       "2026-02-27",
     ]);
@@ -119,74 +114,64 @@ describe("S1 import", { timeout: 60_000 }, () => {
   });
 
   it("rejects a truncated file without publishing anything", async () => {
-    const { upload, published } = setup();
-    const result = imported(await upload(FEB.slice(0, FEB.length - 4_000)));
+    const { fetched, published } = setup();
+    const result = imported(await fetched(FEB.slice(0, FEB.length - 4_000)));
     expect(result.outcome).toBe("rejected");
     expect(result.parseError).not.toBeNull();
     expect(published()).toEqual([]);
   });
 
-  it("holds a month with a source inconsistency until the owner decides", async () => {
-    const { sqlite, upload, published } = setup();
+  it("publishes a source inconsistency with its warning recorded", async () => {
+    const { sqlite, fetched, published } = setup();
     const typo = february.map((row, index) =>
       index === 5
-        ? { ...row, total: row.scripless + row.scrip - 300_000_000 }
+        ? { ...row, total: row.scripless + (row.scrip ?? 0) - 300_000_000 }
         : row,
     );
-    const held = imported(await upload(pdf(typo, "27-Feb-2026")));
-    expect(held.outcome).toBe("held");
-    expect(published()).toEqual([]);
-
-    expect(
-      reviewHeldRun(
-        sqlite,
-        held.importRunId,
-        "approve",
-        "publisher typo in scrip; total kept as published",
-      ),
-    ).toEqual({ ok: true, outcome: "published" });
+    const result = imported(await fetched(workbook(typo, "2026-02-27")));
+    expect(result.outcome).toBe("published");
     expect(published()).toEqual([
-      { recordDate: "2026-02-27", runId: held.importRunId },
+      { recordDate: "2026-02-27", runId: result.importRunId },
     ]);
     expect(
       sqlite
         .prepare(
-          "SELECT action, reason FROM publish_audit WHERE import_run_id = ?",
+          "SELECT verdict FROM gate_results WHERE import_run_id = ? AND gate = 'shares_identity'",
         )
-        .all(held.importRunId),
-    ).toEqual([
-      {
-        action: "approve",
-        reason: "publisher typo in scrip; total kept as published",
-      },
-    ]);
+        .pluck()
+        .get(result.importRunId),
+    ).toBe("warn");
+    // Stored as published, not repaired.
     expect(
-      reviewHeldRun(sqlite, held.importRunId, "approve", "again"),
-    ).toMatchObject({
-      ok: false,
-    });
+      sqlite
+        .prepare(
+          "SELECT shares_total = shares_scripless + shares_scrip FROM ownership_holdings WHERE row_number = 6",
+        )
+        .pluck()
+        .get(),
+    ).toBe(0);
   });
 
-  it("replaces a published month only when the upload is marked a correction", async () => {
-    const { sqlite, upload, published } = setup();
-    const original = imported(await upload(FEB));
-    const corrected = pdf(
+  it("replaces a published month only with a file declared a correction", async () => {
+    const { sqlite, fetched, published } = setup();
+    const original = imported(await fetched(FEB));
+    const reissued = workbook(
       february.map((row, index) =>
         index === 0 ? { ...row, scripless: row.scripless + 1 } : row,
       ),
-      "27-Feb-2026",
+      "2026-02-27",
     );
-    const unmarked = imported(await upload(corrected));
-    expect(unmarked.outcome).toBe("rejected");
+    const undeclared = imported(await fetched(reissued));
+    expect(undeclared.outcome).toBe("rejected");
     expect(published()).toEqual([
       { recordDate: "2026-02-27", runId: original.importRunId },
     ]);
 
-    // The same bytes, now marked: gated again, because the earlier run was rejected.
-    const marked = imported(await upload(corrected, true));
-    expect(marked.outcome).toBe("published");
+    // The same bytes, declared: gated again, because the earlier run was rejected.
+    const declared = imported(await fetched(reissued, true));
+    expect(declared.outcome).toBe("published");
     expect(published()).toEqual([
-      { recordDate: "2026-02-27", runId: marked.importRunId },
+      { recordDate: "2026-02-27", runId: declared.importRunId },
     ]);
     expect(
       sqlite
@@ -200,14 +185,14 @@ describe("S1 import", { timeout: 60_000 }, () => {
           "SELECT action FROM publish_audit WHERE import_run_id = ? ORDER BY id",
         )
         .pluck()
-        .all(marked.importRunId),
+        .all(declared.importRunId),
     ).toEqual(["supersede", "publish"]);
   });
 
   it("rebuilds every published month from its landed file, and notices an edit", async () => {
-    const { sqlite, landing, upload } = setup();
-    await upload(FEB);
-    await upload(MAR);
+    const { sqlite, landing, fetched } = setup();
+    await fetched(FEB);
+    await fetched(MAR);
     const clean = await checkRebuild(sqlite, landing);
     expect(clean.map((month) => [month.recordDate, month.ok])).toEqual([
       ["2026-02-27", true],

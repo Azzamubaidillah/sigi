@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 
 import { formatPercent } from "@/app/_lib/format";
-import { typeLabel } from "@/app/_lib/labels";
+import { typeLabel } from "@/src/ownership/investor-classes";
 import type { HolderSummary } from "@/src/views/holders";
 
 export function HolderTable({ holders }: { holders: HolderSummary[] }) {

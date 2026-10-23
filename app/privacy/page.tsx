@@ -15,9 +15,8 @@ export default function PrivacyPage() {
           logs (address, time, page requested) for operating the site.
         </p>
         <p>
-          <strong>Cookies.</strong> Only the owner&apos;s sign-in uses cookies:
-          a session cookie and an anti-forgery cookie, set on this host only.
-          Reading the site sets none.
+          <strong>Cookies.</strong> Sigi sets none: there are no accounts and no
+          sign-in.
         </p>
         <p>
           <strong>TradingView.</strong> Charts and the price screener are

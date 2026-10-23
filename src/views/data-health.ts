@@ -13,6 +13,7 @@ export interface ImportRunRow {
   id: number;
   sourceId: string;
   originalName: string;
+  sourceUrl: string;
   sha256: string;
   byteSize: number;
   startedAt: number;
@@ -36,6 +37,7 @@ export function loadImportRuns(
       const runs = sqlite
         .prepare(
           `SELECT r.id, r.source_id AS sourceId, f.original_name AS originalName,
+                  f.source_url AS sourceUrl,
                   f.sha256, f.byte_size AS byteSize, r.started_at AS startedAt,
                   r.outcome, r.parser_version AS parserVersion,
                   r.parse_error AS parseError, r.record_date AS recordDate,
@@ -56,6 +58,33 @@ export function loadImportRuns(
         gates: gates.all(run.id) as GateRow[],
       }));
     }) ?? []
+  );
+}
+
+export interface FetchRunRow {
+  id: number;
+  startedAt: number;
+  finishedAt: number;
+  outcome: "ok" | "failed";
+  listed: number;
+  fetched: number;
+  error: string | null;
+}
+
+/** The worker's latest checks of the exchange's page, newest first. */
+export function loadFetchRuns(databasePath: string, limit = 10): FetchRunRow[] {
+  return (
+    readDatabase(
+      databasePath,
+      (sqlite) =>
+        sqlite
+          .prepare(
+            `SELECT id, started_at AS startedAt, finished_at AS finishedAt, outcome,
+                    listed, fetched, error
+               FROM fetch_runs ORDER BY id DESC LIMIT ?`,
+          )
+          .all(limit) as FetchRunRow[],
+    ) ?? []
   );
 }
 

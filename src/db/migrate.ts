@@ -1,5 +1,7 @@
+import fs from "node:fs";
 import path from "node:path";
 
+import type Database from "better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
 import type { SigiDatabase } from "./client";
@@ -18,8 +20,9 @@ export interface MigrationOutcome {
   durationMs: number;
 }
 
-function migrationCount(database: SigiDatabase): number {
-  const client = database.$client;
+const defaultFolder = (): string => path.resolve(process.cwd(), "drizzle");
+
+function migrationCount(client: Database.Database): number {
   // Drizzle creates its journal on the first `migrate`, so on a new database
   // the table is not there to count yet.
   const journal = client
@@ -34,6 +37,24 @@ function migrationCount(database: SigiDatabase): number {
     .prepare("SELECT count(*) FROM __drizzle_migrations")
     .pluck()
     .get() as number;
+}
+
+/**
+ * Migrations in the folder the database has not had yet. Only the web
+ * container migrates (its start is the deploy gate); the worker waits until
+ * this is zero, so the two never migrate at once.
+ */
+export function pendingMigrationCount(
+  client: Database.Database,
+  migrationsFolder = defaultFolder(),
+): number {
+  const journal = JSON.parse(
+    fs.readFileSync(
+      path.join(migrationsFolder, "meta", "_journal.json"),
+      "utf8",
+    ),
+  ) as { entries: unknown[] };
+  return journal.entries.length - migrationCount(client);
 }
 
 /**
@@ -59,12 +80,12 @@ function hasStatistics(database: SigiDatabase): boolean {
 
 export function migrateDatabase(
   database: SigiDatabase,
-  migrationsFolder = path.resolve(process.cwd(), "drizzle"),
+  migrationsFolder = defaultFolder(),
 ): MigrationOutcome {
   const startedAt = Date.now();
-  const before = migrationCount(database);
+  const before = migrationCount(database.$client);
   migrate(database, { migrationsFolder });
-  const appliedMigrations = migrationCount(database) - before;
+  const appliedMigrations = migrationCount(database.$client) - before;
 
   /**
    * Statistics, immediately, because an index without them can be worse than
@@ -82,12 +103,11 @@ export function migrateDatabase(
    * migration file: a deploy that changes the schema, and a database restored
    * without statistics, get them before anything is served.
    *
-   * It is not run on every call. The container start runs this once as the
-   * deploy gate and the worker runs it again a moment later, and on the
-   * production file (about 3 GB) each full `ANALYZE` is a scan of every index:
-   * minutes, twice per deploy, for statistics that had not changed in between.
-   * Statistics are also refreshed daily by the worker's integrity task, so a
-   * call that found the schema current and statistics present only needs
+   * It is not run on every call. Sunrise, where this comes from, migrates on
+   * every start of two processes, and on its production file (about 3 GB)
+   * each full `ANALYZE` is a scan of every index: minutes, for statistics that
+   * had not changed in between. So a call that found the schema current and
+   * statistics present only needs
    * `PRAGMA optimize`, which re-analyzes a table only when SQLite decides the
    * existing numbers no longer describe it.
    */

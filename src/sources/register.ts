@@ -5,7 +5,7 @@
  */
 
 export type SourceStatus =
-  "cleared" | "cleared-portfolio" | "admin-only" | "excluded";
+  "cleared" | "cleared-portfolio" | "withheld" | "excluded";
 
 export interface SourceEntry {
   name: string;
@@ -22,18 +22,18 @@ export const SOURCES = {
   S1: {
     name: "Holders above 1% (monthly)",
     publisher:
-      "PT Bursa Efek Indonesia (announcements); data from PT Kustodian Sentral Efek Indonesia",
-    url: "https://www.idx.co.id/id/berita/pengumuman/",
+      "PT Bursa Efek Indonesia (share-ownership data page); data from PT Kustodian Sentral Efek Indonesia",
+    url: "https://www.idx.co.id/id/perusahaan-tercatat/data-kepemilikan-saham/",
     status: "cleared-portfolio",
     terms:
-      "Non-commercial use with full citation and access date; no scraping. Downloaded by hand and uploaded.",
+      "Non-commercial use with full citation and access date. The site's terms ask that it not be scraped; Sigi fetches these files automatically once a day regardless, by the owner's decision (D-021).",
     live: true,
   },
   S2: {
     name: "KSEI monthly holdings, local and foreign",
     publisher: "PT Kustodian Sentral Efek Indonesia",
     url: "https://web.ksei.co.id/archive_download/holding_composition",
-    status: "admin-only",
+    status: "withheld",
     terms: "Terms not found; not shown publicly until they are.",
     live: false,
   },
@@ -109,6 +109,6 @@ export type SourceId = keyof typeof SOURCES;
 export const STATUS_LABELS: Record<SourceStatus, string> = {
   cleared: "Cleared",
   "cleared-portfolio": "Cleared for non-commercial use",
-  "admin-only": "Admin only",
+  withheld: "Withheld until its terms are clear",
   excluded: "Excluded",
 };

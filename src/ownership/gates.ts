@@ -1,50 +1,25 @@
-import type { S1Row } from "./s1-pdf";
+import { holderKind } from "./investor-classes";
+import type { S1Row } from "./s1-xlsx";
 
-/** KSEI investor-type codes, in the order the KSEI files list them. */
-export const INVESTOR_TYPES = [
-  "IS",
-  "CP",
-  "PF",
-  "IB",
-  "ID",
-  "MF",
-  "SC",
-  "FD",
-  "OT",
-] as const;
-export type InvestorType = (typeof INVESTOR_TYPES)[number];
-
-export const INVESTOR_TYPE_LABELS: Record<InvestorType, string> = {
-  IS: "Insurance",
-  CP: "Corporate",
-  PF: "Pension fund",
-  IB: "Financial institution",
-  ID: "Individual",
-  MF: "Mutual fund",
-  SC: "Securities company",
-  FD: "Foundation",
-  OT: "Other",
-};
-
-const investorTypes = new Set<string>(INVESTOR_TYPES);
-
-/** Absolute bounds on rows per month; the first file had 7,257. */
+/** Absolute bounds on rows per month; the files so far have 7,154–7,257. */
 export const ROW_COUNT_BAND = { min: 3_000, max: 15_000 } as const;
 /** Allowed change in total rows against the previous published month. */
 export const ROW_COUNT_MAX_CHANGE = 0.25;
-/**
- * Issuers whose count of >1% holders moves by more than this hold the month
- * for review. A placeholder until a few months of history exist to set it from.
- */
+/** Issuers whose count of >1% holders moves by more than this are noted. */
 export const HOLDER_COUNT_MAX_CHANGE = 5;
 /**
- * Rows whose total differs from scripless + scrip that the owner may accept
- * after review (the publisher's own file has one). More than this is treated
- * as a misread file rather than a few typos at the source.
+ * Rows whose total differs from scripless + scrip that are published with a
+ * note (the publisher's own files have one, some months). More than this is
+ * treated as a misread file rather than a few typos at the source.
  */
-export const SHARES_MISMATCH_REVIEW_LIMIT = 5;
+export const SHARES_MISMATCH_LIMIT = 5;
 
-export type GateVerdict = "pass" | "fail" | "hold";
+/**
+ * "fail" rejects the file and keeps the previous month live. "warn" publishes
+ * it with the finding shown on the data page: nobody reviews imports, so a
+ * finding either blocks or is disclosed (D-021).
+ */
+export type GateVerdict = "pass" | "warn" | "fail";
 
 export interface GateResult {
   gate: string;
@@ -68,7 +43,7 @@ export interface GateInput {
   latestPublished: string | null;
   /** Whether a month with this file's record date is published now. */
   recordDatePublished: boolean;
-  /** The owner declared this file a correction of a published month. */
+  /** The file replaces a published month (the exchange re-issued it). */
   correction: boolean;
 }
 
@@ -95,22 +70,19 @@ function rowCountGate({ rows, previous }: GateInput): GateResult {
       detail: `${count} rows; expected ${ROW_COUNT_BAND.min}–${ROW_COUNT_BAND.max}`,
     };
   }
-  if (previous) {
-    const change = Math.abs(count - previous.rowCount) / previous.rowCount;
-    if (change > ROW_COUNT_MAX_CHANGE) {
-      return {
+  if (!previous) return { gate, verdict: "pass", detail: `${count} rows` };
+  const change = Math.abs(count - previous.rowCount) / previous.rowCount;
+  return change > ROW_COUNT_MAX_CHANGE
+    ? {
         gate,
         verdict: "fail",
         detail: `${count} rows against ${previous.rowCount} on ${previous.recordDate}; more than ${ROW_COUNT_MAX_CHANGE * 100}% change`,
+      }
+    : {
+        gate,
+        verdict: "pass",
+        detail: `${count} rows (${previous.rowCount} on ${previous.recordDate})`,
       };
-    }
-    return {
-      gate,
-      verdict: "pass",
-      detail: `${count} rows (${previous.rowCount} on ${previous.recordDate})`,
-    };
-  }
-  return { gate, verdict: "pass", detail: `${count} rows` };
 }
 
 function shareCodeGate({ rows }: GateInput): GateResult {
@@ -134,9 +106,9 @@ function percentRangeGate({ rows }: GateInput): GateResult {
 }
 
 /**
- * Each issuer's holder percentages may not exceed 100%. Every published
- * figure is rounded to two decimals, so the sum may legitimately overshoot by
- * up to half a hundredth per holder; that much is allowed and no more.
+ * Each issuer's holder percentages may not exceed 100%. Every figure is
+ * rounded to hundredths, so the sum may overshoot by up to half a hundredth
+ * per holder; that much is allowed and no more.
  */
 function percentSumGate({ rows }: GateInput): GateResult {
   const sums = new Map<string, { hundredths: number; holders: number }>();
@@ -175,43 +147,40 @@ function sharesIdentityGate({ rows }: GateInput): GateResult {
   }
   return {
     gate,
-    verdict: bad.length <= SHARES_MISMATCH_REVIEW_LIMIT ? "hold" : "fail",
-    detail: `${bad.length} ${bad.length === 1 ? "row" : "rows"} where the source's total is not scripless + scrip: ${examples(bad)}`,
+    verdict: bad.length <= SHARES_MISMATCH_LIMIT ? "warn" : "fail",
+    detail: `${bad.length} ${bad.length === 1 ? "row" : "rows"} where the source's total is not scripless + scrip, published as is: ${examples(bad)}`,
   };
 }
 
 /**
- * Investor type and local/foreign. The publisher leaves both empty for scrip
- * held in KSEI's special accounts, whose owner is not yet classified (cover
- * letter, note 4), so empty is valid only when both are empty together.
+ * Investor types Sigi cannot place. They are published as is, but such a
+ * holder never gets a page, since it might be a person (PRD C6).
  */
 function classificationGate({ rows }: GateInput): GateResult {
-  const bad = rows
-    .filter((row) => {
-      if (row.investorType === null && row.localForeign === null) return false;
-      return (
-        row.investorType === null ||
-        !investorTypes.has(row.investorType) ||
-        (row.localForeign !== "L" && row.localForeign !== "A")
-      );
-    })
-    .map(
-      (row) =>
-        `${where(row)} type "${row.investorType ?? ""}" local/foreign "${row.localForeign ?? ""}"`,
-    );
+  const unknown = new Map<string, number>();
+  for (const row of rows) {
+    if (holderKind(row.investorType) === "unknown") {
+      unknown.set(row.investorType!, (unknown.get(row.investorType!) ?? 0) + 1);
+    }
+  }
   const unclassified = rows.filter((row) => row.investorType === null).length;
-  return bad.length === 0
+  return unknown.size === 0
     ? {
         gate: "classification",
         verdict: "pass",
-        detail: `known type and L/A on every row; ${unclassified} unclassified scrip rows`,
+        detail: `every type recognised; ${unclassified} rows unclassified at the source`,
       }
-    : { gate: "classification", verdict: "fail", detail: examples(bad) };
+    : {
+        gate: "classification",
+        verdict: "warn",
+        detail: `unrecognised types, treated as possibly individual: ${examples([...unknown].map(([type, n]) => `"${type}" (${n})`))}`,
+      };
 }
 
 /**
- * Months are published in order, oldest first, so history is loaded
- * chronologically. Replacing a published month needs the owner to say so.
+ * Months are published oldest first. A file for a published month replaces
+ * it only as a correction, which the fetcher declares when the exchange
+ * re-issues a month under a new file.
  */
 export function recordDateGate({
   recordDate,
@@ -233,7 +202,7 @@ export function recordDateGate({
       : {
           gate,
           verdict: "fail",
-          detail: `marked as a correction, but ${recordDate} is not a published month`,
+          detail: `a correction, but ${recordDate} is not a published month`,
         };
   }
   if (latestPublished === null || recordDate > latestPublished) {
@@ -248,27 +217,25 @@ export function recordDateGate({
   return {
     gate,
     verdict: "fail",
-    detail: `${recordDate} is not newer than the published ${latestPublished}; tick "correction" to replace a published month`,
+    detail: `${recordDate} is not newer than the published ${latestPublished}`,
   };
 }
 
 function holderCountGate({ rows, previous }: GateInput): GateResult {
   const gate = "holder_count_change";
-  if (!previous) {
+  if (!previous)
     return { gate, verdict: "pass", detail: "no earlier month to compare" };
-  }
   const current = new Map<string, number>();
-  for (const row of rows) {
+  for (const row of rows)
     current.set(row.shareCode, (current.get(row.shareCode) ?? 0) + 1);
-  }
-  const codes = new Set([...current.keys(), ...previous.holdersByCode.keys()]);
   const moved: string[] = [];
-  for (const code of [...codes].sort()) {
+  for (const code of [
+    ...new Set([...current.keys(), ...previous.holdersByCode.keys()]),
+  ].sort()) {
     const before = previous.holdersByCode.get(code) ?? 0;
     const after = current.get(code) ?? 0;
-    if (Math.abs(after - before) > HOLDER_COUNT_MAX_CHANGE) {
+    if (Math.abs(after - before) > HOLDER_COUNT_MAX_CHANGE)
       moved.push(`${code} ${before} → ${after}`);
-    }
   }
   return moved.length === 0
     ? {
@@ -278,12 +245,12 @@ function holderCountGate({ rows, previous }: GateInput): GateResult {
       }
     : {
         gate,
-        verdict: "hold",
-        detail: `${moved.length} issuers moved by more than ${HOLDER_COUNT_MAX_CHANGE} holders: ${examples(moved)}`,
+        verdict: "warn",
+        detail: `${moved.length} ${moved.length === 1 ? "issuer" : "issuers"} moved by more than ${HOLDER_COUNT_MAX_CHANGE} holders: ${examples(moved)}`,
       };
 }
 
-/** Every gate, in the order the data health page lists them. */
+/** Every gate, in the order the data page lists them. */
 export function runGates(input: GateInput): GateResult[] {
   return [
     recordDateGate(input),
@@ -299,8 +266,8 @@ export function runGates(input: GateInput): GateResult[] {
 
 export function outcomeOf(
   results: readonly GateResult[],
-): "rejected" | "held" | "published" {
-  if (results.some((result) => result.verdict === "fail")) return "rejected";
-  if (results.some((result) => result.verdict === "hold")) return "held";
-  return "published";
+): "rejected" | "published" {
+  return results.some((result) => result.verdict === "fail")
+    ? "rejected"
+    : "published";
 }

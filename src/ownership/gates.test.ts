@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  type GateResult,
   type GateInput,
   HOLDER_COUNT_MAX_CHANGE,
   outcomeOf,
   recordDateGate,
   runGates,
-  SHARES_MISMATCH_REVIEW_LIMIT,
+  SHARES_MISMATCH_LIMIT,
 } from "./gates";
-import type { S1Row } from "./s1-pdf";
+import type { S1Row } from "./s1-xlsx";
 
 function row(overrides: Partial<S1Row> = {}): S1Row {
   return {
@@ -58,7 +59,7 @@ function input(overrides: Partial<GateInput> = {}): GateInput {
   };
 }
 
-function verdict(results: ReturnType<typeof runGates>, gate: string) {
+function verdict(results: GateResult[], gate: string) {
   return results.find((result) => result.gate === gate)?.verdict;
 }
 
@@ -111,40 +112,41 @@ describe("S1 gates", () => {
     );
   });
 
-  it("holds a few source rows whose shares do not add up, and rejects many", () => {
+  it("publishes a few source rows whose shares do not add up with a warning, and rejects many", () => {
     const mismatched = (count: number) =>
       month(4_000, (index) => (index < count ? { sharesTotal: 99 } : {}));
-    const few = runGates(
-      input({ rows: mismatched(SHARES_MISMATCH_REVIEW_LIMIT) }),
-    );
-    expect(verdict(few, "shares_identity")).toBe("hold");
-    expect(outcomeOf(few)).toBe("held");
+    const few = runGates(input({ rows: mismatched(SHARES_MISMATCH_LIMIT) }));
+    expect(verdict(few, "shares_identity")).toBe("warn");
+    expect(outcomeOf(few)).toBe("published");
     const many = runGates(
-      input({ rows: mismatched(SHARES_MISMATCH_REVIEW_LIMIT + 1) }),
+      input({ rows: mismatched(SHARES_MISMATCH_LIMIT + 1) }),
     );
     expect(verdict(many, "shares_identity")).toBe("fail");
     expect(outcomeOf(many)).toBe("rejected");
   });
 
-  it("accepts unclassified scrip only when type and local/foreign are both empty", () => {
-    const both = month(4_000, (index) =>
-      index === 3 ? { investorType: null, localForeign: null } : {},
+  it("accepts both taxonomies and unclassified rows, and warns on an unknown type", () => {
+    const mixed = month(4_000, (index) =>
+      index === 1
+        ? { investorType: "MUTUAL FUNDS" }
+        : index === 2
+          ? { investorType: "Sole proprietorship" }
+          : index === 3
+            ? { investorType: null, localForeign: "L" }
+            : {},
     );
-    expect(verdict(runGates(input({ rows: both })), "classification")).toBe(
+    expect(verdict(runGates(input({ rows: mixed })), "classification")).toBe(
       "pass",
     );
-    const half = month(4_000, (index) =>
-      index === 3 ? { localForeign: null } : {},
+    const unknown = runGates(
+      input({
+        rows: month(4_000, (index) =>
+          index === 3 ? { investorType: "Space Agency" } : {},
+        ),
+      }),
     );
-    expect(verdict(runGates(input({ rows: half })), "classification")).toBe(
-      "fail",
-    );
-    const unknown = month(4_000, (index) =>
-      index === 3 ? { investorType: "XX" } : {},
-    );
-    expect(verdict(runGates(input({ rows: unknown })), "classification")).toBe(
-      "fail",
-    );
+    expect(verdict(unknown, "classification")).toBe("warn");
+    expect(outcomeOf(unknown)).toBe("published");
   });
 
   it("rejects a share code that is not four letters", () => {
@@ -154,7 +156,7 @@ describe("S1 gates", () => {
     expect(verdict(runGates(input({ rows })), "share_code")).toBe("fail");
   });
 
-  it("holds the month when an issuer's holder count jumps", () => {
+  it("warns when an issuer's holder count jumps", () => {
     const previous = (holders: number) => ({
       recordDate: "2026-01-30",
       rowCount: 4_000,
@@ -180,13 +182,13 @@ describe("S1 gates", () => {
         ),
         "holder_count_change",
       ),
-    ).toBe("hold");
+    ).toBe("warn");
   });
 
-  it("rejects before it holds", () => {
+  it("rejects when any gate fails, whatever else warns", () => {
     expect(
       outcomeOf([
-        { gate: "a", verdict: "hold", detail: "" },
+        { gate: "a", verdict: "warn", detail: "" },
         { gate: "b", verdict: "fail", detail: "" },
       ]),
     ).toBe("rejected");
@@ -219,7 +221,7 @@ describe("record date gate", () => {
     ).toBe("pass");
   });
 
-  it("lets a correction replace a published month, and only a published one", () => {
+  it("lets a re-issued file replace a published month, and only a published one", () => {
     expect(recordDateGate({ ...base, correction: true }).verdict).toBe("pass");
     expect(
       recordDateGate({

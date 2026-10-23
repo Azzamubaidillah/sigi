@@ -10,6 +10,8 @@
  *     there. Nothing is ever merged by similarity.
  */
 
+import { holderKind } from "./investor-classes";
+
 export interface HolderAlias {
   /** The published spelling, after mechanical normalisation. */
   alias: string;
@@ -281,28 +283,16 @@ export function holderSlug(key: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-/** Investor types that are never a natural person (KSEI codes). */
-const institutionalTypes = new Set([
-  "CP",
-  "IB",
-  "MF",
-  "SC",
-  "IS",
-  "PF",
-  "FD",
-  "OT",
-]);
-
 /**
  * Whether a holder may have its own page (PRD C6). Every row published under
- * the holder must carry an institutional type: one row typed as an individual,
- * or left unclassified (unclassified scrip includes people), and there is no
+ * the holder must be an institution: one row typed as an individual, left
+ * unclassified, or carrying a type Sigi does not recognise, and there is no
  * page. Fails closed.
  */
 export function mayHaveHolderPage(types: Iterable<string | null>): boolean {
   let seen = false;
   for (const type of types) {
-    if (type === null || !institutionalTypes.has(type)) return false;
+    if (holderKind(type) !== "institution") return false;
     seen = true;
   }
   return seen;
