@@ -1,5 +1,6 @@
 /**
- * The worker: checks every source on a schedule and imports what is new.
+ * The worker: checks every source on a schedule and imports what is new, then
+ * checks every thesis condition against what is published.
  * No one uploads or approves anything; a file either passes its gates and is
  * published, or is rejected with the reason shown on /data.
  *
@@ -10,13 +11,19 @@
  *   tsx scripts/worker.ts               run forever (the worker container)
  *   tsx scripts/worker.ts --once        check every feed now, then exit
  *   tsx scripts/worker.ts --once FEED…  check only the named feeds
- * With --once the exit code is non-zero if any check failed.
+ * With --once the exit code is non-zero if any check failed. Thesis conditions
+ * are checked after the feeds in both modes.
  *
  * The schedule lives in `fetch_runs`: a feed is due one interval after its
  * last run finished, or three hours after a failed one, so a restart or a
  * deploy neither skips a check nor repeats one. A stop signal ends the wait;
  * a check in progress is not interrupted, and each import is one transaction,
  * so a kill mid-check leaves nothing half-published.
+ *
+ * Thesis conditions (PRD F7) are checked at start, after every pass over the
+ * feeds, and just after midnight in Jakarta, so a date condition turns on the
+ * day it names and a new version is checked as soon as a deploy restarts the
+ * worker.
  */
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -31,9 +38,12 @@ import { fetchMacroFeed } from "../src/fetch/macro-http";
 import { runS1Fetch } from "../src/fetch/s1-fetch";
 import { createLogger } from "../src/logger";
 import { FEEDS, type FeedId, S1_FEED } from "../src/macro/feeds";
+import { checkTheses } from "../src/theses/check";
 
 const RETRY_AFTER_FAILURE_MS = 3 * 3_600_000;
 const SCHEMA_POLL_MS = 10_000;
+const DAY_MS = 86_400_000;
+const JAKARTA_OFFSET_MS = 7 * 3_600_000;
 
 const config = loadConfig();
 const logger = createLogger("sigi-worker", config);
@@ -96,6 +106,28 @@ async function check(sqlite: Database.Database, feed: Feed): Promise<boolean> {
   return summary.outcome === "ok";
 }
 
+/** One minute past the next midnight in Jakarta (UTC+7, no daylight saving). */
+function nextJakartaDay(now: number): number {
+  const day = Math.floor((now + JAKARTA_OFFSET_MS) / DAY_MS) + 1;
+  return day * DAY_MS - JAKARTA_OFFSET_MS + 60_000;
+}
+
+/** Checks every thesis condition; true unless the check itself failed. */
+function checkThesisConditions(sqlite: Database.Database): boolean {
+  try {
+    const summary = checkTheses(sqlite, {
+      databasePath: config.databasePath,
+      thesesDirectory: config.thesesDirectory,
+      now: Date.now(),
+    });
+    logger.info(summary, "theses checked");
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, "thesis check failed");
+    return false;
+  }
+}
+
 const { sqlite } = openDatabase(config.databasePath);
 let exitCode = 0;
 try {
@@ -113,19 +145,22 @@ try {
       if (stop.signal.aborted) break;
       if (!(await check(sqlite, feed))) exitCode = 1;
     }
+    if (!checkThesisConditions(sqlite)) exitCode = 1;
   } else {
     while (!stop.signal.aborted) {
       for (const feed of feeds) {
         if (stop.signal.aborted) break;
         if (nextDue(sqlite, feed) <= Date.now()) await check(sqlite, feed);
       }
-      const wait =
-        Math.min(...feeds.map((feed) => nextDue(sqlite, feed))) - Date.now();
+      if (stop.signal.aborted) break;
+      checkThesisConditions(sqlite);
+      const wake = Math.min(
+        nextJakartaDay(Date.now()),
+        ...feeds.map((feed) => nextDue(sqlite, feed)),
+      );
+      const wait = wake - Date.now();
       if (wait > 0) {
-        logger.info(
-          { nextCheck: new Date(Date.now() + wait).toISOString() },
-          "waiting",
-        );
+        logger.info({ nextCheck: new Date(wake).toISOString() }, "waiting");
         await pause(wait);
       }
     }

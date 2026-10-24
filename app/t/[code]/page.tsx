@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { S1Citation } from "@/app/_components/Citation";
 import { HolderName } from "@/app/_components/HolderName";
+import { StatusBadge } from "@/app/_components/ThesisParts";
 import {
   formatDate,
   formatHhi,
@@ -27,6 +28,7 @@ import {
   type CompanyFigures,
   loadTickerOwnership,
 } from "@/src/views/ownership";
+import { thesesForTicker } from "@/src/views/theses";
 
 type Params = { params: Promise<{ code: string }> };
 
@@ -190,6 +192,28 @@ function FreeFloat({ figures }: { figures: CompanyFigures }) {
   );
 }
 
+function ThesesSection({ code }: { code: string }) {
+  const theses = thesesForTicker(loadConfig(), code);
+  return (
+    <section className="panel">
+      <h2>Theses</h2>
+      {theses.length === 0 ? (
+        <p className="absent">No thesis names {code}.</p>
+      ) : (
+        <ul>
+          {theses.map((thesis) => (
+            <li key={thesis.slug}>
+              <Link href={`/theses/${thesis.slug}`}>{thesis.title}</Link>{" "}
+              <StatusBadge status={thesis.status} />{" "}
+              <span className="muted">{thesis.summary}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default async function TickerPage({ params }: Params) {
   const code = shareCodeOf((await params).code);
   if (!code) notFound();
@@ -207,6 +231,7 @@ export default async function TickerPage({ params }: Params) {
           <p className="absent">{ABSENCE_TEXT[ownership.reason]}</p>
           {ownership.month ? <S1Citation month={ownership.month} /> : null}
         </section>
+        <ThesesSection code={code} />
       </>
     );
   }
@@ -333,6 +358,7 @@ export default async function TickerPage({ params }: Params) {
         <h2>Changes since the previous month</h2>
         <Changes slice={ownership.changes} links={links} />
       </section>
+      <ThesesSection code={figures.shareCode} />
     </>
   );
 }

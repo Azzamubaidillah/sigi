@@ -25,6 +25,11 @@ const links = [
     matches: (path: string) => path === "/macro",
   },
   {
+    href: "/theses",
+    label: "Theses",
+    matches: (path: string) => path.startsWith("/theses"),
+  },
+  {
     href: "/data",
     label: "Data & sources",
     matches: (path: string) => path === "/data" || path === "/privacy",

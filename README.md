@@ -10,6 +10,7 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **M2** (deployed 2026-10-23): the investability tracker against the 15% free-float rule (F3), the holder explorer for institutions (F4), and the market page with the ownership screen and TradingView widgets (F9).
 - **Automation** (2026-10-24): a worker fetches the monthly files from the exchange's site and imports them; there is no admin, upload or sign-in (D-021).
 - **M3** (deployed 2026-10-24): the macro dashboard (F6) at `/macro`, fed daily from Bank Indonesia, the World Bank Pink Sheet and FRED (D-023).
+- **M4** (deployed 2026-10-25): theses (F7) at `/theses`, files in `theses/` with typed invalidation conditions that the worker checks daily (D-024).
 
 | Doc | Purpose |
 |---|---|
@@ -41,6 +42,39 @@ The exchange's terms ask that its site not be scraped, and Bank Indonesia publis
 `pnpm verify` runs format, lint, types, tests and a production build. The tests include the rebuild check on synthetic files. To also test against the real files, set `SIGI_S1_REAL_DIR` to a directory holding `one-YYYY-MM-DD.xlsx` files. Real files are never committed, because they name individuals.
 
 `pnpm rebuild:check` re-derives every published S1 month and macro series from its stored source file and compares content hashes.
+
+## Writing a thesis
+
+A thesis is `theses/<slug>/<YYYY-MM-DD>.md`, where the slug is lower-case words joined by hyphens. Each new version is a new file dated the day it was written. Older files stay as they are, and the page shows what changed. Commit and deploy to publish. The file starts with two fenced blocks, then the prose:
+
+````markdown
+```thesis
+title: One line, up to 120 characters
+tickers: BBRI, BBNI
+stance: A description of the view, up to 160 characters
+summary: The thesis in one line
+status: active
+review: 2027-01-31
+catalyst: 2027-03-31 First free-float deadline for large caps
+```
+
+```conditions
+ownership BBRI "PT HOLDER NAME" below 50%
+float BBTN below 12.5% from 2027-03-31
+macro bi-rate above 6.25
+date 2027-06-30 no placement by then
+price BBRI below 3500
+```
+
+## Why
+…
+````
+
+- **Header:** status is `active`, `invalidated` or `closed`; `catalyst` may repeat. The stance describes the view: ratings, targets and a sentence opening with buy, sell or hold are refused.
+- **Conditions:** `ownership` names an institution as the register spells it and compares its position; `float` compares the free-float upper bound and takes only `below`, optionally from a date; `macro` takes a series id (`bi-rate`, `cpi-yoy`, `jisdor`, `fx-reserves`, `brent`, `coal`, `palm-oil`, `nickel`, `tin`, `gold`, `fed-funds`, `us-10y`, `usd-broad`) and a number in that series' unit on `/macro`; `date` is met on the day it names; `price` is always a manual check, since Sigi stores no prices.
+- **Comments:** a line starting with `#` is ignored in either block; a `#` later in a line is part of the value.
+
+One bad line in either block shows as "Header unreadable" or "Conditions unreadable", with the line and the reason; nothing is guessed. A closed thesis needs a `## Post-mortem` section. The worker records each condition as met, not met, unknown (with the reason) or manual each day; met conditions of active theses lead `/theses`.
 
 ## Deploy
 

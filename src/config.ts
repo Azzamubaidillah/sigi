@@ -41,6 +41,8 @@ export interface SigiConfig {
   logLevel: z.infer<typeof environmentSchema>["SIGI_LOG_LEVEL"];
   fetchIntervalMs: number;
   chromePath: string;
+  /** Thesis files in this repository (`theses/<slug>/<YYYY-MM-DD>.md`). */
+  thesesDirectory: string;
 }
 
 const environmentKeys = Object.keys(environmentSchema.shape);
@@ -89,5 +91,6 @@ function parseConfig(
     logLevel: parsed.SIGI_LOG_LEVEL,
     fetchIntervalMs: Math.round(parsed.SIGI_FETCH_INTERVAL_HOURS * 3_600_000),
     chromePath: parsed.SIGI_CHROME_PATH,
+    thesesDirectory: path.resolve(workingDirectory, "theses"),
   };
 }

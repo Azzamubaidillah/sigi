@@ -186,3 +186,21 @@ Merges also change who has a page. A holder whose spellings appear in the same m
 - **"Released" means first seen by Sigi,** at the resolution of a daily check. "Next release" is an expectation from each source's usual cadence (holidays ignored, BI's meeting dates assumed monthly), and is labelled so.
 **Evidence:** from the host on 2026-10-24, all eight feeds imported: BI-Rate 129 decisions from April 2016, inflation 129 months, JISDOR 257 days, reserves 129 months, six Pink Sheet columns (to September 2026), three FRED series. A second run imported nothing, as intended.
 
+## D-024. Theses are versioned files with a strict header and typed conditions, checked daily by the worker (2026-10-25)
+**Context:** PRD F7 asks for theses as files in the repository, with typed invalidation conditions that Sigi checks against its own data, a status, version history with diffs, and a "conditions hit" list. Sunrise keeps coin theses as dated markdown files with a strictly parsed `levels` fence (its D-158 and D-161); Sigi follows that shape.
+**Decision:**
+- **Files:** `theses/<slug>/<YYYY-MM-DD>.md`, one file per version. The newest date is the current version, older files are kept unedited as history, and a deploy publishes them. The page shows the line diff from the previous version.
+- **Header:** a `thesis` fence. It has one `key: value` per line for title, tickers, stance, summary, status (active, invalidated or closed) and review date, plus repeatable dated catalysts. One bad line makes the header unreadable, with a reason that names the line. A stance containing ratings, targets or an opening transaction verb is refused. Closing a thesis requires a `## Post-mortem` section with text.
+- **Conditions:** a `conditions` fence, one per line:
+  - `ownership CODE "HOLDER" below|above N%`: the holder's position, rows summed under the holder key (D-018); institutions only (C6);
+  - `float CODE below N% [from DATE]`: the D-017 upper bound. There is no `above`, because a bound can show a float below a level but never above one;
+  - `macro SERIES below|above N`: the latest published value;
+  - `date DATE note`: met on the day it names;
+  - `price CODE below|above LEVEL`: always a manual check, since Sigi stores no prices (C1).
+
+  One bad line makes the whole block unreadable, and the page says "conditions unreadable: <reason>". Nothing is partly read.
+- **Check:** the worker evaluates the current version at start-up, after every pass over the feeds and just after midnight in Jakarta. It stores one row per condition per day (`thesis_checks`). Each row is met, not met, unknown with the reason, or manual, plus the figure compared and its date. The pages show the stored rows and never evaluate per request. "Met since" is the first day of the current unbroken run of met.
+- **Unknown, not guessed:** these give unknown with the reason: a holder in no published month (likely a misspelling), a holder with any individual or untyped row, an issuer missing from the latest register, an incomplete register (D-019), and a series with no published value.
+- **Rendering:** markdown becomes Sigi's own block tree, never HTML (from Sunrise). Raw HTML is shown as text. Only http(s) links, site paths and links to other theses survive.
+**Consequences:** the owner writes and commits each version and deploys. A `float … below` that is not met says the official figure can still be lower. Conditions are identified by their text, so editing a condition's wording starts a new history.
+

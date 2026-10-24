@@ -199,3 +199,30 @@ export const publishAudit = sqliteTable("publish_audit", {
   ),
   reason: text("reason"),
 });
+
+/**
+ * The worker's daily check of each thesis condition (PRD F7): one row per
+ * condition per Jakarta day, so "met since" and "changed since yesterday"
+ * come from rows rather than memory. A condition is identified by its
+ * normalised text, so it keeps its history across versions while unchanged.
+ */
+export const thesisChecks = sqliteTable(
+  "thesis_checks",
+  {
+    slug: text("slug").notNull(),
+    condition: text("condition").notNull(),
+    /** YYYY-MM-DD in Jakarta. */
+    checkedOn: text("checked_on").notNull(),
+    checkedAt: integer("checked_at").notNull(),
+    /** The thesis version (file date) the condition was read from. */
+    version: text("version").notNull(),
+    status: text("status", {
+      enum: ["met", "not-met", "unknown", "manual"],
+    }).notNull(),
+    detail: text("detail").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.slug, table.condition, table.checkedOn] }),
+    index("thesis_checks_day_idx").on(table.checkedOn),
+  ],
+);

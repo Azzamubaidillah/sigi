@@ -502,6 +502,35 @@
     color: var(--muted);
     font-size: 0.8rem;
   }
+
+  /* A thesis body is the author's prose: paragraphs need their spacing back. */
+  .thesis-body p,
+  .thesis-body ul,
+  .thesis-body ol,
+  .thesis-body blockquote {
+    margin: 0 0 0.75rem;
+    max-width: 75ch;
+  }
+
+  .thesis-body blockquote {
+    border-left: 3px solid var(--line);
+    padding-left: 0.8rem;
+    color: var(--muted);
+  }
+
+  .thesis-body pre,
+  pre.diff {
+    overflow-x: auto;
+    background: var(--raised);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  pre.diff span {
+    display: block;
+    white-space: pre-wrap;
+  }
 }
 
 @layer states {
@@ -527,5 +556,14 @@
 
   .badge.derived {
     color: var(--torch);
+  }
+
+  /* Thesis version diffs. */
+  .diff-added {
+    color: var(--positive);
+  }
+
+  .diff-removed {
+    color: var(--negative);
   }
 }

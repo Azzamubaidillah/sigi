@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.6, 2026-10-24. **Status:** P1 started 2026-10-22; M1, M2 and M3 deployed; every import runs unattended (§11, D-021, D-023). **Owner:** Azzam Ubaidillah.
+**Version:** 0.7, 2026-10-25. **Status:** P1 started 2026-10-22; M1, M2, M3 and M4 deployed; every import runs unattended (§11, D-021, D-023, D-024). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -159,6 +159,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 - **Acceptance:**
   - a malformed condition block makes the thesis show "conditions unreadable: \<reason\>"; it is never guessed;
   - every thesis page carries the not-investment-advice notice.
+  - **Met 2026-10-25** (M4, D-024). Theses live in `theses/<slug>/<YYYY-MM-DD>.md` and show at `/theses` and `/theses/<slug>`; each ticker page lists the theses that name it. A malformed `conditions` block shows "Conditions unreadable: \<reason\>" naming the line, on the thesis and in the list. The notice sits on the list and on every version of every thesis. The worker records each condition's check daily. "Conditions hit" leads the page with the day each condition was first met. A closed thesis without a written post-mortem is refused. Verified against a copy of production data with a throwaway thesis; no thesis is published yet, because the theses are the owner's to write (§10 asks for at least three).
 
 ### F8. Ticker page
 - **Our sections:** ownership (F2), float and tranche (F3), local/foreign (F5 when cleared), theses that mention the ticker (F7), events (float deadline, MSCI dates).
@@ -268,7 +269,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 | M1 | F1 import pipeline + F10 data health + F2 ownership section + deploy skeleton. **Built 2026-10-22; deployed 2026-10-23** at https://sigi.ubaidillah.id (Dokploy) | 20 h |
 | M2 | F3 tracker + F4 holder explorer + F9 market page. **Deployed 2026-10-23.** Then, by owner decision on 2026-10-24, the S1 import was automated and the admin removed (D-021, D-022) | 15 h |
 | M3 | F6 macro dashboard. **Built and deployed 2026-10-24** (D-023) | 12 h |
-| M4 | F7 theses + condition evaluation | 10 h |
+| M4 | F7 theses + condition evaluation. **Built and deployed 2026-10-25** (D-024); the theses themselves are the owner's to write | 10 h |
 | M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page | 8 h |
 | M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain | 10 h |
 

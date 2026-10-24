@@ -1,6 +1,6 @@
 # Architecture (proposed)
 
-**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and the macro series and nothing is uploaded; the admin area is gone (D-021). M3 (macro dashboard) is built (D-023). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and the macro series and nothing is uploaded; the admin area is gone (D-021). M3 (macro dashboard) is built (D-023), and so is M4 (theses with conditions the worker checks daily, D-024). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
@@ -181,6 +181,12 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 - **Copied:** `src/imports/xlsx.ts` with its test. Changed: relationship targets resolve relative to `xl/`; a self-closing cell no longer swallows the next one; a null sheet name reads the only sheet; the resolved sheet name is returned.
 - **Removed (D-021):** everything sign-in: `src/security/{csrf,passcode,session,throttle,throttle-store,admin-paths,owner-request}.ts` and their tests, `app/api/auth/`, `app/login/`, `app/admin/`, `app/api/admin/`, `scripts/hash-passcode.ts`, the `login_attempts` table.
 - **Written fresh:** the worker (`scripts/worker.ts`, `src/fetch/`). Sunrise's scheduler is not copied: one daily task needs a loop and a `fetch_runs` row, not deadlines and backoff.
+
+**Theses (2026-10-25, M4), from public `sunrise` at `312906f`.** The leak scan ran before the commit.
+
+- **Copied:** the markdown-to-block-tree conversion of `src/views/theses.ts` (into `src/theses/markdown.ts`) and the renderer of `app/_components/ThesisBody.tsx`. Changed: links to other theses point to `/theses/<slug>?version=`, and site paths such as `/t/BBRI` are kept. The folds, the contents and the price quotes are not copied.
+- **Written fresh, after Sunrise's pattern:** the strict `thesis` and `conditions` fence grammars, in the manner of `src/thesis-levels.ts` (`src/theses/{header,conditions}.ts`); the folder reader with dated version files (`src/theses/folder.ts`, after `src/thesis-folder.ts`); the line diff; the daily check in the worker (`src/theses/check.ts`); and the pages `/theses` and `/theses/[slug]` (D-024).
+- **Not copied:** hidden theses, plan levels, held positions, quote windows and the publish script. Theses ship with a deploy, not a mirror.
 
 ### Never copied
 
