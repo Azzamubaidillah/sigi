@@ -2,17 +2,13 @@ import type Database from "better-sqlite3";
 
 import type { ImportOutcome } from "../db/schema";
 import { contentHash } from "../ownership/content-hash";
-import {
-  type GateResult,
-  outcomeOf,
-  type PreviousMonth,
-  runGates,
-} from "../ownership/gates";
+import { type PreviousMonth, runGates } from "../ownership/gates";
 import {
   parseS1Xlsx,
   S1_PARSER_VERSION,
   type S1Row,
 } from "../ownership/s1-xlsx";
+import { type GateResult, outcomeOf } from "./gate-result";
 import { landFile } from "./landing";
 
 export const S1_SOURCE_ID = "S1";

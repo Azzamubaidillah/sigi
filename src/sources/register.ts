@@ -63,12 +63,13 @@ export const SOURCES = {
     live: false,
   },
   S6: {
-    name: "Bank Indonesia statistics",
+    name: "Bank Indonesia statistics (BI-Rate, inflation, JISDOR, reserves)",
     publisher: "Bank Indonesia",
-    url: "https://www.bi.go.id/",
+    url: "https://www.bi.go.id/id/statistik/default.aspx",
     status: "cleared-portfolio",
-    terms: "Non-commercial display with citation.",
-    live: false,
+    terms:
+      "No site-wide terms found; shown non-commercially with citation. Exported automatically once a day, by the owner's decision (D-023).",
+    live: true,
   },
   S7: {
     name: "World Bank commodity prices (Pink Sheet)",
@@ -76,15 +77,16 @@ export const SOURCES = {
     url: "https://www.worldbank.org/en/research/commodity-markets",
     status: "cleared",
     terms: "CC BY 4.0, with attribution.",
-    live: false,
+    live: true,
   },
   S8: {
-    name: "FRED public-domain series",
+    name: "FRED: Federal Reserve Board series",
     publisher: "Federal Reserve Bank of St. Louis",
     url: "https://fred.stlouisfed.org/",
     status: "cleared",
-    terms: "Only series whose source is in the public domain.",
-    live: false,
+    terms:
+      "Only series from the Federal Reserve Board, which carry no copyright notice.",
+    live: true,
   },
   S9: {
     name: "IMF data",

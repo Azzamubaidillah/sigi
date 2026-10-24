@@ -2,7 +2,9 @@ import type Database from "better-sqlite3";
 
 import type { ImportOutcome } from "../db/schema";
 import { importS1File, S1_SOURCE_ID } from "../imports/s1-import";
+import { S1_FEED } from "../macro/feeds";
 import { S1_PARSER_VERSION } from "../ownership/s1-xlsx";
+import { describeError } from "./errors";
 import { type ListedFile, s1Listings } from "./idx-listing";
 
 export interface S1Source {
@@ -106,7 +108,7 @@ export async function runS1Fetch(
       });
     }
   } catch (cause) {
-    error = cause instanceof Error ? cause.message : String(cause);
+    error = describeError(cause);
   } finally {
     await source?.close().catch(() => undefined);
   }
@@ -114,10 +116,10 @@ export async function runS1Fetch(
   const runId = Number(
     sqlite
       .prepare(
-        `INSERT INTO fetch_runs (started_at, finished_at, outcome, listed, fetched, error)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO fetch_runs (feed, started_at, finished_at, outcome, listed, fetched, error)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(startedAt, now(), outcome, listed, fetched.length, error)
+      .run(S1_FEED, startedAt, now(), outcome, listed, fetched.length, error)
       .lastInsertRowid,
   );
   return { runId, outcome, listed, fetched, error };

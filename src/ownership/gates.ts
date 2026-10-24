@@ -1,3 +1,4 @@
+import type { GateResult } from "../imports/gate-result";
 import { holderKind } from "./investor-classes";
 import type { S1Row } from "./s1-xlsx";
 
@@ -13,19 +14,6 @@ export const HOLDER_COUNT_MAX_CHANGE = 5;
  * treated as a misread file rather than a few typos at the source.
  */
 export const SHARES_MISMATCH_LIMIT = 5;
-
-/**
- * "fail" rejects the file and keeps the previous month live. "warn" publishes
- * it with the finding shown on the data page: nobody reviews imports, so a
- * finding either blocks or is disclosed (D-021).
- */
-export type GateVerdict = "pass" | "warn" | "fail";
-
-export interface GateResult {
-  gate: string;
-  verdict: GateVerdict;
-  detail: string;
-}
 
 export interface PreviousMonth {
   recordDate: string;
@@ -262,12 +250,4 @@ export function runGates(input: GateInput): GateResult[] {
     classificationGate(input),
     holderCountGate(input),
   ];
-}
-
-export function outcomeOf(
-  results: readonly GateResult[],
-): "rejected" | "published" {
-  return results.some((result) => result.verdict === "fail")
-    ? "rejected"
-    : "published";
 }

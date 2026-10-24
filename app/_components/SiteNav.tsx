@@ -20,6 +20,11 @@ const links = [
     matches: (path: string) => path.startsWith("/holders"),
   },
   {
+    href: "/macro",
+    label: "Macro",
+    matches: (path: string) => path === "/macro",
+  },
+  {
     href: "/data",
     label: "Data & sources",
     matches: (path: string) => path === "/data" || path === "/privacy",

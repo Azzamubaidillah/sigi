@@ -194,7 +194,7 @@ describe("S1 import", { timeout: 60_000 }, () => {
     await fetched(FEB);
     await fetched(MAR);
     const clean = await checkRebuild(sqlite, landing);
-    expect(clean.map((month) => [month.recordDate, month.ok])).toEqual([
+    expect(clean.map((month) => [month.item, month.ok])).toEqual([
       ["2026-02-27", true],
       ["2026-03-31", true],
     ]);
@@ -205,7 +205,7 @@ describe("S1 import", { timeout: 60_000 }, () => {
       )
       .run();
     const edited = await checkRebuild(sqlite, landing);
-    expect(edited.map((month) => [month.recordDate, month.ok])).toEqual([
+    expect(edited.map((month) => [month.item, month.ok])).toEqual([
       ["2026-02-27", true],
       ["2026-03-31", false],
     ]);

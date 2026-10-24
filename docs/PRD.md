@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.5, 2026-10-24. **Status:** P1 started 2026-10-22; M1 and M2 deployed; the S1 import runs unattended (§11, D-021). **Owner:** Azzam Ubaidillah.
+**Version:** 0.6, 2026-10-24. **Status:** P1 started 2026-10-22; M1, M2 and M3 deployed; every import runs unattended (§11, D-021, D-023). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -64,7 +64,7 @@ The existing platforms (Stockbit, RTI Business, Invezgo, Sectors.app) already se
 | ID | Constraint | Consequence |
 |---|---|---|
 | C1 | **No paid data or API** (owner decision 2026-10-18) | **No stored daily prices.** So no price-based screener of our own, no computed returns, and no automatic check of thesis price levels. Prices, charts, price/fundamental screening and fundamentals *display* come from TradingView widgets, which are display-only (DATA-SOURCES S3) |
-| C2 | **No scraping or crawling** of any site whose terms forbid it, **except where the owner accepts the risk in a decision.** The IDX terms forbid it even for non-commercial use | The monthly >1% workbooks are **fetched automatically from idx.co.id once a day, by owner decision** (D-021): a breach of the IDX terms, accepted with its blocking risk to the shared host. The KSEI monthly holdings file is not fetched |
+| C2 | **No scraping or crawling** of any site whose terms forbid it, **except where the owner accepts the risk in a decision.** The IDX terms forbid it even for non-commercial use | The monthly >1% workbooks are **fetched automatically from idx.co.id once a day, by owner decision** (D-021): a breach of the IDX terms, accepted with its blocking risk to the shared host. Bank Indonesia's tables are exported automatically too (D-023), its terms being unknown. The KSEI monthly holdings file is not fetched |
 | C3 | **Every public figure has a source, an as-of date and a licence entry** in DATA-SOURCES.md | Data whose terms are unknown is not shown until it is cleared |
 | C4 | **Non-commercial until the §9 gate passes**: no ads, paywall, paid tier or sponsorship | Monetisation design waits until Phase 3 |
 | C5 | **No exchange trademarks** (IDX, BEI, KSEI) in the product name, logo or domain | Naming (D-009) |
@@ -80,7 +80,7 @@ Full terms, quotes and verification status are in [DATA-SOURCES.md](DATA-SOURCES
 | Local/foreign holdings by 9 investor types, month-end price, shares outstanding (about 3,750 rows/month, pipe-delimited text) | KSEI monthly download | **Not used until KSEI's terms are found** | Permission needed |
 | Prices, charts, fundamentals, profile, IDX screener, economic calendar, news | TradingView widgets (IDX end-of-day) | Allowed with TradingView attribution | Allowed with attribution (commercial clause to re-check) |
 | CPI, GDP and other official statistics | BPS website tables (not the Web API) | Allowed with citation [H] | Allowed with citation [H] |
-| BI-Rate, JISDOR, FX reserves | Bank Indonesia website | Show with citation [L] | Permission needed, or replace |
+| BI-Rate, JISDOR, FX reserves, inflation (BPS data) | Bank Indonesia website, exported automatically by owner decision (D-023) | Show with citation [L] | Permission needed, or replace |
 | Coal, palm oil, nickel, gold, other commodities (monthly) | World Bank Pink Sheet (CC BY 4.0) | Allowed with attribution [M] | Allowed with attribution [M] |
 | US rates and other global series | FRED (only series in the public domain) | Allowed [M] | Allowed per series [M] |
 
@@ -139,6 +139,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
   - each series shows source, release date, next release date and licence;
   - a series with no data shows an absent reason;
   - published values and our derived values (e.g. year-over-year) are labelled differently.
+  - **Met 2026-10-24** (M3, D-023): 13 series in three groups at `/macro`. Indonesia: BI-Rate, inflation, JISDOR and FX reserves from Bank Indonesia. Commodities: Brent, coal, palm oil, nickel, tin and gold from the World Bank Pink Sheet. Global: the US policy rate, the 10-year Treasury yield and the broad dollar from FRED. Each card shows the source with a link, the access date and licence, when Sigi first saw the latest value, and the next release as an expectation. A series with nothing published shows a typed reason. Values are marked "published" or "Sigi" (change and year on year). Each sector link has a written rationale, and IDX sector indices sit beside each group. BPS GDP is not in M3 (D-023).
 
 ### F7. Theses (written by the owner in the portfolio phase, as files in the repository)
 - **Format:** markdown body plus a structured header:
@@ -266,7 +267,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 |---|---|---|
 | M1 | F1 import pipeline + F10 data health + F2 ownership section + deploy skeleton. **Built 2026-10-22; deployed 2026-10-23** at https://sigi.ubaidillah.id (Dokploy) | 20 h |
 | M2 | F3 tracker + F4 holder explorer + F9 market page. **Deployed 2026-10-23.** Then, by owner decision on 2026-10-24, the S1 import was automated and the admin removed (D-021, D-022) | 15 h |
-| M3 | F6 macro dashboard | 12 h |
+| M3 | F6 macro dashboard. **Built and deployed 2026-10-24** (D-023) | 12 h |
 | M4 | F7 theses + condition evaluation | 10 h |
 | M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page | 8 h |
 | M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain | 10 h |
@@ -287,7 +288,7 @@ That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, r
 | R8 | Scope creep and a stalled second project | High | Phase gates, hour budgets, the kill rule in §11 |
 | R9 | The AI brief states something false or advice-like on a public page | Medium | Evidence-key validation, a recommendation-language check, the stale marker, the rejected-file notice; the owner can unpublish a brief with a commit and deploy |
 | R10 | The register omits large holders, so float estimates are overstated (2026-02-27 file: BBRI, BBNI, BBTN, ADHI and NCKL each miss a known controlling holder, while BMRI and TLKM list Danantara) | High | **Mitigated in M2:** a company whose holders above 1% total under 15% gets no float figure, is counted separately on every screen and page, and every such case so far is a known omission (D-019). An omission at a company that still lists more than 15% is not caught; re-check each new month with the low-total list |
-| R11 | idx.co.id or Cloudflare blocks the host's IP for scraping (D-021); the IP is shared with Sunrise, the indexer and the owner's other sites | High | One page view and at most one download per new file per day; failures are visible on `/data`. No fallback source carries holder names; a block stops new months until resolved. Accepted by the owner |
+| R11 | idx.co.id, Bank Indonesia or Cloudflare blocks the host's IP for scraping (D-021, D-023); the IP is shared with Sunrise, the indexer and the owner's other sites | High | One page view and at most one download per new file per day on idx.co.id; about ten requests a day to BI; failures are visible on `/data`. No fallback source carries holder names; a block stops new data from that source until resolved. Accepted by the owner |
 
 ## 13. Open questions
 

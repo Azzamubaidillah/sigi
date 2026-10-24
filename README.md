@@ -9,6 +9,7 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **M1** (deployed 2026-10-23): the monthly >1% holders import with validation gates and fail-closed publishing (PRD F1), data health and sources (F10), ownership per company (F2), and the Dokploy deployment.
 - **M2** (deployed 2026-10-23): the investability tracker against the 15% free-float rule (F3), the holder explorer for institutions (F4), and the market page with the ownership screen and TradingView widgets (F9).
 - **Automation** (2026-10-24): a worker fetches the monthly files from the exchange's site and imports them; there is no admin, upload or sign-in (D-021).
+- **M3** (deployed 2026-10-24): the macro dashboard (F6) at `/macro`, fed daily from Bank Indonesia, the World Bank Pink Sheet and FRED (D-023).
 
 | Doc | Purpose |
 |---|---|
@@ -25,21 +26,21 @@ Node 24, pnpm 10, and Google Chrome for the worker.
 pnpm install
 cp .env.example .env            # on macOS, set SIGI_CHROME_PATH to Chrome's binary
 node --env-file=.env --import tsx scripts/migrate.ts
-node --env-file=.env --import tsx scripts/worker.ts --once   # fetch and import every month listed
+node --env-file=.env --import tsx scripts/worker.ts --once   # check every feed once; or name feeds, e.g. --once fred-DGS10
 pnpm dev                        # http://127.0.0.1:3220
 ```
 
-The worker opens the exchange's [share-ownership data page](https://www.idx.co.id/id/perusahaan-tercatat/data-kepemilikan-saham/) in a real Chrome, lists the monthly files *Pemegang Saham di Atas 1%*, and downloads and imports each one it has not imported yet, oldest first. Without `--once` it repeats every `SIGI_FETCH_INTERVAL_HOURS` (24 by default). Each file gets one of three outcomes, all shown on `/data`:
+The worker opens the exchange's [share-ownership data page](https://www.idx.co.id/id/perusahaan-tercatat/data-kepemilikan-saham/) in a real Chrome, lists the monthly files *Pemegang Saham di Atas 1%*, and downloads and imports each one it has not imported yet, oldest first. It also checks the macro feeds over plain HTTP: four Bank Indonesia tables, the World Bank's monthly commodity workbook and three FRED series (D-023). Without `--once` it repeats every `SIGI_FETCH_INTERVAL_HOURS` (24 by default) per feed. Each file gets one of three outcomes, all shown on `/data`:
 
 - **published**, when no check fails; warnings (a few source rows whose shares do not add up, an unrecognised investor type, a big move in an issuer's holder count) are published with the file and listed;
 - **rejected**, with the reasons; the previous month stays live;
-- **no-op**, when the same file was imported before.
+- **no-op**, when the same file, or the same figures in new bytes, were imported before.
 
-The exchange's terms ask that its site not be scraped. Sigi fetches these files automatically anyway, by the owner's decision; DECISIONS D-021 records the risk.
+The exchange's terms ask that its site not be scraped, and Bank Indonesia publishes no terms. Sigi fetches from both automatically anyway, by the owner's decision; DECISIONS D-021 and D-023 record the risk.
 
 `pnpm verify` runs format, lint, types, tests and a production build. The tests include the rebuild check on synthetic files. To also test against the real files, set `SIGI_S1_REAL_DIR` to a directory holding `one-YYYY-MM-DD.xlsx` files. Real files are never committed, because they name individuals.
 
-`pnpm rebuild:check` re-derives every published month from its stored source file and compares content hashes.
+`pnpm rebuild:check` re-derives every published S1 month and macro series from its stored source file and compares content hashes.
 
 ## Deploy
 

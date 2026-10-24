@@ -1,6 +1,6 @@
 # Architecture (proposed)
 
-**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and nothing is uploaded; the admin area is gone (D-021). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and the macro series and nothing is uploaded; the admin area is gone (D-021). M3 (macro dashboard) is built (D-023). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
@@ -28,16 +28,16 @@ flowchart LR
     AG[Brief agent<br/>no shell, read/write allowlists]
   end
   subgraph Public sources
-    BPS[BPS website tables]
+    BI[Bank Indonesia tables<br/>ASP.NET exports]
     WB[World Bank Pink Sheet]
-    FRED[FRED public-domain series]
+    FRED[FRED Federal Reserve Board series]
   end
   TVW[TradingView widgets<br/>display only]
 
   IDX --> FW --> LZ --> PR --> ST --> G
   G -- pass or warn --> PUB
   G -- any fail --> X[Rejected with reasons<br/>shown on data health page]
-  BPS --> WK
+  BI --> WK
   WB --> WK
   FRED --> WK
   WK --> LZ
@@ -63,7 +63,7 @@ flowchart LR
 |---|---|---|
 | Ownership (S1) | ~7,200 | One row per issuer–holder pair |
 | KSEI composition (S2) | ~3,750 | One row per security; not fetched until cleared |
-| Macro observations | < 1,000 | About 30 series |
+| Macro observations | ~8,000 stored | 13 series, each replaced whole by its latest file (daily series hold three years, monthly ones from 2016, the Pink Sheet from 1960) |
 | Theses | Tens | Markdown plus typed conditions |
 
 That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (as in Sunrise) is enough for P1. Re-evaluate Postgres at P3, when reader accounts and concurrent writes arrive.
@@ -101,6 +101,8 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 6. **Publish:** unless a gate failed, swap staging into the published tables in one transaction, with an audit row. A re-issued month (a published record date under a new URL) replaces the old one.
 7. **Rebuild check (CI):** re-run 3–6 from the landing fixtures and compare content hashes.
 
+**Macro feeds (D-023):** eight files a day over plain HTTP, defined in `src/macro/feeds.ts` with the series registry in `src/macro/series.ts`: four Bank Indonesia exports (the ASP.NET form posted back with a date range and its export button), the World Bank's monthly workbook (found by its link on the commodity-markets page) and three FRED CSVs. Each is parsed (`src/macro/parse.ts`), gated and, unless a gate fails, replaces its series whole (`src/macro/import.ts`); a file whose figures equal what is published is a no-op. Nothing derived is stored: changes and year-on-year moves are computed by the view (`src/views/macro.ts`).
+
 **Processes:** `sigi-web` (Next.js; migrates at start) and `sigi-worker` (`scripts/worker.ts`; waits until the schema is current, so only one process migrates). The schedule lives in `fetch_runs`: the next check is due one interval after the last finished run, three hours after a failed one, so restarts neither skip nor repeat checks. Chrome runs with `--no-sandbox` because the container has no user namespaces; it only visits idx.co.id.
 
 ## 5. Pages (P1)
@@ -112,7 +114,7 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 | `/t/[code]` | Ticker page: free-float bound and rule status, holders, month-over-month changes (built; widget slots in M6) |
 | `/holders`, `/holders/[slug]` | Pages for corporate, fund and institution holders only (D-007, D-018; built, M2) |
 | `/privacy` | What the site and the TradingView widgets receive (built, M2) |
-| `/macro` | Indonesian macro dashboard with sector links |
+| `/macro` | Macro dashboard: a card per series with published and derived values, a year's chart, source, release dates and sector links; IDX sector indices beside each group (built, M3) |
 | `/theses`, `/theses/[slug]` | Theses, conditions-hit list, version history |
 | `/brief` | Today's brief, stale marker, rejected-file notice, inputs table (F12) |
 | `/data` | Data health: the worker's checks, imports, gate results with warnings, sources and licences |

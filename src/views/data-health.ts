@@ -1,6 +1,6 @@
 import { readDatabase } from "../db/read";
 import type { ImportOutcome } from "../db/schema";
-import type { GateVerdict } from "../ownership/gates";
+import type { GateVerdict } from "../imports/gate-result";
 import { loadLatestMonth, type PublishedMonth } from "./ownership";
 
 export interface GateRow {
@@ -61,30 +61,42 @@ export function loadImportRuns(
   );
 }
 
-export interface FetchRunRow {
-  id: number;
-  startedAt: number;
-  finishedAt: number;
-  outcome: "ok" | "failed";
-  listed: number;
-  fetched: number;
-  error: string | null;
+export interface FeedStatus {
+  feed: string;
+  /** The worker's latest check; null if the feed was never checked. */
+  last: {
+    startedAt: number;
+    outcome: "ok" | "failed";
+    listed: number;
+    fetched: number;
+    error: string | null;
+  } | null;
+  /** When a check last found something new and imported it. */
+  lastImportAt: number | null;
 }
 
-/** The worker's latest checks of the exchange's page, newest first. */
-export function loadFetchRuns(databasePath: string, limit = 10): FetchRunRow[] {
+/** The latest check of each feed, in the order given. */
+export function loadFeedStatus(
+  databasePath: string,
+  feeds: readonly string[],
+): FeedStatus[] {
   return (
-    readDatabase(
-      databasePath,
-      (sqlite) =>
-        sqlite
-          .prepare(
-            `SELECT id, started_at AS startedAt, finished_at AS finishedAt, outcome,
-                    listed, fetched, error
-               FROM fetch_runs ORDER BY id DESC LIMIT ?`,
-          )
-          .all(limit) as FetchRunRow[],
-    ) ?? []
+    readDatabase(databasePath, (sqlite) => {
+      const last = sqlite.prepare(
+        `SELECT started_at AS startedAt, outcome, listed, fetched, error
+           FROM fetch_runs WHERE feed = ? ORDER BY id DESC LIMIT 1`,
+      );
+      const lastImport = sqlite
+        .prepare(
+          "SELECT max(started_at) FROM fetch_runs WHERE feed = ? AND fetched > 0",
+        )
+        .pluck();
+      return feeds.map((feed) => ({
+        feed,
+        last: (last.get(feed) as FeedStatus["last"] | undefined) ?? null,
+        lastImportAt: (lastImport.get(feed) as number | null) ?? null,
+      }));
+    }) ?? feeds.map((feed) => ({ feed, last: null, lastImportAt: null }))
   );
 }
 

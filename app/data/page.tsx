@@ -4,12 +4,36 @@ import { GateList } from "@/app/_components/GateList";
 import { formatDate, formatMonth, formatTimestamp } from "@/app/_lib/format";
 import { loadConfig } from "@/src/config";
 import { S1_PAGE_URL } from "@/src/fetch/idx-listing";
+import { FEEDS, type FeedId, S1_FEED } from "@/src/macro/feeds";
 import { SOURCES, STATUS_LABELS } from "@/src/sources/register";
 import {
-  loadFetchRuns,
+  loadFeedStatus,
   loadImportRuns,
   loadS1Health,
 } from "@/src/views/data-health";
+import { formatPeriod } from "@/src/views/macro";
+
+const FEED_LIST = [S1_FEED, ...(Object.keys(FEEDS) as FeedId[])];
+
+function feedLabel(feed: string): {
+  title: string;
+  source: string;
+  url: string;
+} {
+  if (feed === S1_FEED) {
+    return {
+      title: "Holders above 1%, monthly files",
+      source: "S1",
+      url: S1_PAGE_URL,
+    };
+  }
+  const definition = FEEDS[feed as FeedId];
+  return {
+    title: definition.title,
+    source: definition.source,
+    url: definition.pageUrl,
+  };
+}
 
 export const metadata: Metadata = { title: "Data & sources" };
 
@@ -23,7 +47,7 @@ export default function DataPage() {
   const { databasePath } = loadConfig();
   const health = loadS1Health(databasePath);
   const runs = loadImportRuns(databasePath);
-  const fetches = loadFetchRuns(databasePath);
+  const feeds = loadFeedStatus(databasePath, FEED_LIST);
   return (
     <>
       <div className="page-header">
@@ -32,8 +56,8 @@ export default function DataPage() {
           Where every figure comes from, when it was last fetched, and what each
           import&apos;s checks found. Files are fetched and imported
           automatically; nobody reviews them by hand. A file that fails a check
-          is not published, and the previous month stays live. A file with a
-          warning is published, and the warning is shown here.
+          is not published, and what was published before stays live. A file
+          with a warning is published, and the warning is shown here.
         </p>
       </div>
 
@@ -77,48 +101,70 @@ export default function DataPage() {
       </section>
 
       <section className="panel">
-        <h2>Checks of the exchange&apos;s page</h2>
-        {fetches.length === 0 ? (
-          <p className="absent">The page has not been checked yet.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Checked</th>
-                  <th>Outcome</th>
-                  <th className="num">Files listed</th>
-                  <th className="num">Fetched</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fetches.map((fetch) => (
-                  <tr key={fetch.id}>
-                    <td>{formatTimestamp(fetch.startedAt)}</td>
+        <h2>Checks of each source</h2>
+        <div className="table-wrap">
+          <table className="data">
+            <thead>
+              <tr>
+                <th>Feed</th>
+                <th>Source</th>
+                <th>Last checked</th>
+                <th>Outcome</th>
+                <th>Last new data</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feeds.map((status) => {
+                const label = feedLabel(status.feed);
+                return (
+                  <tr key={status.feed}>
                     <td>
-                      {fetch.outcome === "ok" ? (
-                        "OK"
+                      <a href={label.url} rel="noreferrer">
+                        {label.title}
+                      </a>
+                    </td>
+                    <td className="mono">{label.source}</td>
+                    <td>
+                      {status.last
+                        ? formatTimestamp(status.last.startedAt)
+                        : "Not yet"}
+                    </td>
+                    <td>
+                      {!status.last ? (
+                        "—"
+                      ) : status.last.outcome === "ok" ? (
+                        status.last.fetched > 0 ? (
+                          `OK, ${status.last.fetched} imported`
+                        ) : (
+                          "OK, nothing new"
+                        )
                       ) : (
                         <span className="tone-negative">
-                          Failed: {fetch.error}
+                          Failed: {status.last.error}
                         </span>
                       )}
                     </td>
-                    <td className="num">{fetch.listed}</td>
-                    <td className="num">{fetch.fetched}</td>
+                    <td>
+                      {status.lastImportAt
+                        ? formatTimestamp(status.lastImportAt)
+                        : "—"}
+                    </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         <p className="citation">
-          A worker opens the exchange&apos;s{" "}
+          A worker checks every source once a day. The exchange&apos;s{" "}
           <a href={S1_PAGE_URL} rel="noreferrer">
             share-ownership data page
           </a>{" "}
-          once a day and imports every monthly file of holders above 1% it has
-          not imported yet, oldest first.
+          is read in a browser and every monthly file of holders above 1% not
+          yet imported is taken, oldest first (D-021). Bank Indonesia&apos;s
+          tables are exported as a reader would export them (D-023); the World
+          Bank and FRED files are downloaded as published. A failed check is
+          retried three hours later.
         </p>
       </section>
 
@@ -134,7 +180,7 @@ export default function DataPage() {
                   <th>Run</th>
                   <th>Imported</th>
                   <th>File</th>
-                  <th>Record date</th>
+                  <th>Latest period</th>
                   <th className="num">Rows</th>
                   <th>Outcome</th>
                   <th>Checks</th>
@@ -143,7 +189,9 @@ export default function DataPage() {
               <tbody>
                 {runs.map((run) => (
                   <tr key={run.id}>
-                    <td className="mono">#{run.id}</td>
+                    <td className="mono">
+                      #{run.id} {run.sourceId}
+                    </td>
                     <td>{formatTimestamp(run.startedAt)}</td>
                     <td>
                       <a href={run.sourceUrl} rel="noreferrer">
@@ -154,7 +202,9 @@ export default function DataPage() {
                         sha256 {run.sha256.slice(0, 12)}…
                       </span>
                     </td>
-                    <td>{run.recordDate ? formatDate(run.recordDate) : "—"}</td>
+                    <td>
+                      {run.recordDate ? formatPeriod(run.recordDate) : "—"}
+                    </td>
                     <td className="num">
                       {run.rowCount?.toLocaleString("en-US") ?? "—"}
                     </td>

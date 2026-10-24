@@ -402,6 +402,94 @@
     margin-top: 0.4rem;
   }
 
+  /* Macro dashboard: a card per series, sector-index widgets below. */
+  .macro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.9rem;
+  }
+
+  .macro-card {
+    display: grid;
+    gap: 0.45rem;
+    align-content: start;
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+    min-width: 0;
+  }
+
+  .macro-card h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .macro-value {
+    margin: 0;
+  }
+
+  .macro-value strong {
+    font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .macro-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: 0.35rem 0.75rem;
+    margin: 0;
+  }
+
+  .macro-facts dt {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .macro-facts dd {
+    margin: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sparkline {
+    width: 100%;
+    height: 64px;
+    stroke: var(--info);
+    stroke-width: 1.6;
+  }
+
+  .macro-range {
+    margin: 0;
+    font-size: 0.75rem;
+  }
+
+  .macro-card .citation {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+
+  .macro-card summary {
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .sector-links {
+    margin: 0.35rem 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.8rem;
+  }
+
+  .macro-indices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.9rem;
+    margin-top: 1rem;
+  }
+
   .prose p {
     margin: 0;
     max-width: 75ch;
@@ -429,5 +517,15 @@
 
   .badge.warn {
     color: var(--warning);
+  }
+
+  /* Macro values: as published by the source, or calculated by Sigi. */
+  .badge.published {
+    color: var(--info);
+    background: var(--info-soft);
+  }
+
+  .badge.derived {
+    color: var(--torch);
   }
 }

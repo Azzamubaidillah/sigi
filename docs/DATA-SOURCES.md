@@ -43,7 +43,7 @@ Status values:
 | Field | Value |
 |---|---|
 | Content | Embeddable charts, symbol overview, fundamentals, company profile, screener, heatmaps, economic calendar and top stories, using TradingView's licensed data |
-| IDX coverage | "IDX Indonesia Stock Exchange: EOD Stocks & Indices" ([available markets, Asia/Pacific](https://www.tradingview.com/widget-docs/markets/asia-pacific/)) [H]. **Verified 2026-10-23 in a browser:** the advanced chart renders `IDX:COMPOSITE` (IHSG), and the screener widget with `market: "indonesia"` lists 888 IDX stocks [H]. Sector index symbols are still to be verified (M3) |
+| IDX coverage | "IDX Indonesia Stock Exchange: EOD Stocks & Indices" ([available markets, Asia/Pacific](https://www.tradingview.com/widget-docs/markets/asia-pacific/)) [H]. **Verified 2026-10-23 in a browser:** the advanced chart renders `IDX:COMPOSITE` (IHSG), and the screener widget with `market: "indonesia"` lists 888 IDX stocks [H]. **Verified 2026-10-24:** the mini symbol overview renders the eight IDX-IC sector indices used on `/macro` (`IDX:IDXENERGY`, `IDXBASIC`, `IDXFINANCE`, `IDXPROPERT`, `IDXNONCYC`, `IDXTRANS`, `IDXINDUST`, `IDXINFRA`) [H] |
 | Terms | Free, with TradingView branding and attribution ([widgets](https://www.tradingview.com/widget/)) [M]. *"Widgets can only display data provided by TradingView, and we don't have an API for feeding your own data into them."* *"It is not possible to download or export data from TradingView."* ([data FAQ](https://www.tradingview.com/widget-docs/faq/data/)) [H]. Clicks can be redirected to our own ticker pages through the "full-size chart URL" setting ([general FAQ](https://www.tradingview.com/widget-docs/faq/general/)) [H]. The widgets set no cookies, but TradingView receives the embedding URL, widget type, symbol and visitor IP (same FAQ) [H]; this must be disclosed in our privacy notice |
 | Constraint | **Display only.** Nothing from a widget may be read, stored or used in our own calculations |
 | Status | **cleared** (both phases), with attribution unchanged; re-check the commercial clauses before P3 |
@@ -53,7 +53,7 @@ Status values:
 | Field | Value |
 |---|---|
 | Content | CPI, GDP, trade, and other official statistics; release calendar |
-| Access | Tables downloaded from the website at a polite cadence, matched to BPS's release calendar. **We don't use the BPS Web API** (S5) |
+| Access | **Not used yet** (D-023): the table pages render in the browser from server actions, and the site challenges the host's IP through Cloudflare (checked 2026-10-24). Inflation comes from Bank Indonesia's republication (S6). **We don't use the BPS Web API** (S5) |
 | Terms | *"The content available on this website is provided to you free of charge, worldwide, on a continuous and non-exclusive basis for the purposes of: (i) using the data for both commercial and non-commercial purposes; (ii) copying, distributing, and/or transmitting the content …"*, provided we *"provide proper citation or credit to BPS-Statistics Indonesia. The citation should include the title of the content, accessed date, the author (if applicable), and a direct link to the original content"* and make no implied endorsement. BPS may block anomalous access patterns. [bps.go.id/en/term-of-use](https://www.bps.go.id/en/term-of-use), read 2026-10-18 [H] |
 | Status | **cleared** (both phases), with citation |
 
@@ -66,16 +66,17 @@ The API licence is non-sublicensable and forbids selling or *seeking revenue* fr
 | Field | Value |
 |---|---|
 | Content | [BI-Rate](https://www.bi.go.id/id/statistik/indikator/bi-rate.aspx) (5.75% as of 2026-09-23), [JISDOR](https://www.bi.go.id/en/fungsi-utama/moneter/informasi-kurs/default.aspx) (published every business day), SEKI statistical tables |
-| Access | Manual or low-frequency download from the website; no official API was found |
+| Access | **Exported automatically once a day, by owner decision (D-023).** Each table page is an ASP.NET form; posting it back with a date range and the export button returns an Excel file: [BI-Rate](https://www.bi.go.id/id/statistik/indikator/bi-rate.aspx) (full history from April 2016), [Data Inflasi](https://www.bi.go.id/id/statistik/indikator/data-inflasi.aspx) (BPS CPI year on year, from January 2016), [JISDOR](https://www.bi.go.id/id/statistik/informasi-kurs/jisdor/default.aspx) (three years) and [Cadangan Devisa](https://www.bi.go.id/id/statistik/indikator/cadangan-devisa.aspx) (USD million, from January 2016). BI drops connections from clients without a browser user agent. Checked working from the host on 2026-10-24 [H]. No official API was found |
 | Terms | **No site-wide terms page found.** Some BI publications say *"Dilarang mengutip atau memperbanyak … tanpa izin tertulis dari Bank Indonesia"* (seen in individual PDFs) [M]. Whether this applies to statistical tables is unknown [L] |
-| Status | **Portfolio phase: cleared with citation [L]** (non-commercial factual statistics). **Product: needs written permission**, or replacement with permissively licensed equivalents |
+| Status | **Portfolio phase: cleared with citation [L]** (non-commercial factual statistics); the automated export is the owner's accepted risk (D-023, PRD R11). **Product: needs written permission**, or replacement with permissively licensed equivalents |
 
 ## S7. World Bank Commodity Price Data ("Pink Sheet")
 
 | Field | Value |
 |---|---|
 | Content | Monthly prices, including coal, palm oil, nickel and gold |
-| Terms | Creative Commons Attribution 4.0, with the World Bank Terms of Use for Datasets; attribution must be passed on with any redistribution [M] (stated in a third-party dataset's notice; to re-read on [the World Bank site](https://www.worldbank.org/en/research/commodity-markets) before P1 ships) |
+| Terms | Creative Commons Attribution 4.0: "License: Creative Commons Attribution 4.0" on the World Bank data catalog's [Commodity Prices - History and Projections](https://datacatalog.worldbank.org/search/dataset/0038238/commodity-prices-history-and-projections), read 2026-10-24 [H]. Prices are updated on the second business day of each month (same page) [H] |
+| Access | The monthly workbook (`CMO-Historical-Data-Monthly.xlsx`, sheet "Monthly Prices"), found by its link on the [commodity-markets page](https://www.worldbank.org/en/research/commodity-markets) and downloaded once a day; the link changes each year [H] |
 | Status | **cleared** (both phases), with attribution |
 
 ## S8. FRED (Federal Reserve Bank of St. Louis)
@@ -84,6 +85,8 @@ The API licence is non-sublicensable and forbids selling or *seeking revenue* fr
 |---|---|
 | Content | Global series, e.g. US policy rate and Treasury yields |
 | Terms | Free API key; series from third parties keep their own copyright and may carry redistribution limits ([API terms](https://fred.stlouisfed.org/docs/api/terms_of_use.html), via [summary](https://freeapihub.com/apis/fred-api)) [M] |
+| Access | `fredgraph.csv?id=<ID>`, one series per request (several at once come back as a ZIP grouped by frequency), once a day, under Sigi's own user agent [H] |
+| Series in use | DFEDTARU, DGS10, DTWEXBGS: source "Board of Governors of the Federal Reserve System (US)"; their series notes carry no copyright statement, unlike third-party series, read 2026-10-24 [M] |
 | Status | **cleared per series.** Only use series whose source note shows public-domain origin (e.g. Federal Reserve Board, US Treasury); record each series' licence in the registry |
 
 ## S9. IMF data
@@ -103,10 +106,10 @@ Commercial reuse requires permission (*"For any potential commercial reuse of IM
 
 | Source | Reason |
 |---|---|
-| Automated access to idx.co.id (prices, disclosures, XBRL) | Terms forbid scraping or crawling, even for non-commercial use (S1 quote) |
+| Automated access to idx.co.id beyond the S1 files (prices, disclosures, XBRL) | Terms forbid scraping or crawling, even for non-commercial use (S1 quote). The S1 files are the one exception, by owner decision (D-021) |
 | IDX Data Services licences, Sectors.app, Invezgo, EODHD and other paid feeds | Owner decision: no paid data (PRD C1). For reference, IDX end-of-day licences start at Rp2.3M/month plus a deposit of 300% of the fee (IDX pricelist, May 2026) |
 | Yahoo Finance (unofficial endpoints) | No official public API; its terms are understood to limit use to personal use [L], not re-read on 2026-10-18 |
-| Any dataset obtained by scraping, or under terms that forbid this use | C2 |
+| Any dataset obtained by scraping, or under terms that forbid this use | C2, except where the owner decided otherwise: S1 (D-021) and S6 (D-023) |
 
 ## Review cadence
 

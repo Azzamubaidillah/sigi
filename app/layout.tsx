@@ -33,8 +33,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               Sigi is a research site, not investment advice. Ownership figures
               come from the monthly register of holders above 1% published by PT
               Bursa Efek Indonesia with data from PT Kustodian Sentral Efek
-              Indonesia; see <Link href="/data">Data &amp; sources</Link> for
-              every source and its terms, and the{" "}
+              Indonesia; macro figures from Bank Indonesia, the World Bank and
+              FRED. See <Link href="/data">Data &amp; sources</Link> for every
+              source and its terms, and the{" "}
               <Link href="/privacy">privacy notice</Link>. Charts and the price
               screener are TradingView widgets.
             </p>

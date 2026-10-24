@@ -1,4 +1,10 @@
-import { strToU8, zipSync } from "fflate";
+import {
+  cellXml as plainCellXml,
+  columnLetters,
+  excelSerial,
+  type FixtureCell,
+  zipWorkbook,
+} from "../imports/xlsx-fixture";
 
 /**
  * Builds a synthetic workbook in the layout of the exchange's >1% holders
@@ -45,33 +51,11 @@ export interface FixtureOptions {
   residueBelow?: number;
 }
 
-function serial(isoDate: string): number {
-  return Math.round(
-    (Date.parse(`${isoDate}T00:00:00Z`) - Date.UTC(1899, 11, 30)) / 86_400_000,
-  );
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-const COLUMNS = "ABCDEFGHIJKLM";
-
-function cellXml(
-  column: number,
-  row: number,
-  value: string | number | null | undefined,
-): string {
-  const ref = `${COLUMNS[column - 1]}${row}`;
-  if (value === undefined || value === null) return `<c r="${ref}" s="1"/>`;
-  if (typeof value === "number") return `<c r="${ref}"><v>${value}</v></c>`;
-  // Excel turns a typed TRUE into a boolean, and the real files carry the
-  // ticker TRUE that way.
-  if (value === "TRUE") return `<c r="${ref}" t="b"><v>1</v></c>`;
-  return `<c r="${ref}" t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`;
+/** As the shared fixture cell, except the ticker TRUE, which Excel stores as a boolean. */
+function cellXml(column: number, row: number, value: FixtureCell): string {
+  if (value === "TRUE")
+    return `<c r="${columnLetters(column)}${row}" t="b"><v>1</v></c>`;
+  return plainCellXml(column, row, value);
 }
 
 export function buildS1Workbook(
@@ -100,7 +84,7 @@ export function buildS1Workbook(
     ...rows.map((row, index) => {
       const r = index + 7;
       const values: (string | number | null | undefined)[] = [
-        serial(row.date ?? options.recordDate),
+        excelSerial(row.date ?? options.recordDate),
         row.shareCode,
         row.issuerName,
         row.investorName,
@@ -121,24 +105,7 @@ export function buildS1Workbook(
       return `<row r="${r}"><c r="O${r}" t="e"><f>(K${r}/L${r})*100</f><v>#DIV/0!</v></c></row>`;
     }),
   ];
-  const ns =
-    'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
-  const relNs =
-    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
-  return zipSync({
-    "[Content_Types].xml": strToU8(
-      '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>',
-    ),
-    "xl/workbook.xml": strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><workbook ${ns} ${relNs}><sheets><sheet name="Data" sheetId="1" r:id="rId1"/></sheets></workbook>`,
-    ),
-    "xl/_rels/workbook.xml.rels": strToU8(
-      '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
-    ),
-    "xl/worksheets/sheet1.xml": strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><worksheet ${ns}><sheetData>${sheetRows.join("")}</sheetData></worksheet>`,
-    ),
-  });
+  return zipWorkbook([{ name: "Data", rowsXml: sheetRows }]);
 }
 
 /**

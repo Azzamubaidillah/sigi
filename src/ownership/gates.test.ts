@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { type GateResult, outcomeOf } from "../imports/gate-result";
 import {
-  type GateResult,
   type GateInput,
   HOLDER_COUNT_MAX_CHANGE,
-  outcomeOf,
   recordDateGate,
   runGates,
   SHARES_MISMATCH_LIMIT,

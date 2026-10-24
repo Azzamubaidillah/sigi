@@ -16,6 +16,7 @@ import {
   type ListedFile,
   S1_PAGE_URL,
 } from "./idx-listing";
+import { isCompleteZip } from "./zip";
 
 /**
  * idx.co.id sits behind Cloudflare, which refuses plain HTTP clients and
@@ -111,23 +112,6 @@ async function passChallenge(
     await sleep(500);
   }
   logger.debug({ what, afterMs: Date.now() - started }, "through");
-}
-
-/** A ZIP ends with its end-of-central-directory record; a cut-off file does not. */
-function isCompleteZip(bytes: Uint8Array): boolean {
-  if (bytes.length < 22 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) return false;
-  const tail = Math.max(0, bytes.length - 22 - 0xffff);
-  for (let i = bytes.length - 22; i >= tail; i--) {
-    if (
-      bytes[i] === 0x50 &&
-      bytes[i + 1] === 0x4b &&
-      bytes[i + 2] === 0x05 &&
-      bytes[i + 3] === 0x06
-    ) {
-      return true;
-    }
-  }
-  return false;
 }
 
 /** Opens `url` in a tab and returns the file Chrome downloads from it. */
