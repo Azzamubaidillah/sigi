@@ -130,6 +130,14 @@ Each entry records context, the decision and its consequences. Newest last. Owne
 
 2,784 institutional holders have pages; 2,364 holders (individuals or unclassified) do not.
 
+**Evidence, all eight months (2026-10-25):** the files from 2026-02-27 to 2026-09-30 gave 268 further candidate groups, and 261 rows were added under the same rule. The canonical spelling is an existing canonical if there is one, otherwise the spelling that starts with "PT", then one that contains "PT", then the most published. In no group did one spelling say local and another foreign, and none mixed individuals with institutions. 16 groups keep a spelling outside the rule:
+- 10 individuals, where a title moves or the name order changes (for example "LO KHENG HONG DRS" and "DRS LO KHENG HONG");
+- 2 with a different word order, for example "PT TRIPLE BERSAMA BERKAH" (its other two spellings were merged);
+- 2 that differ in "LIMITED" and "LTD";
+- 2 with a word added: "PENTA COSMOPOLITAN CORPORATION PT" and "MAYAPADA KARUNIA CORPORATION PT".
+
+Merges also change who has a page. A holder whose spellings appear in the same month counts once. A merged holder with a row of no type in any month fails the page rule (C6, fail-closed), even if its other spelling had a page. On 2026-09-30 the counts move from 2,506 holders with pages and 2,642 without to 2,487 and 2,657.
+
 ## D-019. A register listing under 15% above 1% gets no float figure (2026-10-23)
 **Context:** in the 2026-02-27 file, five companies' holders above 1% total under 15%: BBRI 5.86%, ADHI 7.37%, BBNI 7.95%, BBTN 9.98% and NCKL 12.03%. Each is missing a known controlling holder: the state or Danantara for the first four, and Harita for NCKL, listed at 3.16%. Their "bound" would be about 100%.
 **Decision:** such a company is marked "register incomplete". It gets no float figure, it is excluded from float screens and counts with the reason stated, and it is listed separately on the investability page. This is a rule, not a hand-kept list, so a new month is checked the same way.

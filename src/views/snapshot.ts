@@ -10,7 +10,7 @@ export interface PublishedMonth {
   rowCount: number;
   issuerCount: number;
   holderCount: number;
-  /** Where and when the owner downloaded the file, for the citation (S1). */
+  /** Where and when the worker downloaded the file, for the citation (S1). */
   sourceUrl: string;
   accessedOn: string;
 }
