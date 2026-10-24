@@ -111,14 +111,15 @@ deploy_app "$SIGI_DOKPLOY_APP" web
 
 # The new container migrates before it listens; give it two minutes.
 echo "==> checking $SIGI_PUBLIC_URL"
+PAGES="/ /data /investability /holders /macro /theses"
 round() {
-  for path in / /data /investability /holders; do
+  for path in $PAGES; do
     curl -s -o /dev/null -w "$path %{http_code}  " "$SIGI_PUBLIC_URL$path"
   done
 }
 attempt=0
 codes=$(round)
-while [ "$(printf '%s' "$codes" | grep -o ' 200 ' | wc -l | tr -d ' ')" != 4 ]; do
+while [ "$(printf '%s' "$codes" | grep -o ' 200 ' | wc -l | tr -d ' ')" != "$(echo $PAGES | wc -w | tr -d ' ')" ]; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 24 ]; then
     echo "pages did not all answer 200 within two minutes: $codes" >&2
