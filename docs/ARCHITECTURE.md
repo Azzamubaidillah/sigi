@@ -210,28 +210,31 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
   - absolute home-directory paths.
 - Any hit stops the copy until it is explained or removed.
 
-## 8. Daily brief pipeline (D-012, PRD F12)
+## 8. Daily brief pipeline (D-012, D-025, PRD F12)
 
-It works the same way as Sunrise's brief, with the public-site changes marked **Sigi**.
+It works the same way as Sunrise's brief, with the public-site changes marked **Sigi**. Built in M5.
 
-1. **Schedule:** a host cron entry runs the runner every hour. The runner acts only in its configured UTC hour; 23:00 UTC is 06:00 WIB, before the 09:00 WIB market open. A lock file prevents overlapping runs. The log is size-capped. If the agent credential is missing, the run is skipped and the skip is logged.
+1. **Schedule:** `scripts/install-brief-schedule.sh` puts one host cron line, hourly at :10, that runs `/opt/sigi-brief/brief-run.sh`. The runner acts only in the 06:00 hour in Jakarta (`TZ=Asia/Jakarta`, so the host's own zone does not matter), before the 09:00 WIB market open. A lock file prevents overlapping runs. The log is size-capped. If the agent credential is missing, the run is skipped and the skip is logged. **Sigi:** the run's date is the Jakarta date, and it is the analysis file's name and the context's `today`.
 2. **Export:**
-   - `scripts/brief-context.ts` runs in a throwaway container of the deployed worker image, with **no network** and read-only access to the database.
-   - It writes `brief/context/<date>.json`: every reading with `asOf`, `source`, evidence status and a `key` per citable item (e.g. `own:<CODE>:<YYYY-MM>`, `float:<CODE>`, `macro:<series>:<date>`, `thesis:<slug>`, `event:<id>`), plus an `absent` list.
-   - **Sigi:** individual holders are excluded at export time.
+   - `scripts/brief-context.ts` runs in a throwaway container of the deployed worker image, with **no network** and the data directory mounted read-only.
+   - It writes `context/<date>.json`: every reading with `asOf`, `source`, evidence status and a `key` per citable item (`own:<CODE>`, `float:<CODE>`, `macro:<series>:<period>`, `cond:<thesis>:<n>`, `event:<date>:<n>`, `health:<feed>`, `news:<id>`), plus an `absent` list. It validates its own output before printing.
+   - **Sigi:** individual holders from the register are never in the context: only holders that may have a page (institutions, C6) are named, and the rest of the moves are counted. Headlines and theses are text from other sources and are not scrubbed; the prompt tells the agent to leave out personal names.
+   - The theses are files in the image, so the runner copies them out to `theses/` for the agent each day.
 3. **Agent:**
-   - The coding agent runs headless as an unprivileged user.
+   - The coding agent runs headless as the unprivileged user `sunrise-agent` (the user and subscription Sunrise's brief uses), with `--restricted` (no shell).
    - It may read: the context, yesterday's analysis, the theses.
    - It may use web search and fetch.
-   - It may write: only `brief/analysis/<date>.json`.
-   - It is denied: the shell, the database, the env files, the home directories, and edits anywhere else.
+   - It may write: only `analysis/<date>.json`.
+   - It is denied: the shell, `/opt/sigi` (the database, the landing store, the env file), the home directories, Sunrise's directory, and edits anywhere else.
    - The prompt is a versioned file in the repo.
    - **Sigi:** the prompt states the public-site rules (no advice, no prices, targets or sizes, links rather than quotes, no individuals).
-4. **Validate (web):**
-   - A Zod schema checks the analysis.
-   - Its date must match the file name, and its `contextGeneratedAt` must match the context file.
+4. **Where the files live:** `/opt/sigi-brief/{context,analysis,theses,logs}` on the host, outside `/opt/sigi` (mode 700), so the agent cannot reach the database. The web container sees the first three at `/opt/sigi/data/brief` through one bind mount, set once in Dokploy.
+5. **Validate (web):**
+   - A Zod schema checks the analysis: strict objects, so an extra field such as a target price is refused; stance, headline, "look at" items, changes, risks, set-aside and sources, each with length caps.
+   - Its date must match the file name and its context's `today`, and its `contextGeneratedAt` must match the context file.
    - Every evidence key must exist in that context.
-   - The size cap applies.
-   - **Sigi:** a recommendation-language check runs, with a documented word list and its stated limits.
-   - The newest valid analysis is shown. A newer invalid file is named, with its reasons. A brief older than 30 h is marked stale.
-5. **Unpublish:** the owner can hide a brief with a commit and deploy (there is no admin page), and the page records the reason. This is the manual backstop for PRD R9.
+   - The size cap applies (512 KiB).
+   - **Sigi:** a recommendation-language check runs on every text field (`src/safety/recommendation.ts`: ratings, targets and a sentence opening with buy, sell or hold, in English and Indonesian). Its limit: it is a word list, so it catches wording, not meaning; the prompt and the not-advice notice carry the rest.
+   - The newest valid analysis is shown. A newer invalid file is named, with its reason. A brief older than 30 h is marked stale.
+   - The validator cannot check that a figure not in the context has a source, or that no article text was quoted; the prompt requires both.
+6. **Unpublish:** the owner can hide a brief with a commit and deploy (there is no admin page): add its date and a reason to `src/brief/unpublished.ts`, and the page shows the reason in its place. This is the manual backstop for PRD R9.

@@ -87,7 +87,7 @@ fi
 rm -rf "$THESES_DIR"
 mkdir -p "$THESES_DIR"
 if ! docker run --rm --network none --entrypoint sh "$IMAGE" \
-  -c 'cd /opt/sigi && if [ -d theses ]; then tar -cf - theses; fi' \
+  -c 'cd /opt/sigi && if [ -d theses ]; then tar -cf - theses; else tar -cf - -T /dev/null; fi' \
   | tar -xf - -C "$BASE" 2>> "$LOG"; then
   echo "$(stamp) brief: could not copy the theses out of the image" >> "$LOG"
 fi
