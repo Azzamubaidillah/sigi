@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.8, 2026-10-25. **Status:** P1 started 2026-10-22; M1 to M5 deployed; every import runs unattended (§11, D-021, D-023, D-024, D-025). **Owner:** Azzam Ubaidillah.
+**Version:** 0.9, 2026-10-25. **Status:** P1 started 2026-10-22; M1 to M6 built and deployed; the public launch (search engines allowed) waits for the owner, and §10's three theses are not yet written (§11, D-021, D-023 to D-026). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -165,7 +165,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 - **Our sections:** ownership (F2), float and tranche (F3), local/foreign (F5 when cleared), theses that mention the ticker (F7), events (float deadline, MSCI dates).
 - **TradingView sections,** visually separated and labelled "Data by TradingView": advanced chart, fundamentals, company profile, top stories.
 - The ticker list comes from our imports (issuer codes and names in the ownership files), not from scraping.
-- **Acceptance:** with any one source missing, the page still renders, and each missing section shows its absent reason.
+- **Acceptance:** with any one source missing, the page still renders, and each missing section shows its absent reason. **Met 2026-10-25** (M6, D-026), with one limit: the TradingView sections load in the visitor's browser and cannot say why they are blank if TradingView does not answer. Each section stands alone: a code that is not in the register shows its absent reason in the ownership section and still shows the dates, the theses and the TradingView sections. The page now has Sigi's sections (ownership and float, holders, changes, dates to watch, theses) and then, apart and labelled "Data by TradingView", the chart, fundamentals, company profile and top stories for `IDX:<CODE>`; all four render on production.
 
 ### F9. Market page
 - The IHSG chart (TradingView advanced chart, `IDX:COMPOSITE`), labelled as third-party. Sector index charts are deferred to the macro dashboard (M3), where each sector sits beside the series linked to it.
@@ -181,6 +181,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 
 ### F11. Bilingual UI
 - English and Indonesian copy for every page. The data tables keep source spellings.
+- **Acceptance:** every page, title, label, notice and TradingView widget is available in both languages; the language follows a cookie set by the masthead links, else the browser's Accept-Language. **Met 2026-10-25** (M6, D-026). Numbers and dates are written the way each language writes them. Left in English on purpose: the worker's stored explanations, the thesis texts, and the daily brief's content, which the Indonesian brief page says. The Indonesian copy has had no native-speaker review.
 
 ### F12. Daily brief (Sunrise's mechanism, adapted for a public site)
 - **Question it answers:** "What changed in the data Sigi tracks, and what is worth a closer look?" It is *not* "what should I do".
@@ -272,7 +273,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 | M3 | F6 macro dashboard. **Built and deployed 2026-10-24** (D-023) | 12 h |
 | M4 | F7 theses + condition evaluation. **Built and deployed 2026-10-25** (D-024); the theses themselves are the owner's to write | 10 h |
 | M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page. **Built and deployed 2026-10-25** (D-025) | 8 h |
-| M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain | 10 h |
+| M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain. **Built and deployed 2026-10-25** (D-026): 133 Playwright specs and Lighthouse accessibility 100 on 120 runs; the launch itself (removing the nginx `noindex` line) is the owner's call | 10 h |
 
 That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, re-estimate everything before continuing. **Start date:** 2026-10-22 (owner: "start now").
 
@@ -304,4 +305,4 @@ Resolved by the owner on 2026-10-19:
 | Q4, permission emails | Not now | D-013 |
 | Q5, hosting | A subdomain of the owner's site | D-014 |
 
-Start date: 2026-10-22. Subdomain: `sigi.ubaidillah.id` (DNS added by the owner, 2026-10-23). Production is kept out of search engines (`X-Robots-Tag: noindex`) until the M6 launch.
+Start date: 2026-10-22. Subdomain: `sigi.ubaidillah.id` (DNS added by the owner, 2026-10-23). Production is kept out of search engines (`X-Robots-Tag: noindex`) until the M6 launch, which is one change: remove that line from the site's nginx server block and reload nginx (D-026). Of §10's P1-exit coverage, two items are met (an ownership page for every issuer; 8 published months) and two are not: three published theses (the owner writes them) and at least 5 macro series per group (there are 13 in groups of 4, 6 and 3, so Indonesia and Global are short).

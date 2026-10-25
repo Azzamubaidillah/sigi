@@ -12,6 +12,7 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **M3** (deployed 2026-10-24): the macro dashboard (F6) at `/macro`, fed daily from Bank Indonesia, the World Bank Pink Sheet and FRED (D-023).
 - **M4** (deployed 2026-10-25): theses (F7) at `/theses`, files in `theses/` with typed invalidation conditions that the worker checks daily (D-024).
 - **M5** (deployed 2026-10-25): the daily brief (F12) at `/brief`: an agent reads Sigi's own readings each morning and writes one file that the page validates before showing (D-025).
+- **M6** (deployed 2026-10-25): the company page with its dates and TradingView sections (F8), English and Indonesian on every page (F11, D-026), Playwright and Lighthouse checks in CI. The site is public but asks search engines not to index it: the launch is removing the `X-Robots-Tag: noindex, nofollow` line from the site's nginx server block and reloading nginx.
 
 | Doc | Purpose |
 |---|---|

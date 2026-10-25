@@ -1,6 +1,6 @@
 # Architecture (proposed)
 
-**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and the macro series and nothing is uploaded; the admin area is gone (D-021). M3 (macro dashboard) is built (D-023), and so are M4 (theses with conditions the worker checks daily, D-024) and M5 (the daily brief, D-025). M6 (ticker page, bilingual, tests, launch) is the rest of the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and the macro series and nothing is uploaded; the admin area is gone (D-021). M3 (macro dashboard) is built (D-023), and so are M4 (theses with conditions the worker checks daily, D-024), M5 (the daily brief, D-025) and M6 (ticker page, English and Indonesian, Playwright and Lighthouse, D-026). The one step left is the public launch, which is the owner's call. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
@@ -111,13 +111,15 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 |---|---|
 | `/` | Market page: IHSG chart and IDX screener (TradingView widgets); the ownership screen with URL filters (built, M2) |
 | `/investability` | Sigi's count against the exchange's, bands of the float bound, companies certainly below 15% with possible deadlines, timeline, methodology (built, M2) |
-| `/t/[code]` | Ticker page: free-float bound and rule status, holders, month-over-month changes (built; widget slots in M6) |
+| `/t/[code]` | Ticker page: free-float bound and rule status, holders, month-over-month changes, rule and index dates, theses naming the code, then apart and labelled "Data by TradingView" the chart, fundamentals, profile and top stories (built, M2 and M6) |
 | `/holders`, `/holders/[slug]` | Pages for corporate, fund and institution holders only (D-007, D-018; built, M2) |
 | `/privacy` | What the site and the TradingView widgets receive (built, M2) |
 | `/macro` | Macro dashboard: a card per series with published and derived values, a year's chart, source, release dates and sector links; IDX sector indices beside each group (built, M3) |
-| `/theses`, `/theses/[slug]` | Theses, conditions-hit list, version history |
-| `/brief` | Today's brief, stale marker, rejected-file notice, inputs table (F12) |
+| `/theses`, `/theses/[slug]` | Theses, conditions-hit list, version history (built, M4) |
+| `/brief` | Today's brief, stale marker, rejected-file notice, inputs table (built, M5; F12) |
 | `/data` | Data health: the worker's checks, imports, gate results with warnings, sources and licences |
+| `/lang` | Sets the language cookie and redirects back (GET only; built, M6, D-026) |
+| `/robots.txt`, `/sitemap.xml` | Crawler rules and the page list (built, M6) |
 
 ## 6. Testing
 
