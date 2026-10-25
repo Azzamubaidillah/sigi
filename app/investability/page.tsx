@@ -3,8 +3,12 @@ import Link from "next/link";
 
 import { S1Citation } from "@/app/_components/Citation";
 import { formatDate, formatPercent } from "@/app/_lib/format";
+import { getLang } from "@/app/_lib/lang";
 import { possibleDeadlines, trancheDeadlines } from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
+import { localise } from "@/src/i18n/define";
+import { commonMessages } from "@/src/i18n/messages/common";
+import { investabilityMessages } from "@/src/i18n/messages/investability";
 import {
   RULE_SOURCES,
   TIMELINE,
@@ -13,126 +17,132 @@ import {
 } from "@/src/investability/rule";
 import { loadInvestability } from "@/src/views/investability";
 
-export const metadata: Metadata = { title: "Investability" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: investabilityMessages[await getLang()].metaTitle };
+}
 
 function Source({
   url,
   publisher,
   kind,
+  pressReport,
 }: {
   url: string;
   publisher: string;
   kind: string;
+  pressReport: string;
 }) {
   return (
     <a href={url} rel="noreferrer">
       {publisher}
-      {kind === "secondary" ? " (press report)" : ""}
+      {kind === "secondary" ? pressReport : ""}
     </a>
   );
 }
 
-export default function InvestabilityPage() {
+export default async function InvestabilityPage() {
+  const lang = await getLang();
+  const m = investabilityMessages[lang];
   const view = loadInvestability(loadConfig().databasePath);
   const today = new Date().toISOString().slice(0, 10);
   return (
     <>
       <div className="page-header">
-        <h1>Investability: the 15% free-float rule</h1>
-        <p className="lede">
-          The exchange&apos;s minimum free float rose to 15% on 31 March 2026,
-          with staged deadlines to 2029, while MSCI weighs moving Indonesia to
-          Standalone status. This page counts which companies the monthly
-          register shows below the line. It is Sigi&apos;s estimate, never the
-          official count, which is shown beside it.
-        </p>
+        <h1>{m.title}</h1>
+        <p className="lede">{m.lede}</p>
       </div>
 
       {view.kind === "absent" ? (
         <section className="panel">
           <p className="absent">
-            No month of the &gt;1% register has been published yet.
+            {commonMessages[lang].ownershipAbsence.no_published_month}
           </p>
         </section>
       ) : (
         <>
           <section className="panel">
-            <h2>Below 15%: Sigi&apos;s count and the exchange&apos;s</h2>
+            <h2>{m.counts.heading}</h2>
             <dl className="figures">
               <div>
                 <dt>
-                  Sigi, {formatDate(view.month.recordDate)}: certainly below 15%
+                  {m.counts.sigi(formatDate(view.month.recordDate, lang))}
                 </dt>
                 <dd>{view.belowMinimum.length}</dd>
               </div>
               <div>
                 <dt>
-                  Exchange, {formatDate(view.official.asOf)} (nearest to
-                  Sigi&apos;s month)
+                  {m.counts.exchangeNearest(
+                    formatDate(view.official.asOf, lang),
+                  )}
                 </dt>
                 <dd>
                   {view.official.belowMinimum}
-                  {view.official.listed ? ` of ${view.official.listed}` : ""}
+                  {view.official.listed
+                    ? m.counts.ofListed(view.official.listed)
+                    : ""}
                 </dd>
               </div>
               {view.latestOfficial !== view.official ? (
                 <div>
                   <dt>
-                    Exchange, {formatDate(view.latestOfficial.asOf)} (latest
-                    reported)
+                    {m.counts.exchangeLatest(
+                      formatDate(view.latestOfficial.asOf, lang),
+                    )}
                   </dt>
                   <dd>
                     {view.latestOfficial.belowMinimum}
                     {view.latestOfficial.listed
-                      ? ` of ${view.latestOfficial.listed}`
+                      ? m.counts.ofListed(view.latestOfficial.listed)
                       : ""}
                   </dd>
                 </div>
               ) : null}
               <div>
-                <dt>Companies with no float figure (register incomplete)</dt>
+                <dt>{m.counts.incomplete}</dt>
                 <dd>{view.incomplete.length}</dd>
               </div>
             </dl>
             <p className="citation">
-              Sigi counts a company only when even its upper bound is under 15%,
-              so its count is a floor: the exchange also removes affiliates,
-              insiders, treasury and locked-up shares below 5%, which the
-              register cannot see. The exchange counts all listed companies from
-              its own records, so the gap is the definition, the date and the
-              source together. Exchange figures as reported by{" "}
-              <Source {...view.official.source} />
+              {m.counts.citation}
+              <Source {...view.official.source} pressReport={m.pressReport} />
               {view.official !== view.latestOfficial ? (
                 <>
-                  {" "}
-                  and <Source {...view.latestOfficial.source} />
+                  {m.counts.and}
+                  <Source
+                    {...view.latestOfficial.source}
+                    pressReport={m.pressReport}
+                  />
                 </>
               ) : null}
-              .
+              {m.counts.end}
             </p>
           </section>
 
           <section className="panel">
-            <h2>Companies by free-float bound</h2>
+            <h2>{m.bands.heading}</h2>
             <div className="table-wrap">
               <table className="data">
                 <thead>
                   <tr>
-                    <th>Upper bound on free float</th>
-                    <th className="num">Companies</th>
+                    <th scope="col">{m.bands.bound}</th>
+                    <th scope="col" className="num">
+                      {m.bands.companies}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {view.bands.map((band) => (
                     <tr key={band.id}>
                       <td>
-                        <Link href={`/?${band.screenQuery}`}>{band.label}</Link>
+                        <Link href={`/?${band.screenQuery}`}>
+                          {m.bands.labels[band.id]}
+                        </Link>
                       </td>
                       <td className="num">{band.count}</td>
                     </tr>
                   ))}
                   <tr>
-                    <td>No figure: register incomplete</td>
+                    <td>{m.bands.noFigure}</td>
                     <td className="num">{view.incomplete.length}</td>
                   </tr>
                 </tbody>
@@ -140,34 +150,41 @@ export default function InvestabilityPage() {
             </div>
             {view.incomplete.length > 0 ? (
               <p className="citation">
-                Register incomplete (
-                {view.incomplete.map((c) => c.shareCode).join(", ")}): holders
-                above 1% total under 15%, and in every such case checked a known
-                controlling holder is missing from the file.
+                {m.bands.incompleteBefore}
+                {view.incomplete.map((c) => c.shareCode).join(", ")}
+                {m.bands.incompleteAfter}
               </p>
             ) : null}
-            <S1Citation month={view.month} />
+            <S1Citation month={view.month} lang={lang} />
           </section>
 
           <section className="panel">
-            <h2>Certainly below 15% ({view.belowMinimum.length})</h2>
+            <h2>{m.below.heading(view.belowMinimum.length)}</h2>
             <p className="muted">
-              The deadline depends on market capitalisation, which Sigi does not
-              have (it stores no prices), so each company shows the tranches
-              still possible given its bound.
+              {m.below.intro}
               {view.previous
-                ? ` Since ${formatDate(view.previous.recordDate)}: ${view.crossedUp.length} rose above 15% (${view.crossedUp.join(", ") || "none"}), ${view.crossedDown.length} fell below (${view.crossedDown.join(", ") || "none"}).`
-                : " No earlier month is published, so there is no movement to show yet."}
+                ? m.below.moved(
+                    formatDate(view.previous.recordDate, lang),
+                    view.crossedUp.length,
+                    view.crossedUp.join(", ") || m.below.none,
+                    view.crossedDown.length,
+                    view.crossedDown.join(", ") || m.below.none,
+                  )
+                : m.below.noPrevious}
             </p>
             <div className="table-wrap">
               <table className="data">
                 <thead>
                   <tr>
-                    <th>Code</th>
-                    <th>Company</th>
-                    <th className="num">Bound</th>
-                    <th className="num">Month before</th>
-                    <th>Possible deadlines</th>
+                    <th scope="col">{m.below.code}</th>
+                    <th scope="col">{m.below.company}</th>
+                    <th scope="col" className="num">
+                      {m.below.bound}
+                    </th>
+                    <th scope="col" className="num">
+                      {m.below.before}
+                    </th>
+                    <th scope="col">{m.below.deadlines}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -180,15 +197,20 @@ export default function InvestabilityPage() {
                       </td>
                       <td>{row.issuerName}</td>
                       <td className="num">
-                        {formatPercent(row.upperBoundHundredths)}
+                        {formatPercent(row.upperBoundHundredths, lang)}
                       </td>
                       <td className="num">
                         {row.previousUpperBoundHundredths === null
                           ? "—"
-                          : formatPercent(row.previousUpperBoundHundredths)}
+                          : formatPercent(
+                              row.previousUpperBoundHundredths,
+                              lang,
+                            )}
                       </td>
                       <td>
-                        {possibleDeadlines(row.possibleTranches).join("; ")}
+                        {possibleDeadlines(row.possibleTranches, lang).join(
+                          "; ",
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -200,21 +222,21 @@ export default function InvestabilityPage() {
       )}
 
       <section className="panel">
-        <h2>Timeline</h2>
+        <h2>{m.timeline.heading}</h2>
         <div className="table-wrap">
           <table className="data">
             <tbody>
               {TIMELINE.map((event) => (
-                <tr key={`${event.date}-${event.label}`}>
+                <tr key={`${event.date}-${event.label.en}`}>
                   <td className="mono">{event.date}</td>
                   <td>
-                    {event.label}
+                    {localise(event.label, lang)}
                     {event.date < today ? (
-                      <span className="muted"> (passed)</span>
+                      <span className="muted">{m.timeline.passed}</span>
                     ) : null}
                   </td>
                   <td>
-                    <Source {...event.source} />
+                    <Source {...event.source} pressReport={m.pressReport} />
                   </td>
                 </tr>
               ))}
@@ -222,67 +244,32 @@ export default function InvestabilityPage() {
           </table>
         </div>
         <p className="citation">
-          Deadlines by tranche:{" "}
+          {m.timeline.tranches}
           {(Object.keys(TRANCHES) as Tranche[])
             .map(
               (tranche) =>
-                `${TRANCHES[tranche].label}: ${trancheDeadlines(tranche)}`,
+                `${localise(TRANCHES[tranche].label, lang)}: ${trancheDeadlines(tranche, lang)}`,
             )
-            .join(". ")}
-          . The rule as reported by{" "}
+            .join(m.timeline.trancheJoin)}
+          {m.timeline.ruleBefore}
           {RULE_SOURCES.map((source, index) => (
             <span key={source.url}>
-              {index > 0 ? " and " : ""}
-              <Source {...source} />
+              {index > 0 ? m.timeline.sourceJoin : ""}
+              <Source {...source} pressReport={m.pressReport} />
             </span>
           ))}
-          ; the rule text itself (revised Peraturan Bursa I-A) was not read in
-          full.
+          {m.timeline.ruleAfter}
         </p>
       </section>
 
       <section className="panel" id="methodology">
-        <h2>Methodology</h2>
+        <h2>{m.method.heading}</h2>
         <div className="stack prose">
-          <p>
-            <strong>The official definition.</strong> Free float is the shares
-            held by shareholders who each hold less than 5% and are not the
-            controller or its affiliates, a director or commissioner, and not
-            treasury or locked-up shares (Peraturan Bursa I-A, as reported).
-          </p>
-          <p>
-            <strong>What the register shows.</strong> Every holder of more than
-            1%, with type, local or foreign, and shares, as of the month&apos;s
-            last trading day. It does not say who is an affiliate or an insider,
-            and shows nothing below 1%.
-          </p>
-          <p>
-            <strong>Sigi&apos;s figure: an upper bound.</strong> 100% minus
-            every holder of 5% or more, with a holder&apos;s rows added together
-            first. Everything the register cannot see only lowers the official
-            figure, so the official free float is this bound or lower. A company
-            whose bound is under 15% is therefore certainly below the minimum;
-            one above it may still be below.
-          </p>
-          <p>
-            <strong>Why the counts differ.</strong> Sigi&apos;s count is a floor
-            on the exchange&apos;s. It also uses an older or newer month than
-            the exchange&apos;s count, and the exchange uses its own records,
-            not this register.
-          </p>
-          <p>
-            <strong>Incomplete registers.</strong> When a company&apos;s holders
-            above 1% add up to less than 15%, Sigi gives no float figure. In the
-            27 February 2026 file that is BBRI, BBNI, BBTN, ADHI and NCKL, each
-            missing a known controlling holder.
-          </p>
-          <p>
-            <strong>Holders.</strong> A holder&apos;s rows are matched across
-            companies and months by name, after removing case, full stops and
-            commas; other spellings are merged only by a reviewed alias list.
-            Holders who are individuals, or whose type is unclassified, never
-            get their own page.
-          </p>
+          {m.method.paragraphs.map((paragraph) => (
+            <p key={paragraph.lead}>
+              <strong>{paragraph.lead}</strong> {paragraph.body}
+            </p>
+          ))}
         </div>
       </section>
     </>

@@ -170,9 +170,7 @@ describe("ownership screen (PRD F9)", () => {
     );
     if (screen.kind !== "list") throw new Error("no list");
     expect(screen.companies.map((c) => c.shareCode)).toEqual(["BBBB"]);
-    expect(screen.excluded).toEqual([
-      { reason: expect.stringContaining("register incomplete"), count: 1 },
-    ]);
+    expect(screen.excluded).toEqual([{ reason: "incomplete", count: 1 }]);
     const all = loadCompanyScreen(db, parseScreenFilters({}));
     expect(all.kind === "list" && all.excluded).toEqual([]);
   });

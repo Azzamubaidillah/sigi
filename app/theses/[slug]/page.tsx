@@ -9,7 +9,10 @@ import {
   StatusBadge,
 } from "@/app/_components/ThesisParts";
 import { formatDate } from "@/app/_lib/format";
+import { getLang } from "@/app/_lib/lang";
 import { loadConfig } from "@/src/config";
+import type { Lang } from "@/src/i18n/lang";
+import { thesesMessages } from "@/src/i18n/messages/theses";
 import type { DiffResult } from "@/src/theses/diff";
 import { loadThesis } from "@/src/views/theses";
 
@@ -26,32 +29,34 @@ async function load({ params, searchParams }: Props) {
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const thesis = await load(props);
+  const [thesis, lang] = await Promise.all([load(props), getLang()]);
   return {
     title: thesis
       ? (thesis.summary.header?.title ?? thesis.summary.slug)
-      : "Not found",
+      : thesesMessages[lang].notFoundTitle,
   };
 }
 
-function Diff({ diff, from }: { diff: DiffResult; from: string }) {
+function Diff({
+  diff,
+  from,
+  lang,
+}: {
+  diff: DiffResult;
+  from: string;
+  lang: Lang;
+}) {
+  const m = thesesMessages[lang].page;
   if (diff.kind === "too-large") {
-    return (
-      <p className="absent">
-        The versions are too long to compare here ({diff.lines} lines).
-      </p>
-    );
+    return <p className="absent">{m.diffTooLarge(diff.lines)}</p>;
   }
   if (diff.hunks.length === 0) {
-    return (
-      <p className="absent">No change in the text from {formatDate(from)}.</p>
-    );
+    return <p className="absent">{m.diffNoChange(formatDate(from, lang))}</p>;
   }
   return (
     <>
       <p className="muted">
-        {diff.added} line{diff.added === 1 ? "" : "s"} added, {diff.removed}{" "}
-        removed since {formatDate(from)}.
+        {m.diffCounts(diff.added, diff.removed, formatDate(from, lang))}
       </p>
       {diff.hunks.map((hunk, index) => (
         <pre className="diff" key={index} tabIndex={0}>
@@ -73,8 +78,9 @@ function Diff({ diff, from }: { diff: DiffResult; from: string }) {
 }
 
 export default async function ThesisPage(props: Props) {
-  const thesis = await load(props);
+  const [thesis, lang] = await Promise.all([load(props), getLang()]);
   if (!thesis) notFound();
+  const m = thesesMessages[lang].page;
   const { summary } = thesis;
   const header = summary.header;
   return (
@@ -83,30 +89,32 @@ export default async function ThesisPage(props: Props) {
         <h1>{header?.title ?? summary.slug}</h1>
         {header ? <p className="lede">{header.summary}</p> : null}
       </div>
-      <NotAdvice />
+      <NotAdvice lang={lang} />
       {!thesis.current ? (
         <p className="notice">
-          This is the version of {formatDate(summary.version)}.{" "}
-          <Link href={`/theses/${summary.slug}`}>Read the current version</Link>
-          .
+          {m.versionOf(formatDate(summary.version, lang))}{" "}
+          <Link href={`/theses/${summary.slug}`}>{m.readCurrent}</Link>.
         </p>
       ) : null}
 
       <section className="panel">
-        <h2>Summary</h2>
+        <h2>{m.summary}</h2>
         {summary.headerError ? (
-          <p className="notice">Header unreadable: {summary.headerError}</p>
+          <p className="notice">
+            {m.headerUnreadable}
+            {summary.headerError}
+          </p>
         ) : null}
         {header ? (
           <dl className="figures">
             <div>
-              <dt>Status</dt>
+              <dt>{m.status}</dt>
               <dd>
-                <StatusBadge status={header.status} />
+                <StatusBadge status={header.status} lang={lang} />
               </dd>
             </div>
             <div>
-              <dt>Tickers</dt>
+              <dt>{m.tickers}</dt>
               <dd className="mono">
                 {header.tickers.map((code, index) => (
                   <span key={code}>
@@ -117,34 +125,36 @@ export default async function ThesisPage(props: Props) {
               </dd>
             </div>
             <div>
-              <dt>Stance</dt>
+              <dt>{m.stance}</dt>
               <dd>{header.stance}</dd>
             </div>
             <div>
-              <dt>Review by</dt>
-              <dd className="mono">{formatDate(header.review)}</dd>
+              <dt>{m.reviewBy}</dt>
+              <dd className="mono">{formatDate(header.review, lang)}</dd>
             </div>
             <div>
-              <dt>Version</dt>
-              <dd className="mono">{formatDate(summary.version)}</dd>
+              <dt>{m.version}</dt>
+              <dd className="mono">{formatDate(summary.version, lang)}</dd>
             </div>
           </dl>
         ) : null}
         {header && header.catalysts.length > 0 ? (
           <>
-            <h3>Catalysts</h3>
+            <h3>{m.catalysts}</h3>
             <div className="table-wrap">
               <table className="data">
                 <thead>
                   <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Catalyst</th>
+                    <th scope="col">{m.date}</th>
+                    <th scope="col">{m.catalyst}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {header.catalysts.map((catalyst) => (
                     <tr key={`${catalyst.date} ${catalyst.text}`}>
-                      <td className="mono">{formatDate(catalyst.date)}</td>
+                      <td className="mono">
+                        {formatDate(catalyst.date, lang)}
+                      </td>
                       <td>{catalyst.text}</td>
                     </tr>
                   ))}
@@ -156,60 +166,59 @@ export default async function ThesisPage(props: Props) {
       </section>
 
       <section className="panel">
-        <h2>Invalidation conditions</h2>
+        <h2>{m.invalidation}</h2>
         {summary.conditions ? (
           <>
             {!thesis.current ? (
-              <p className="muted">
-                Only the current version&rsquo;s conditions are checked.
-              </p>
+              <p className="muted">{m.onlyCurrentChecked}</p>
             ) : null}
             <ConditionTable
               rows={summary.conditions}
               checked={thesis.current}
+              lang={lang}
             />
             <p className="citation">
-              Checked against Sigi&rsquo;s own published data: ownership and
-              float from the latest monthly register, macro from the latest
-              published value. Prices are not stored (C1), so price levels are a
-              manual check. See <Link href="/data">Data &amp; sources</Link>.
+              {m.citationBefore}
+              <Link href="/data">{m.citationLink}</Link>
+              {m.citationAfter}
             </p>
           </>
         ) : (
           <p className="notice">
-            Conditions unreadable: {summary.conditionsError}
+            {m.conditionsUnreadable}
+            {summary.conditionsError}
           </p>
         )}
       </section>
 
       <section className="panel">
-        <h2>Thesis</h2>
-        <ThesisBody blocks={thesis.blocks} />
+        <h2>{m.thesis}</h2>
+        <ThesisBody blocks={thesis.blocks} lang={lang} />
       </section>
 
       <section className="panel">
-        <h2>History</h2>
+        <h2>{m.history}</h2>
         <ul>
           {summary.versions.map((version) => (
             <li key={version} className="mono">
               {version === summary.version ? (
-                <strong>{formatDate(version)}</strong>
+                <strong>{formatDate(version, lang)}</strong>
               ) : (
                 <Link href={`/theses/${summary.slug}?version=${version}`}>
-                  {formatDate(version)}
+                  {formatDate(version, lang)}
                 </Link>
               )}
-              {version === summary.versions[0] ? " (current)" : ""}
+              {version === summary.versions[0] ? m.current : ""}
             </li>
           ))}
         </ul>
         {thesis.diff && thesis.previous ? (
           <>
-            <h3>Changes from the previous version</h3>
-            <Diff diff={thesis.diff} from={thesis.previous} />
+            <h3>{m.changesHeading}</h3>
+            <Diff diff={thesis.diff} from={thesis.previous} lang={lang} />
           </>
         ) : (
-          <p className="absent">This is the first version.</p>
+          <p className="absent">{m.firstVersion}</p>
         )}
       </section>
     </>

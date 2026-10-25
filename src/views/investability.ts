@@ -15,32 +15,28 @@ import { loadSnapshot, type PublishedMonth } from "./snapshot";
 
 /** Bands of the free-float upper bound, in hundredths; `max` is exclusive. */
 export const BANDS = [
-  { id: "under-5", label: "Under 5%", min: 0, max: 500 },
+  { id: "under-5", min: 0, max: 500 },
   {
     id: "5-to-12.5",
-    label: "5% to 12.5%",
     min: 500,
     max: INTERIM_MINIMUM_HUNDREDTHS,
   },
   {
     id: "12.5-to-15",
-    label: "12.5% to 15%",
     min: INTERIM_MINIMUM_HUNDREDTHS,
     max: FREE_FLOAT_MINIMUM_HUNDREDTHS,
   },
   {
     id: "15-to-25",
-    label: "15% to 25%",
     min: FREE_FLOAT_MINIMUM_HUNDREDTHS,
     max: 2_500,
   },
-  { id: "25-to-50", label: "25% to 50%", min: 2_500, max: 5_000 },
-  { id: "50-up", label: "50% and above", min: 5_000, max: null },
+  { id: "25-to-50", min: 2_500, max: 5_000 },
+  { id: "50-up", min: 5_000, max: null },
 ] as const;
 
 export interface BandCount {
   id: (typeof BANDS)[number]["id"];
-  label: string;
   count: number;
   /** The market page's screen for this band. */
   screenQuery: string;
@@ -164,7 +160,6 @@ export function loadInvestability(databasePath: string): Investability {
     incomplete,
     bands: BANDS.map((band) => ({
       id: band.id,
-      label: band.label,
       count: counts.get(band.id) ?? 0,
       screenQuery: screenQuery(band),
     })),

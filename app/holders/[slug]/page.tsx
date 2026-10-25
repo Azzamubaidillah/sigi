@@ -10,7 +10,10 @@ import {
   formatShares,
   formatSharesChange,
 } from "@/app/_lib/format";
+import { getLang } from "@/app/_lib/lang";
 import { loadConfig } from "@/src/config";
+import { commonMessages } from "@/src/i18n/messages/common";
+import { holdersMessages } from "@/src/i18n/messages/holders";
 import { typeLabel } from "@/src/ownership/investor-classes";
 import { loadHolder } from "@/src/views/holders";
 
@@ -18,10 +21,16 @@ type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const holder = loadHolder(loadConfig().databasePath, (await params).slug);
-  return { title: holder ? holder.name : "Not found" };
+  return {
+    title: holder
+      ? holder.name
+      : holdersMessages[await getLang()].page.notFound,
+  };
 }
 
 export default async function HolderPage({ params }: Params) {
+  const lang = await getLang();
+  const m = holdersMessages[lang].page;
   const holder = loadHolder(loadConfig().databasePath, (await params).slug);
   // No page for unknown slugs, and none for individuals or unclassified
   // holders: the view returns null for both (PRD C6).
@@ -34,28 +43,32 @@ export default async function HolderPage({ params }: Params) {
           {holder.types.map(typeLabel).join(", ")}
           {holder.domiciles.length
             ? ` · ${holder.domiciles.join(", ")}`
-            : ""}. <Link href="/holders">All holders</Link>
+            : ""}. <Link href="/holders">{m.allHolders}</Link>
         </p>
       </div>
 
       <section className="panel">
         <h2>
-          Holdings above 1% on {formatDate(holder.month.recordDate)} (
-          {holder.positions.length})
+          {m.holdings(
+            formatDate(holder.month.recordDate, lang),
+            holder.positions.length,
+          )}
         </h2>
         {holder.positions.length === 0 ? (
-          <p className="absent">
-            No holding above 1% in the latest month; earlier months are below.
-          </p>
+          <p className="absent">{m.noHolding}</p>
         ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
                 <tr>
-                  <th>Code</th>
-                  <th>Company</th>
-                  <th className="num">Shares</th>
-                  <th className="num">%</th>
+                  <th scope="col">{m.code}</th>
+                  <th scope="col">{m.company}</th>
+                  <th scope="col" className="num">
+                    {m.shares}
+                  </th>
+                  <th scope="col" className="num">
+                    {m.percent}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -67,9 +80,11 @@ export default async function HolderPage({ params }: Params) {
                       </Link>
                     </td>
                     <td>{position.issuerName}</td>
-                    <td className="num">{formatShares(position.shares)}</td>
                     <td className="num">
-                      {formatPercent(position.hundredths)}
+                      {formatShares(position.shares, lang)}
+                    </td>
+                    <td className="num">
+                      {formatPercent(position.hundredths, lang)}
                     </td>
                   </tr>
                 ))}
@@ -79,37 +94,42 @@ export default async function HolderPage({ params }: Params) {
         )}
         {holder.spellings.length > 1 ? (
           <p className="citation">
-            Published as:{" "}
+            {m.publishedAs}
             {holder.spellings.map((spelling) => `“${spelling}”`).join(", ")}
           </p>
         ) : null}
-        <S1Citation month={holder.month} />
+        <S1Citation month={holder.month} lang={lang} />
       </section>
 
       <section className="panel">
-        <h2>Changes since the previous month</h2>
+        <h2>{m.changes}</h2>
         {holder.moves === null || holder.previous === null ? (
           <p className="absent">
-            No earlier month is published, so there is nothing to compare
-            against.
+            {commonMessages[lang].ownershipAbsence.no_previous_month}
           </p>
         ) : holder.moves.length === 0 ? (
           <p className="muted">
-            No change against {formatDate(holder.previous.recordDate)}.
+            {m.noChange(formatDate(holder.previous.recordDate, lang))}
           </p>
         ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
                 <tr>
-                  <th>Code</th>
-                  <th>Company</th>
-                  <th className="num">
-                    {formatDate(holder.previous.recordDate)}
+                  <th scope="col">{m.code}</th>
+                  <th scope="col">{m.company}</th>
+                  <th scope="col" className="num">
+                    {formatDate(holder.previous.recordDate, lang)}
                   </th>
-                  <th className="num">{formatDate(holder.month.recordDate)}</th>
-                  <th className="num">Shares</th>
-                  <th className="num">Change</th>
+                  <th scope="col" className="num">
+                    {formatDate(holder.month.recordDate, lang)}
+                  </th>
+                  <th scope="col" className="num">
+                    {m.shares}
+                  </th>
+                  <th scope="col" className="num">
+                    {m.change}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -124,22 +144,24 @@ export default async function HolderPage({ params }: Params) {
                     <td className="num">
                       {move.beforeHundredths === null
                         ? "—"
-                        : formatPercent(move.beforeHundredths)}
+                        : formatPercent(move.beforeHundredths, lang)}
                     </td>
                     <td className="num">
                       {move.afterHundredths === null
                         ? "—"
-                        : formatPercent(move.afterHundredths)}
+                        : formatPercent(move.afterHundredths, lang)}
                     </td>
                     <td className="num">
                       {formatSharesChange(
                         (move.afterShares ?? 0) - (move.beforeShares ?? 0),
+                        lang,
                       )}
                     </td>
                     <td className="num">
                       {formatPercentChange(
                         (move.afterHundredths ?? 0) -
                           (move.beforeHundredths ?? 0),
+                        lang,
                       )}
                     </td>
                   </tr>
@@ -148,10 +170,7 @@ export default async function HolderPage({ params }: Params) {
             </table>
           </div>
         )}
-        <p className="citation">
-          A dash means the holding was at or below 1%, where the register does
-          not report it, or that the holder was not in that month&apos;s file.
-        </p>
+        <p className="citation">{m.dash}</p>
       </section>
     </>
   );

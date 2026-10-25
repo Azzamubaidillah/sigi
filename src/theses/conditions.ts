@@ -395,7 +395,7 @@ function evaluateMacro(
   if (!latest) {
     return {
       status: "unknown",
-      detail: `${definition.name} has no published value yet.`,
+      detail: `${definition.name.en} has no published value yet.`,
       source: definition.source,
     };
   }
@@ -405,7 +405,7 @@ function evaluateMacro(
       : latest.value > condition.value;
   return {
     status: met ? "met" : "not-met",
-    detail: `${definition.name} is ${latest.value.toFixed(definition.decimals)} (${definition.unit}) for ${latest.period}, as published (condition: ${condition.direction} ${condition.value}).`,
+    detail: `${definition.name.en} is ${latest.value.toFixed(definition.decimals)} (${definition.unit}) for ${latest.period}, as published (condition: ${condition.direction} ${condition.value}).`,
     source: definition.source,
   };
 }

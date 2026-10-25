@@ -1,4 +1,6 @@
 import { readDatabase } from "../db/read";
+import type { Text } from "../i18n/define";
+import type { Lang } from "../i18n/lang";
 import { feedOf } from "../macro/feeds";
 import type { Observation } from "../macro/parse";
 import {
@@ -11,14 +13,6 @@ import {
 } from "../macro/series";
 
 export type MacroAbsence = "not_fetched" | "fetch_failed" | "rejected";
-
-export const MACRO_ABSENCE_TEXT: Record<MacroAbsence, string> = {
-  not_fetched: "Not fetched yet: the worker has not checked this source.",
-  fetch_failed:
-    "The source could not be reached on the last check, and nothing has been published from it yet.",
-  rejected:
-    "The last file from the source failed its checks, and nothing has been published from it yet.",
-};
 
 export interface NextRelease {
   /** YYYY-MM-DD; always an expectation from the usual cadence, never an announcement. */
@@ -51,7 +45,7 @@ export type SeriesCard = { id: SeriesId; definition: SeriesDefinition } & (
 
 export interface MacroGroup {
   id: GroupId;
-  title: string;
+  title: Text;
   sectorIndices: readonly string[];
   cards: SeriesCard[];
 }
@@ -286,11 +280,11 @@ export function loadMacro(
   );
 }
 
-/** "2026-09" → "Sep 2026"; "2026-10-21" → "21 Oct 2026". */
-export function formatPeriod(period: string): string {
+/** "2026-09" → "Sep 2026"; "2026-10-21" → "21 Oct 2026" (Indonesian: "Sep 2026", "21 Okt 2026"). */
+export function formatPeriod(period: string, lang: Lang = "en"): string {
   const [year, month, day] = period.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day ?? 1));
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(lang === "id" ? "id-ID" : "en-GB", {
     timeZone: "UTC",
     ...(day === undefined ? {} : { day: "numeric" }),
     month: "short",

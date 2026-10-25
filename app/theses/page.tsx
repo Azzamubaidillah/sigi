@@ -7,44 +7,46 @@ import {
   StatusBadge,
 } from "@/app/_components/ThesisParts";
 import { formatDate } from "@/app/_lib/format";
+import { getLang } from "@/app/_lib/lang";
 import { loadConfig } from "@/src/config";
+import { thesesMessages } from "@/src/i18n/messages/theses";
 import { loadTheses } from "@/src/views/theses";
 
-export const metadata: Metadata = { title: "Theses" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: thesesMessages[await getLang()].metaTitle };
+}
 
-export default function ThesesPage() {
+export default async function ThesesPage() {
+  const lang = await getLang();
+  const m = thesesMessages[lang].list;
   const { theses, hits, lastCheckedOn } = loadTheses(loadConfig());
   return (
     <>
       <div className="page-header">
-        <h1>Theses</h1>
-        <p className="lede">
-          Research notes on listed companies, each with the conditions that
-          would show it wrong. The worker checks every ownership, float, macro
-          and date condition each day against Sigi&rsquo;s own published data.
-        </p>
+        <h1>{m.heading}</h1>
+        <p className="lede">{m.lede}</p>
       </div>
-      <NotAdvice />
+      <NotAdvice lang={lang} />
 
       <section className="panel">
-        <h2>Conditions hit</h2>
+        <h2>{m.hitsHeading}</h2>
         {hits.length === 0 ? (
           <p className="absent">
             {theses.length === 0
-              ? "No thesis is published yet."
+              ? m.none
               : lastCheckedOn
-                ? `No condition of an active thesis is met (checked ${formatDate(lastCheckedOn)}).`
-                : "The conditions have not been checked yet; the worker checks them daily."}
+                ? m.noneMet(formatDate(lastCheckedOn, lang))
+                : m.notCheckedYet}
           </p>
         ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
                 <tr>
-                  <th scope="col">Thesis</th>
-                  <th scope="col">Condition</th>
-                  <th scope="col">What was compared</th>
-                  <th scope="col">Met since</th>
+                  <th scope="col">{m.thesis}</th>
+                  <th scope="col">{m.condition}</th>
+                  <th scope="col">{m.compared}</th>
+                  <th scope="col">{m.metSince}</th>
                 </tr>
               </thead>
               <tbody>
@@ -55,10 +57,10 @@ export default function ThesesPage() {
                     </td>
                     <td>
                       <code>{hit.condition.text}</code>{" "}
-                      <CheckBadge status="met" />
+                      <CheckBadge status="met" lang={lang} />
                     </td>
                     <td>{hit.detail}</td>
-                    <td className="mono">{formatDate(hit.metSince)}</td>
+                    <td className="mono">{formatDate(hit.metSince, lang)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -68,20 +70,20 @@ export default function ThesesPage() {
       </section>
 
       <section className="panel">
-        <h2>All theses</h2>
+        <h2>{m.allHeading}</h2>
         {theses.length === 0 ? (
-          <p className="absent">No thesis is published yet.</p>
+          <p className="absent">{m.none}</p>
         ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
                 <tr>
-                  <th scope="col">Thesis</th>
-                  <th scope="col">Tickers</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Stance</th>
-                  <th scope="col">Review</th>
-                  <th scope="col">Version</th>
+                  <th scope="col">{m.thesis}</th>
+                  <th scope="col">{m.tickers}</th>
+                  <th scope="col">{m.status}</th>
+                  <th scope="col">{m.stance}</th>
+                  <th scope="col">{m.review}</th>
+                  <th scope="col">{m.version}</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,12 +95,14 @@ export default function ThesesPage() {
                       </Link>
                       {thesis.headerError ? (
                         <div className="muted">
-                          Header unreadable: {thesis.headerError}
+                          {m.headerUnreadable}
+                          {thesis.headerError}
                         </div>
                       ) : null}
                       {thesis.conditionsError ? (
                         <div className="muted">
-                          Conditions unreadable: {thesis.conditionsError}
+                          {m.conditionsUnreadable}
+                          {thesis.conditionsError}
                         </div>
                       ) : null}
                     </td>
@@ -112,17 +116,22 @@ export default function ThesesPage() {
                     </td>
                     <td>
                       {thesis.header ? (
-                        <StatusBadge status={thesis.header.status} />
+                        <StatusBadge
+                          status={thesis.header.status}
+                          lang={lang}
+                        />
                       ) : null}
                     </td>
                     <td>{thesis.header?.stance}</td>
                     <td className="mono">
-                      {thesis.header ? formatDate(thesis.header.review) : null}
+                      {thesis.header
+                        ? formatDate(thesis.header.review, lang)
+                        : null}
                     </td>
                     <td className="mono">
-                      {formatDate(thesis.version)}
+                      {formatDate(thesis.version, lang)}
                       {thesis.versions.length > 1
-                        ? ` (${thesis.versions.length} versions)`
+                        ? m.versions(thesis.versions.length)
                         : ""}
                     </td>
                   </tr>

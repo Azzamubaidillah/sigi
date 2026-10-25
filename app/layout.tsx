@@ -2,42 +2,66 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { loadConfig } from "@/src/config";
+import { messagesFor } from "@/src/i18n/define";
+import { shellMessages } from "@/src/i18n/messages/shell";
+
 import "./sigi.css";
 import { SiteNav } from "./_components/SiteNav";
+import { getLang } from "./_lib/lang";
 
 // Every page renders per request: published data changes on import, and the
 // proxy's CSP nonce must reach the inline scripts Next writes into each page.
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: { default: "Sigi", template: "%s · Sigi" },
-  description:
-    "Who owns Indonesia's listed companies, how much really floats, and what changed this month. Every figure cites its source.",
-  applicationName: "Sigi",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  const m = messagesFor(shellMessages, lang);
+  return {
+    metadataBase: new URL(loadConfig().origin),
+    title: { default: "Sigi", template: "%s · Sigi" },
+    description: m.siteDescription,
+    applicationName: "Sigi",
+    openGraph: {
+      type: "website",
+      siteName: "Sigi",
+      title: "Sigi",
+      description: m.siteDescription,
+      locale: lang === "id" ? "id_ID" : "en_GB",
+    },
+  };
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const lang = await getLang();
+  const m = messagesFor(shellMessages, lang);
   return (
-    <html lang="en">
+    <html lang={lang}>
       <body>
+        <a className="skip" href="#content">
+          {m.skip}
+        </a>
         <div className="shell">
           <header className="masthead">
             <Link href="/" className="brand">
               Sigi
             </Link>
-            <SiteNav />
+            <SiteNav labels={m.nav} language={m.language} current={lang} />
           </header>
-          <main>{children}</main>
+          <main id="content" tabIndex={-1}>
+            {children}
+          </main>
           <footer className="site">
             <p>
-              Sigi is a research site, not investment advice. Ownership figures
-              come from the monthly register of holders above 1% published by PT
-              Bursa Efek Indonesia with data from PT Kustodian Sentral Efek
-              Indonesia; macro figures from Bank Indonesia, the World Bank and
-              FRED. See <Link href="/data">Data &amp; sources</Link> for every
-              source and its terms, and the{" "}
-              <Link href="/privacy">privacy notice</Link>. Charts and the price
-              screener are TradingView widgets.
+              {m.footer.before}
+              <Link href="/data">{m.footer.sources}</Link>
+              {m.footer.middle}
+              <Link href="/privacy">{m.footer.privacy}</Link>
+              {m.footer.after}
             </p>
           </footer>
         </div>

@@ -10,12 +10,6 @@ import { recommendationLanguage } from "../safety/recommendation";
 export const THESIS_STATUSES = ["active", "invalidated", "closed"] as const;
 export type ThesisStatus = (typeof THESIS_STATUSES)[number];
 
-export const STATUS_LABELS: Record<ThesisStatus, string> = {
-  active: "Active",
-  invalidated: "Invalidated",
-  closed: "Closed",
-};
-
 export interface Catalyst {
   date: string;
   text: string;

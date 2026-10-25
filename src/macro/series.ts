@@ -1,3 +1,4 @@
+import type { Text } from "../i18n/define";
 import type { SourceId } from "../sources/register";
 
 /**
@@ -9,16 +10,22 @@ import type { SourceId } from "../sources/register";
 
 export const GROUPS = {
   indonesia: {
-    title: "Indonesia: rates, prices and the rupiah",
+    title: {
+      en: "Indonesia: rates, prices and the rupiah",
+      id: "Indonesia: suku bunga, harga, dan rupiah",
+    },
     /** IDX sector indices shown beside the group (TradingView, display only). */
     sectorIndices: ["IDX:IDXFINANCE", "IDX:IDXPROPERT"],
   },
   commodities: {
-    title: "Commodities Indonesia sells",
+    title: {
+      en: "Commodities Indonesia sells",
+      id: "Komoditas yang dijual Indonesia",
+    },
     sectorIndices: ["IDX:IDXENERGY", "IDX:IDXBASIC", "IDX:IDXNONCYC"],
   },
   global: {
-    title: "Global money",
+    title: { en: "Global money", id: "Uang global" },
     sectorIndices: ["IDX:COMPOSITE"],
   },
 } as const;
@@ -43,11 +50,11 @@ export type ReleaseRule =
 export interface SectorLink {
   /** An IDX-IC sector name. */
   sector: string;
-  rationale: string;
+  rationale: Text;
 }
 
 export interface SeriesDefinition {
-  name: string;
+  name: Text;
   group: GroupId;
   source: SourceId;
   /** How the source names it, for the citation. */
@@ -70,7 +77,7 @@ export interface SeriesDefinition {
 
 export const SERIES = {
   "bi-rate": {
-    name: "BI-Rate",
+    name: { en: "BI-Rate", id: "BI-Rate" },
     group: "indonesia",
     source: "S6",
     sourceName: "BI-Rate (BI-7Day Reverse Repo Rate)",
@@ -83,18 +90,22 @@ export const SERIES = {
     sectors: [
       {
         sector: "Financials",
-        rationale:
-          "Banks price loans and deposits off the policy rate, so it moves their margins and loan growth.",
+        rationale: {
+          en: "Banks price loans and deposits off the policy rate, so it moves their margins and loan growth.",
+          id: "Bank menetapkan bunga kredit dan simpanan mengikuti suku bunga acuan, sehingga BI-Rate memengaruhi margin dan pertumbuhan kredit mereka.",
+        },
       },
       {
         sector: "Properties & Real Estate",
-        rationale:
-          "Mortgage rates and developers' borrowing costs follow it, and so does demand for housing.",
+        rationale: {
+          en: "Mortgage rates and developers' borrowing costs follow it, and so does demand for housing.",
+          id: "Suku bunga KPR dan biaya pinjaman pengembang mengikutinya, begitu pula permintaan hunian.",
+        },
       },
     ],
   },
   "cpi-yoy": {
-    name: "Inflation, year on year",
+    name: { en: "Inflation, year on year", id: "Inflasi, tahun ke tahun" },
     group: "indonesia",
     source: "S6",
     sourceName:
@@ -109,18 +120,25 @@ export const SERIES = {
     sectors: [
       {
         sector: "Consumer Non-Cyclicals",
-        rationale:
-          "Food and staples makers live on the gap between their input costs and what they can pass on.",
+        rationale: {
+          en: "Food and staples makers live on the gap between their input costs and what they can pass on.",
+          id: "Produsen pangan dan kebutuhan pokok hidup dari selisih antara biaya bahan baku dan harga yang bisa mereka teruskan ke konsumen.",
+        },
       },
       {
         sector: "Financials",
-        rationale:
-          "Inflation against Bank Indonesia's target sets the path of the BI-Rate.",
+        rationale: {
+          en: "Inflation against Bank Indonesia's target sets the path of the BI-Rate.",
+          id: "Inflasi terhadap target Bank Indonesia menentukan arah BI-Rate.",
+        },
       },
     ],
   },
   jisdor: {
-    name: "Rupiah per US dollar (JISDOR)",
+    name: {
+      en: "Rupiah per US dollar (JISDOR)",
+      id: "Rupiah per dolar AS (JISDOR)",
+    },
     group: "indonesia",
     source: "S6",
     sourceName: "JISDOR reference rate",
@@ -133,23 +151,29 @@ export const SERIES = {
     sectors: [
       {
         sector: "Consumer Non-Cyclicals",
-        rationale:
-          "Importers of wheat, soybeans, milk and packaging pay in dollars and sell in rupiah.",
+        rationale: {
+          en: "Importers of wheat, soybeans, milk and packaging pay in dollars and sell in rupiah.",
+          id: "Importir gandum, kedelai, susu, dan kemasan membayar dalam dolar dan menjual dalam rupiah.",
+        },
       },
       {
         sector: "Energy",
-        rationale:
-          "Coal and oil producers sell in dollars, so a weaker rupiah lifts their rupiah earnings.",
+        rationale: {
+          en: "Coal and oil producers sell in dollars, so a weaker rupiah lifts their rupiah earnings.",
+          id: "Produsen batu bara dan minyak menjual dalam dolar, sehingga rupiah yang melemah mengangkat pendapatan rupiah mereka.",
+        },
       },
       {
         sector: "Industrials",
-        rationale:
-          "Companies with dollar debt and imported machinery carry the currency risk.",
+        rationale: {
+          en: "Companies with dollar debt and imported machinery carry the currency risk.",
+          id: "Perusahaan dengan utang dolar dan mesin impor menanggung risiko kurs.",
+        },
       },
     ],
   },
   "fx-reserves": {
-    name: "Foreign-exchange reserves",
+    name: { en: "Foreign-exchange reserves", id: "Cadangan devisa" },
     group: "indonesia",
     source: "S6",
     sourceName: "Cadangan Devisa",
@@ -162,13 +186,15 @@ export const SERIES = {
     sectors: [
       {
         sector: "Financials",
-        rationale:
-          "Reserves are Bank Indonesia's buffer for defending the rupiah when foreign money leaves.",
+        rationale: {
+          en: "Reserves are Bank Indonesia's buffer for defending the rupiah when foreign money leaves.",
+          id: "Cadangan adalah penyangga Bank Indonesia untuk menjaga rupiah ketika dana asing keluar.",
+        },
       },
     ],
   },
   brent: {
-    name: "Crude oil, Brent",
+    name: { en: "Crude oil, Brent", id: "Minyak mentah, Brent" },
     group: "commodities",
     source: "S7",
     sourceName: "Crude oil, Brent",
@@ -181,17 +207,25 @@ export const SERIES = {
     sectors: [
       {
         sector: "Energy",
-        rationale: "Oil and gas producers' revenue follows the oil price.",
+        rationale: {
+          en: "Oil and gas producers' revenue follows the oil price.",
+          id: "Pendapatan produsen minyak dan gas mengikuti harga minyak.",
+        },
       },
       {
         sector: "Transportation & Logistic",
-        rationale:
-          "Fuel is airlines', shippers' and truckers' largest variable cost.",
+        rationale: {
+          en: "Fuel is airlines', shippers' and truckers' largest variable cost.",
+          id: "Bahan bakar adalah biaya variabel terbesar maskapai, perusahaan pelayaran, dan pengusaha truk.",
+        },
       },
     ],
   },
   coal: {
-    name: "Coal, Australian (Newcastle)",
+    name: {
+      en: "Coal, Australian (Newcastle)",
+      id: "Batu bara, Australia (Newcastle)",
+    },
     group: "commodities",
     source: "S7",
     sourceName: "Coal, Australian",
@@ -204,13 +238,15 @@ export const SERIES = {
     sectors: [
       {
         sector: "Energy",
-        rationale:
-          "Indonesia is the largest exporter of thermal coal; Newcastle is the benchmark its export prices track.",
+        rationale: {
+          en: "Indonesia is the largest exporter of thermal coal; Newcastle is the benchmark its export prices track.",
+          id: "Indonesia adalah eksportir batu bara termal terbesar; Newcastle adalah acuan yang diikuti harga ekspornya.",
+        },
       },
     ],
   },
   "palm-oil": {
-    name: "Palm oil",
+    name: { en: "Palm oil", id: "Minyak sawit" },
     group: "commodities",
     source: "S7",
     sourceName: "Palm oil",
@@ -223,13 +259,15 @@ export const SERIES = {
     sectors: [
       {
         sector: "Consumer Non-Cyclicals",
-        rationale:
-          "Plantation companies, listed under this sector, sell crude palm oil at prices tied to the world price.",
+        rationale: {
+          en: "Plantation companies, listed under this sector, sell crude palm oil at prices tied to the world price.",
+          id: "Perusahaan perkebunan, yang tercatat di sektor ini, menjual minyak sawit mentah dengan harga yang terkait harga dunia.",
+        },
       },
     ],
   },
   nickel: {
-    name: "Nickel",
+    name: { en: "Nickel", id: "Nikel" },
     group: "commodities",
     source: "S7",
     sourceName: "Nickel",
@@ -242,13 +280,15 @@ export const SERIES = {
     sectors: [
       {
         sector: "Basic Materials",
-        rationale:
-          "Indonesia mines and smelts most of the world's nickel; miners' and smelters' margins follow the price.",
+        rationale: {
+          en: "Indonesia mines and smelts most of the world's nickel; miners' and smelters' margins follow the price.",
+          id: "Indonesia menambang dan memurnikan sebagian besar nikel dunia; margin penambang dan smelter mengikuti harganya.",
+        },
       },
     ],
   },
   tin: {
-    name: "Tin",
+    name: { en: "Tin", id: "Timah" },
     group: "commodities",
     source: "S7",
     sourceName: "Tin",
@@ -261,13 +301,15 @@ export const SERIES = {
     sectors: [
       {
         sector: "Basic Materials",
-        rationale:
-          "Indonesia is among the largest tin exporters; the listed tin miner sells at world prices.",
+        rationale: {
+          en: "Indonesia is among the largest tin exporters; the listed tin miner sells at world prices.",
+          id: "Indonesia termasuk eksportir timah terbesar; penambang timah yang tercatat menjual dengan harga dunia.",
+        },
       },
     ],
   },
   gold: {
-    name: "Gold",
+    name: { en: "Gold", id: "Emas" },
     group: "commodities",
     source: "S7",
     sourceName: "Gold",
@@ -280,13 +322,18 @@ export const SERIES = {
     sectors: [
       {
         sector: "Basic Materials",
-        rationale:
-          "Gold miners' revenue follows the gold price; their costs are mostly in rupiah.",
+        rationale: {
+          en: "Gold miners' revenue follows the gold price; their costs are mostly in rupiah.",
+          id: "Pendapatan penambang emas mengikuti harga emas; sebagian besar biaya mereka dalam rupiah.",
+        },
       },
     ],
   },
   "fed-funds": {
-    name: "US federal funds target, upper bound",
+    name: {
+      en: "US federal funds target, upper bound",
+      id: "Target dana federal AS, batas atas",
+    },
     group: "global",
     source: "S8",
     sourceName: "Federal Funds Target Range - Upper Limit [DFEDTARU]",
@@ -299,13 +346,18 @@ export const SERIES = {
     sectors: [
       {
         sector: "Financials",
-        rationale:
-          "The gap between US and Indonesian rates steers foreign money into or out of rupiah assets, and with it the room Bank Indonesia has to cut.",
+        rationale: {
+          en: "The gap between US and Indonesian rates steers foreign money into or out of rupiah assets, and with it the room Bank Indonesia has to cut.",
+          id: "Selisih suku bunga AS dan Indonesia mengarahkan dana asing masuk atau keluar dari aset rupiah, dan dengan itu ruang Bank Indonesia untuk menurunkan suku bunga.",
+        },
       },
     ],
   },
   "us-10y": {
-    name: "US Treasury yield, 10 years",
+    name: {
+      en: "US Treasury yield, 10 years",
+      id: "Imbal hasil Treasury AS, 10 tahun",
+    },
     group: "global",
     source: "S8",
     sourceName:
@@ -319,17 +371,22 @@ export const SERIES = {
     sectors: [
       {
         sector: "Financials",
-        rationale:
-          "Foreign holders compare Indonesian government bond yields with it; higher US yields pull money out.",
+        rationale: {
+          en: "Foreign holders compare Indonesian government bond yields with it; higher US yields pull money out.",
+          id: "Pemegang asing membandingkan imbal hasil obligasi pemerintah Indonesia dengan imbal hasil ini; imbal hasil AS yang lebih tinggi menarik dana keluar.",
+        },
       },
       {
         sector: "Properties & Real Estate",
-        rationale: "Long-duration assets are valued against long-term rates.",
+        rationale: {
+          en: "Long-duration assets are valued against long-term rates.",
+          id: "Aset berdurasi panjang dinilai terhadap suku bunga jangka panjang.",
+        },
       },
     ],
   },
   "usd-broad": {
-    name: "US dollar, broad index",
+    name: { en: "US dollar, broad index", id: "Dolar AS, indeks luas" },
     group: "global",
     source: "S8",
     sourceName: "Nominal Broad U.S. Dollar Index [DTWEXBGS]",
@@ -342,13 +399,17 @@ export const SERIES = {
     sectors: [
       {
         sector: "Consumer Non-Cyclicals",
-        rationale:
-          "A stronger dollar usually means a weaker rupiah and dearer imported inputs.",
+        rationale: {
+          en: "A stronger dollar usually means a weaker rupiah and dearer imported inputs.",
+          id: "Dolar yang lebih kuat biasanya berarti rupiah lebih lemah dan bahan baku impor lebih mahal.",
+        },
       },
       {
         sector: "Energy",
-        rationale:
-          "Commodity exporters gain in rupiah when the dollar strengthens.",
+        rationale: {
+          en: "Commodity exporters gain in rupiah when the dollar strengthens.",
+          id: "Eksportir komoditas diuntungkan dalam rupiah ketika dolar menguat.",
+        },
       },
     ],
   },

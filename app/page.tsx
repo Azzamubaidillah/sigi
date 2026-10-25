@@ -3,9 +3,11 @@ import Link from "next/link";
 import { S1Citation } from "@/app/_components/Citation";
 import { TradingViewWidget } from "@/app/_components/TradingViewWidget";
 import { formatDate, formatHhi, formatPercent } from "@/app/_lib/format";
+import { getLang } from "@/app/_lib/lang";
 import { loadConfig } from "@/src/config";
+import { commonMessages } from "@/src/i18n/messages/common";
+import { marketMessages } from "@/src/i18n/messages/market";
 import {
-  ABSENCE_TEXT,
   type CompanyFigures,
   loadCompanyScreen,
   parseScreenFilters,
@@ -21,25 +23,29 @@ function percentValue(hundredths: number | null): string {
   return hundredths === null ? "" : String(hundredths / 100);
 }
 
+type Messages = (typeof marketMessages)["en"];
+
 function ScreenForm({
   filters,
   typeOptions,
+  m,
 }: {
   filters: ScreenFilters;
   typeOptions: { key: string; label: string }[];
+  m: Messages["screen"];
 }) {
   return (
     <form className="screen" method="get" action="/">
       <label>
-        Code or name
+        {m.query}
         <input
           name="q"
           defaultValue={filters.query}
-          placeholder="e.g. BBCA or bank"
+          placeholder={m.queryPlaceholder}
         />
       </label>
       <label>
-        Free float bound at least (%)
+        {m.floatMin}
         <input
           name="floatMin"
           inputMode="decimal"
@@ -47,7 +53,7 @@ function ScreenForm({
         />
       </label>
       <label>
-        Free float bound below (%)
+        {m.floatMax}
         <input
           name="floatMax"
           inputMode="decimal"
@@ -55,7 +61,7 @@ function ScreenForm({
         />
       </label>
       <label>
-        Largest holder at least (%)
+        {m.topMin}
         <input
           name="topMin"
           inputMode="decimal"
@@ -63,9 +69,9 @@ function ScreenForm({
         />
       </label>
       <label>
-        Has a holder of type
+        {m.type}
         <select name="type" defaultValue={filters.type ?? ""}>
-          <option value="">Any</option>
+          <option value="">{m.anyType}</option>
           {typeOptions.map((option) => (
             <option key={option.key} value={option.key}>
               {option.label}
@@ -74,11 +80,11 @@ function ScreenForm({
         </select>
       </label>
       <label>
-        Sort
+        {m.sort}
         <select name="sort" defaultValue={filters.sort}>
-          {Object.entries(SORTS).map(([value, label]) => (
+          {SORTS.map((value) => (
             <option key={value} value={value}>
-              {label}
+              {m.sorts[value]}
             </option>
           ))}
         </select>
@@ -90,7 +96,7 @@ function ScreenForm({
           value="1"
           defaultChecked={filters.foreign}
         />
-        Has a foreign holder above 1%
+        {m.foreign}
       </label>
       <label className="check">
         <input
@@ -99,50 +105,49 @@ function ScreenForm({
           value="1"
           defaultChecked={filters.changed}
         />
-        Holders changed since the previous month
+        {m.changed}
       </label>
       <div className="actions">
         <button className="button" type="submit">
-          Apply
+          {m.apply}
         </button>
         <Link className="button secondary" href="/">
-          Reset
+          {m.reset}
         </Link>
       </div>
     </form>
   );
 }
 
-function moves(company: CompanyFigures): string {
+function moves(company: CompanyFigures, m: Messages["moves"]): string {
   if (!company.changes) return "—";
   const { entered, exited, increased, decreased } = company.changes;
   const parts = [
-    entered.length ? `${entered.length} new` : "",
-    exited.length ? `${exited.length} gone` : "",
-    increased.length ? `${increased.length} up` : "",
-    decreased.length ? `${decreased.length} down` : "",
+    entered.length ? m.added(entered.length) : "",
+    exited.length ? m.gone(exited.length) : "",
+    increased.length ? m.up(increased.length) : "",
+    decreased.length ? m.down(decreased.length) : "",
   ].filter(Boolean);
-  return parts.length ? parts.join(", ") : "none";
+  return parts.length ? parts.join(", ") : m.none;
 }
 
 export default async function MarketPage({ searchParams }: Props) {
+  const lang = await getLang();
+  const m = marketMessages[lang];
   const filters = parseScreenFilters(await searchParams);
   const screen = loadCompanyScreen(loadConfig().databasePath, filters);
   return (
     <>
       <div className="page-header">
-        <h1>Who owns Indonesia&apos;s listed companies</h1>
-        <p className="lede">
-          Every holder above 1% of every listed company, from the monthly
-          register, screened on Sigi&apos;s own figures. Prices and charts are
-          TradingView&apos;s, shown as embedded.
-        </p>
+        <h1>{m.title}</h1>
+        <p className="lede">{m.lede}</p>
       </div>
 
       <section className="panel">
-        <h2>IHSG (Jakarta Composite)</h2>
+        <h2>{m.chart.heading}</h2>
         <TradingViewWidget
-          title="IHSG daily chart by TradingView"
+          title={m.chart.title}
+          lang={lang}
           script="embed-widget-advanced-chart.js"
           height={420}
           config={{
@@ -151,7 +156,6 @@ export default async function MarketPage({ searchParams }: Props) {
             interval: "D",
             timezone: "Asia/Jakarta",
             style: "1",
-            locale: "en",
             allow_symbol_change: false,
             hide_side_toolbar: true,
             support_host: "https://www.tradingview.com",
@@ -160,34 +164,58 @@ export default async function MarketPage({ searchParams }: Props) {
       </section>
 
       <section className="panel">
-        <h2>Ownership screen</h2>
+        <h2>{m.screen.heading}</h2>
         {screen.kind === "absent" ? (
-          <p className="absent">{ABSENCE_TEXT[screen.reason]}</p>
+          <p className="absent">
+            {commonMessages[lang].ownershipAbsence[screen.reason]}
+          </p>
         ) : (
           <>
-            <ScreenForm filters={filters} typeOptions={screen.typeOptions} />
+            <ScreenForm
+              filters={filters}
+              typeOptions={screen.typeOptions}
+              m={m.screen}
+            />
             <p className="muted spaced">
-              As of {formatDate(screen.month.recordDate)}
+              {m.status.asOf(formatDate(screen.month.recordDate, lang))}
               {screen.previous
-                ? `, changes against ${formatDate(screen.previous.recordDate)}`
-                : ", no earlier month to compare"}
-              . {screen.companies.length} of {screen.total} companies shown
+                ? m.status.changesAgainst(
+                    formatDate(screen.previous.recordDate, lang),
+                  )
+                : m.status.noEarlier}
+              {m.status.shown(screen.companies.length, screen.total)}
               {screen.excluded.length > 0
-                ? `; excluded: ${screen.excluded.map((e) => `${e.count} (${e.reason})`).join("; ")}`
-                : "; none excluded"}
-              .
+                ? m.status.excludedPrefix +
+                  screen.excluded
+                    .map((e) =>
+                      m.status.excludedItem(
+                        e.count,
+                        m.status.reasons[e.reason],
+                      ),
+                    )
+                    .join(m.status.excludedJoin)
+                : m.status.noneExcluded}
+              {m.status.end}
             </p>
             <div className="table-wrap">
               <table className="data">
                 <thead>
                   <tr>
-                    <th>Code</th>
-                    <th>Company</th>
-                    <th className="num">Holders above 1%</th>
-                    <th className="num">Largest holder</th>
-                    <th className="num">Free float bound</th>
-                    <th className="num">HHI</th>
-                    <th>Since last month</th>
+                    <th scope="col">{m.table.code}</th>
+                    <th scope="col">{m.table.company}</th>
+                    <th scope="col" className="num">
+                      {m.table.holders}
+                    </th>
+                    <th scope="col" className="num">
+                      {m.table.largest}
+                    </th>
+                    <th scope="col" className="num">
+                      {m.table.freeFloat}
+                    </th>
+                    <th scope="col" className="num">
+                      {m.table.hhi}
+                    </th>
+                    <th scope="col">{m.table.since}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -201,41 +229,45 @@ export default async function MarketPage({ searchParams }: Props) {
                       <td>{company.issuerName}</td>
                       <td className="num">{company.holders}</td>
                       <td className="num">
-                        {formatPercent(company.topHundredths)}
+                        {formatPercent(company.topHundredths, lang)}
                       </td>
                       <td className="num">
                         {company.registerIncomplete ? (
                           <span
                             className="muted"
-                            title="Register lists under 15% above 1%"
+                            title={m.table.incompleteTitle}
                           >
-                            incomplete
+                            {m.table.incomplete}
                           </span>
                         ) : (
-                          formatPercent(company.freeFloatUpperBoundHundredths)
+                          formatPercent(
+                            company.freeFloatUpperBoundHundredths,
+                            lang,
+                          )
                         )}
                       </td>
-                      <td className="num">{formatHhi(company.hhi)}</td>
-                      <td>{moves(company)}</td>
+                      <td className="num">{formatHhi(company.hhi, lang)}</td>
+                      <td>{moves(company, m.moves)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="citation">
-              Free float bound: 100% minus holders of 5% or more; the official
-              figure is this or lower (
-              <Link href="/investability#methodology">methodology</Link>).
+              {m.bound.before}
+              <Link href="/investability#methodology">{m.bound.link}</Link>
+              {m.bound.after}
             </p>
-            <S1Citation month={screen.month} />
+            <S1Citation month={screen.month} lang={lang} />
           </>
         )}
       </section>
 
       <section className="panel">
-        <h2>Prices and fundamentals screener</h2>
+        <h2>{m.screener.heading}</h2>
         <TradingViewWidget
-          title="Indonesia stock screener by TradingView"
+          title={m.screener.title}
+          lang={lang}
           script="embed-widget-screener.js"
           height={520}
           config={{
@@ -247,7 +279,6 @@ export default async function MarketPage({ searchParams }: Props) {
             defaultScreen: "general",
             market: "indonesia",
             showToolbar: true,
-            locale: "en",
           }}
         />
       </section>

@@ -167,7 +167,7 @@ function floatSection(
           `${deadline.date}:${deadline.requiredHundredths}`,
           {
             date: deadline.date,
-            label: `${tranche.label}: ${deadline.requiredHundredths / 100}% by ${deadline.date}`,
+            label: `${tranche.label.en}: ${deadline.requiredHundredths / 100}% by ${deadline.date}`,
           },
         ]),
       ),
@@ -224,7 +224,7 @@ function macroSection(
       .map((card) => ({
         key: `macro:${card.id}:${card.latest.period}`,
         series: card.id,
-        name: card.definition.name,
+        name: card.definition.name.en,
         unit: card.definition.unit,
         period: card.latest.period,
         value: card.latest.value.toFixed(card.definition.decimals),
@@ -241,7 +241,7 @@ function macroSection(
       .map((card) => ({
         key: `macro-next:${card.id}`,
         series: card.id,
-        name: card.definition.name,
+        name: card.definition.name.en,
         expectedOn: card.nextRelease.date,
         approximate: card.nextRelease.approximate,
       })),
@@ -341,7 +341,7 @@ function eventsSection(
 ): NonNullable<BriefContext["events"]> | string {
   const items = TIMELINE.map((event) => ({
     date: event.date,
-    label: event.label,
+    label: event.label.en,
     publisher: `${event.source.publisher}${event.source.kind === "secondary" ? " (secondary report)" : ""}`,
     inDays: daysFrom(today, event.date),
   }))

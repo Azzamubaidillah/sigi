@@ -1,43 +1,44 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Privacy" };
+import { getLang } from "@/app/_lib/lang";
+import { privacyMessages } from "@/src/i18n/messages/privacy";
 
-export default function PrivacyPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  return { title: privacyMessages[lang].metaTitle };
+}
+
+export default async function PrivacyPage() {
+  const lang = await getLang();
+  const m = privacyMessages[lang];
   return (
     <>
       <div className="page-header">
-        <h1>Privacy</h1>
+        <h1>{m.heading}</h1>
       </div>
       <section className="panel stack prose">
         <p>
-          <strong>Visitors.</strong> Sigi has no accounts for readers, no
-          analytics and no advertising. The web server keeps standard access
-          logs (address, time, page requested) for operating the site.
+          <strong>{m.visitorsLabel}</strong>
+          {m.visitors}
         </p>
         <p>
-          <strong>Cookies.</strong> Sigi sets none: there are no accounts and no
-          sign-in.
+          <strong>{m.cookiesLabel}</strong>
+          {m.cookies}
         </p>
         <p>
-          <strong>TradingView.</strong> Charts and the price screener are
-          TradingView widgets loaded from TradingView&apos;s servers.
-          TradingView states that its widgets set no cookies, and that it
-          receives the embedding page&apos;s address, the widget type, the
-          symbol and your IP address. Its own{" "}
+          <strong>{m.tradingViewLabel}</strong>
+          {m.tradingViewBefore}
           <a
             href="https://www.tradingview.com/privacy-policy/"
             rel="noreferrer"
           >
-            privacy policy
-          </a>{" "}
-          applies to that.
+            {m.tradingViewLink}
+          </a>
+          {m.tradingViewAfter}
         </p>
         <p>
-          <strong>Personal data in the sources.</strong> The ownership register
-          published by the exchange names individual shareholders above 1%. Sigi
-          shows those names only on the company&apos;s own table, exactly as
-          published and with the source, and builds no pages or searches about
-          individuals.
+          <strong>{m.personalLabel}</strong>
+          {m.personal}
         </p>
       </section>
     </>

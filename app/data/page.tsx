@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 
+import { getLang } from "@/app/_lib/lang";
 import { GateList } from "@/app/_components/GateList";
 import { formatDate, formatMonth, formatTimestamp } from "@/app/_lib/format";
 import { loadConfig } from "@/src/config";
 import { S1_PAGE_URL } from "@/src/fetch/idx-listing";
 import { FEEDS, type FeedId, S1_FEED } from "@/src/macro/feeds";
 import { NEWS_FEED, NEWS_SOURCE } from "@/src/news/feeds";
-import { SOURCES, STATUS_LABELS } from "@/src/sources/register";
+import { localise } from "@/src/i18n/define";
+import type { Lang } from "@/src/i18n/lang";
+import { dataMessages } from "@/src/i18n/messages/data";
+import { SOURCES } from "@/src/sources/register";
 import {
   loadFeedStatus,
   loadImportRuns,
@@ -16,14 +20,17 @@ import { formatPeriod } from "@/src/views/macro";
 
 const FEED_LIST = [S1_FEED, ...(Object.keys(FEEDS) as FeedId[]), NEWS_FEED];
 
-function feedLabel(feed: string): {
+function feedLabel(
+  feed: string,
+  lang: Lang,
+): {
   title: string;
   source: string;
   url: string;
 } {
   if (feed === S1_FEED) {
     return {
-      title: "Holders above 1%, monthly files",
+      title: dataMessages[lang].s1.feedTitle,
       source: "S1",
       url: S1_PAGE_URL,
     };
@@ -39,15 +46,16 @@ function feedLabel(feed: string): {
   };
 }
 
-export const metadata: Metadata = { title: "Data & sources" };
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  return { title: dataMessages[lang].metaTitle };
+}
 
-const outcomeText = {
-  published: "Published",
-  superseded: "Superseded",
-  rejected: "Rejected",
-} as const;
-
-export default function DataPage() {
+export default async function DataPage() {
+  const lang = await getLang();
+  const m = dataMessages[lang];
+  const integer = (value: number) =>
+    value.toLocaleString(lang === "id" ? "id-ID" : "en-US");
   const { databasePath } = loadConfig();
   const health = loadS1Health(databasePath);
   const runs = loadImportRuns(databasePath);
@@ -55,71 +63,63 @@ export default function DataPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Data &amp; sources</h1>
-        <p className="lede">
-          Where every figure comes from, when it was last fetched, and what each
-          import&apos;s checks found. Files are fetched and imported
-          automatically; nobody reviews them by hand. A file that fails a check
-          is not published, and what was published before stays live. A file
-          with a warning is published, and the warning is shown here.
-        </p>
+        <h1>{m.heading}</h1>
+        <p className="lede">{m.lede}</p>
       </div>
 
       <section className="panel">
-        <h2>Holders above 1% (S1)</h2>
+        <h2>{m.s1.heading}</h2>
         {health.latest ? (
           <dl className="figures">
             <div>
-              <dt>Published month</dt>
-              <dd>{formatDate(health.latest.recordDate)}</dd>
+              <dt>{m.s1.publishedMonth}</dt>
+              <dd>{formatDate(health.latest.recordDate, lang)}</dd>
             </div>
             <div>
-              <dt>Published at</dt>
-              <dd>{formatTimestamp(health.latest.publishedAt)}</dd>
+              <dt>{m.s1.publishedAt}</dt>
+              <dd>{formatTimestamp(health.latest.publishedAt, lang)}</dd>
             </div>
             <div>
-              <dt>Rows · companies</dt>
+              <dt>{m.s1.rowsCompanies}</dt>
               <dd>
-                {health.latest.rowCount.toLocaleString("en-US")} ·{" "}
-                {health.latest.issuerCount}
+                {integer(health.latest.rowCount)} · {health.latest.issuerCount}
               </dd>
             </div>
             {health.next ? (
               <div>
                 <dt>
-                  Next file (end of {formatMonth(health.next.recordMonth)})
+                  {m.s1.nextFile(formatMonth(health.next.recordMonth, lang))}
                 </dt>
-                <dd>expected by {formatDate(health.next.expectedBy)}</dd>
+                <dd>
+                  {m.s1.expectedBy(formatDate(health.next.expectedBy, lang))}
+                </dd>
               </div>
             ) : null}
           </dl>
         ) : (
-          <p className="absent">No month published yet.</p>
+          <p className="absent">{m.s1.none}</p>
         )}
         {health.overdue ? (
-          <p className="notice spaced">
-            The next monthly file is past its usual publication date and has not
-            been imported. Figures on this site are as of the month above.
-          </p>
+          <p className="notice spaced">{m.s1.overdue}</p>
         ) : null}
       </section>
 
       <section className="panel">
-        <h2>Checks of each source</h2>
+        <h2>{m.feeds.heading}</h2>
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Feed</th>
-                <th>Source</th>
-                <th>Last checked</th>
-                <th>Outcome</th>
-                <th>Last new data</th>
+                <th scope="col">{m.feeds.feed}</th>
+                <th scope="col">{m.feeds.source}</th>
+                <th scope="col">{m.feeds.lastChecked}</th>
+                <th scope="col">{m.feeds.outcome}</th>
+                <th scope="col">{m.feeds.lastNew}</th>
               </tr>
             </thead>
             <tbody>
               {feeds.map((status) => {
-                const label = feedLabel(status.feed);
+                const label = feedLabel(status.feed, lang);
                 return (
                   <tr key={status.feed}>
                     <td>
@@ -130,27 +130,28 @@ export default function DataPage() {
                     <td className="mono">{label.source}</td>
                     <td>
                       {status.last
-                        ? formatTimestamp(status.last.startedAt)
-                        : "Not yet"}
+                        ? formatTimestamp(status.last.startedAt, lang)
+                        : m.feeds.notYet}
                     </td>
                     <td>
                       {!status.last ? (
                         "—"
                       ) : status.last.outcome === "ok" ? (
                         status.last.fetched > 0 ? (
-                          `OK, ${status.last.fetched} imported`
+                          m.feeds.okImported(status.last.fetched)
                         ) : (
-                          "OK, nothing new"
+                          m.feeds.okNothing
                         )
                       ) : (
                         <span className="tone-negative">
-                          Failed: {status.last.error}
+                          {m.feeds.failed}
+                          {status.last.error}
                         </span>
                       )}
                     </td>
                     <td>
                       {status.lastImportAt
-                        ? formatTimestamp(status.lastImportAt)
+                        ? formatTimestamp(status.lastImportAt, lang)
                         : "—"}
                     </td>
                   </tr>
@@ -160,34 +161,32 @@ export default function DataPage() {
           </table>
         </div>
         <p className="citation">
-          A worker checks every source once a day. The exchange&apos;s{" "}
+          {m.feeds.noteBefore}
           <a href={S1_PAGE_URL} rel="noreferrer">
-            share-ownership data page
-          </a>{" "}
-          is read in a browser and every monthly file of holders above 1% not
-          yet imported is taken, oldest first (D-021). Bank Indonesia&apos;s
-          tables are exported as a reader would export them (D-023); the World
-          Bank and FRED files are downloaded as published. A failed check is
-          retried three hours later.
+            {m.feeds.noteLink}
+          </a>
+          {m.feeds.noteAfter}
         </p>
       </section>
 
       <section className="panel">
-        <h2>Imports</h2>
+        <h2>{m.imports.heading}</h2>
         {runs.length === 0 ? (
-          <p className="absent">No file has been imported yet.</p>
+          <p className="absent">{m.imports.none}</p>
         ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
                 <tr>
-                  <th>Run</th>
-                  <th>Imported</th>
-                  <th>File</th>
-                  <th>Latest period</th>
-                  <th className="num">Rows</th>
-                  <th>Outcome</th>
-                  <th>Checks</th>
+                  <th scope="col">{m.imports.run}</th>
+                  <th scope="col">{m.imports.imported}</th>
+                  <th scope="col">{m.imports.file}</th>
+                  <th scope="col">{m.imports.latestPeriod}</th>
+                  <th scope="col" className="num">
+                    {m.imports.rows}
+                  </th>
+                  <th scope="col">{m.imports.outcome}</th>
+                  <th scope="col">{m.imports.checks}</th>
                 </tr>
               </thead>
               <tbody>
@@ -196,7 +195,7 @@ export default function DataPage() {
                     <td className="mono">
                       #{run.id} {run.sourceId}
                     </td>
-                    <td>{formatTimestamp(run.startedAt)}</td>
+                    <td>{formatTimestamp(run.startedAt, lang)}</td>
                     <td>
                       <a href={run.sourceUrl} rel="noreferrer">
                         {run.originalName}
@@ -207,24 +206,27 @@ export default function DataPage() {
                       </span>
                     </td>
                     <td>
-                      {run.recordDate ? formatPeriod(run.recordDate) : "—"}
+                      {run.recordDate
+                        ? formatPeriod(run.recordDate, lang)
+                        : "—"}
                     </td>
                     <td className="num">
-                      {run.rowCount?.toLocaleString("en-US") ?? "—"}
+                      {run.rowCount === null ? "—" : integer(run.rowCount)}
                     </td>
                     <td>
-                      {outcomeText[run.outcome]}
+                      {m.imports.outcomes[run.outcome]}
                       {run.correction ? (
-                        <span className="muted"> (correction)</span>
+                        <span className="muted">{m.imports.correction}</span>
                       ) : null}
                     </td>
                     <td>
                       {run.parseError ? (
                         <span className="tone-negative">
-                          Unreadable: {run.parseError}
+                          {m.imports.unreadable}
+                          {run.parseError}
                         </span>
                       ) : (
-                        <GateList gates={run.gates} />
+                        <GateList gates={run.gates} lang={lang} />
                       )}
                     </td>
                   </tr>
@@ -234,23 +236,23 @@ export default function DataPage() {
           </div>
         )}
         <p className="citation">
-          Published months are rebuilt from the stored source files and compared
-          by content hash, in CI on synthetic files and on the server with{" "}
-          <span className="mono">pnpm rebuild:check</span>.
+          {m.imports.noteBefore}
+          <span className="mono">pnpm rebuild:check</span>
+          {m.imports.noteAfter}
         </p>
       </section>
 
       <section className="panel">
-        <h2>Sources and licences</h2>
+        <h2>{m.sources.heading}</h2>
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Terms</th>
-                <th>In use</th>
+                <th scope="col">{m.sources.id}</th>
+                <th scope="col">{m.sources.source}</th>
+                <th scope="col">{m.sources.status}</th>
+                <th scope="col">{m.sources.terms}</th>
+                <th scope="col">{m.sources.inUse}</th>
               </tr>
             </thead>
             <tbody>
@@ -259,14 +261,14 @@ export default function DataPage() {
                   <td className="mono">{id}</td>
                   <td>
                     <a href={source.url} rel="noreferrer">
-                      {source.name}
+                      {localise(source.name, lang)}
                     </a>
                     <br />
                     <span className="muted">{source.publisher}</span>
                   </td>
-                  <td>{STATUS_LABELS[source.status]}</td>
-                  <td>{source.terms}</td>
-                  <td>{source.live ? "Yes" : "Not yet"}</td>
+                  <td>{m.sourceStatus[source.status]}</td>
+                  <td>{localise(source.terms, lang)}</td>
+                  <td>{source.live ? m.sources.yes : m.sources.notYet}</td>
                 </tr>
               ))}
             </tbody>

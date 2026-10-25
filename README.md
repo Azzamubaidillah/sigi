@@ -44,6 +44,19 @@ The exchange's terms ask that its site not be scraped, and Bank Indonesia publis
 
 `pnpm rebuild:check` re-derives every published S1 month and macro series from its stored source file and compares content hashes.
 
+## End-to-end tests
+
+Playwright drives every public page in Chromium, and Lighthouse audits each page's accessibility (PRD §10). Neither is part of `pnpm verify`; CI runs them in the separate `e2e` job.
+
+```sh
+pnpm exec playwright install chromium   # once
+pnpm e2e                                # builds, seeds, serves, runs the specs
+pnpm lighthouse                         # the same site; accessibility score of at least 90 on every page
+E2E_SKIP_BUILD=1 pnpm e2e               # reuse the existing .next build
+```
+
+Each run seeds a synthetic database and thesis and brief files into a temporary directory (`e2e/seed.ts`, nothing from `~/sigi-local`) and serves the production build on port 3231, with a second, empty site on 3232 for the "nothing yet" states. TradingView requests are answered locally, so nothing needs the network. The directories are removed afterwards; `E2E_KEEP=1` keeps them. Lighthouse runs every page in English and Indonesian, in the light and dark schemes, at desktop and phone size, and writes `lighthouse-report/accessibility.md` and `.json`; the Playwright report is in `playwright-report/`.
+
 ## Writing a thesis
 
 A thesis is `theses/<slug>/<YYYY-MM-DD>.md`, where the slug is lower-case words joined by hyphens. Each new version is a new file dated the day it was written. Older files stay as they are, and the page shows what changed. Commit and deploy to publish. The file starts with two fenced blocks, then the prose:

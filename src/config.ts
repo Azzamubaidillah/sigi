@@ -26,6 +26,8 @@ const environmentSchema = z.object({
   SIGI_FETCH_INTERVAL_HOURS: z.coerce.number().min(1).max(168).default(24),
   /** The browser the worker drives; the worker image installs Google Chrome here. */
   SIGI_CHROME_PATH: z.string().default("/usr/bin/google-chrome"),
+  /** Where the thesis files are (`<slug>/<YYYY-MM-DD>.md`); the repository's own `theses/` by default. */
+  SIGI_THESES_DIR: z.string().min(1).default("./theses"),
 });
 
 export interface SigiConfig {
@@ -91,6 +93,6 @@ function parseConfig(
     logLevel: parsed.SIGI_LOG_LEVEL,
     fetchIntervalMs: Math.round(parsed.SIGI_FETCH_INTERVAL_HOURS * 3_600_000),
     chromePath: parsed.SIGI_CHROME_PATH,
-    thesesDirectory: path.resolve(workingDirectory, "theses"),
+    thesesDirectory: path.resolve(workingDirectory, parsed.SIGI_THESES_DIR),
   };
 }

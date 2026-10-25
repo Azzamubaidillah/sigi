@@ -4,10 +4,20 @@ import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 
 import { formatPercent } from "@/app/_lib/format";
+import type { Lang } from "@/src/i18n/lang";
+import type { holdersMessages } from "@/src/i18n/messages/holders";
 import { typeLabel } from "@/src/ownership/investor-classes";
 import type { HolderSummary } from "@/src/views/holders";
 
-export function HolderTable({ holders }: { holders: HolderSummary[] }) {
+export function HolderTable({
+  holders,
+  lang,
+  labels,
+}: {
+  holders: HolderSummary[];
+  lang: Lang;
+  labels: (typeof holdersMessages)["en"]["table"];
+}) {
   const [query, setQuery] = useState("");
   const deferred = useDeferredValue(query.trim().toUpperCase());
   const shown = deferred
@@ -18,22 +28,24 @@ export function HolderTable({ holders }: { holders: HolderSummary[] }) {
       <input
         className="filter"
         type="search"
-        placeholder="Filter by name"
-        aria-label="Filter holders by name"
+        placeholder={labels.filterPlaceholder}
+        aria-label={labels.filterLabel}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
       <p className="muted">
-        {shown.length} of {holders.length} holders
+        {shown.length} {labels.of} {holders.length} {labels.holders}
       </p>
       <div className="table-wrap">
         <table className="data">
           <thead>
             <tr>
-              <th>Holder</th>
-              <th>Type</th>
-              <th className="num">Companies</th>
-              <th>Largest position</th>
+              <th scope="col">{labels.holder}</th>
+              <th scope="col">{labels.type}</th>
+              <th scope="col" className="num">
+                {labels.companies}
+              </th>
+              <th scope="col">{labels.largest}</th>
             </tr>
           </thead>
           <tbody>
@@ -51,18 +63,14 @@ export function HolderTable({ holders }: { holders: HolderSummary[] }) {
                   >
                     {holder.largest.shareCode}
                   </Link>{" "}
-                  {formatPercent(holder.largest.hundredths)}
+                  {formatPercent(holder.largest.hundredths, lang)}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {shown.length > 500 ? (
-        <p className="muted">
-          Showing the first 500; filter to narrow the list.
-        </p>
-      ) : null}
+      {shown.length > 500 ? <p className="muted">{labels.truncated}</p> : null}
     </>
   );
 }

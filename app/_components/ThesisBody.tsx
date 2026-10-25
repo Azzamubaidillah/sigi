@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import type { Lang } from "@/src/i18n/lang";
+import { thesesMessages } from "@/src/i18n/messages/theses";
 import type { ThesisBlock, ThesisInline } from "@/src/theses/markdown";
 
 /**
@@ -44,7 +46,13 @@ function Inlines({ nodes }: { nodes: ThesisInline[] }): ReactNode {
   });
 }
 
-function Blocks({ blocks }: { blocks: ThesisBlock[] }): ReactNode {
+function Blocks({
+  blocks,
+  lang,
+}: {
+  blocks: ThesisBlock[];
+  lang: Lang;
+}): ReactNode {
   return blocks.map((block, index) => {
     switch (block.type) {
       case "heading": {
@@ -77,14 +85,18 @@ function Blocks({ blocks }: { blocks: ThesisBlock[] }): ReactNode {
               <li key={itemIndex}>
                 {item.checked === null ? null : (
                   <input
-                    aria-label={item.checked ? "Done" : "Not done"}
+                    aria-label={
+                      item.checked
+                        ? thesesMessages[lang].doneLabel
+                        : thesesMessages[lang].notDoneLabel
+                    }
                     checked={item.checked}
                     disabled
                     readOnly
                     type="checkbox"
                   />
                 )}
-                <Blocks blocks={item.children} />
+                <Blocks blocks={item.children} lang={lang} />
               </li>
             ))}
           </Tag>
@@ -129,7 +141,7 @@ function Blocks({ blocks }: { blocks: ThesisBlock[] }): ReactNode {
       case "blockquote":
         return (
           <blockquote key={index}>
-            <Blocks blocks={block.children} />
+            <Blocks blocks={block.children} lang={lang} />
           </blockquote>
         );
       case "code":
@@ -144,10 +156,16 @@ function Blocks({ blocks }: { blocks: ThesisBlock[] }): ReactNode {
   });
 }
 
-export function ThesisBody({ blocks }: { blocks: ThesisBlock[] }) {
+export function ThesisBody({
+  blocks,
+  lang,
+}: {
+  blocks: ThesisBlock[];
+  lang: Lang;
+}) {
   return (
     <div className="prose thesis-body">
-      <Blocks blocks={blocks} />
+      <Blocks blocks={blocks} lang={lang} />
     </div>
   );
 }

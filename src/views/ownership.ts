@@ -18,17 +18,9 @@ import {
 
 export type { PublishedHolding, PublishedMonth } from "./snapshot";
 
-/** Why a section has nothing to show. Pages render these, never a zero. */
+/** Why a section has nothing to show. Pages render these, never a zero. The words are in `commonMessages.ownershipAbsence`. */
 export type OwnershipAbsence =
   "no_published_month" | "not_in_register" | "no_previous_month";
-
-export const ABSENCE_TEXT: Record<OwnershipAbsence, string> = {
-  no_published_month: "No month of the >1% register has been published yet.",
-  not_in_register:
-    "This code has no holder above 1% in the latest published month, or is not a listed share.",
-  no_previous_month:
-    "No earlier month is published, so there is nothing to compare against.",
-};
 
 export function loadLatestMonth(databasePath: string): PublishedMonth | null {
   return loadSnapshot(databasePath)?.months[0] ?? null;
@@ -89,14 +81,15 @@ export function companyFigures(
   };
 }
 
-export const SORTS = {
-  code: "Code",
-  "float-asc": "Free float bound, lowest first",
-  "top-desc": "Largest holder, highest first",
-  "hhi-desc": "Concentration (HHI), highest first",
-  "holders-desc": "Holders above 1%, most first",
-} as const;
-export type ScreenSort = keyof typeof SORTS;
+/** Sort ids as used in the URL; their labels are in `marketMessages`. */
+export const SORTS = [
+  "code",
+  "float-asc",
+  "top-desc",
+  "hhi-desc",
+  "holders-desc",
+] as const;
+export type ScreenSort = (typeof SORTS)[number];
 
 export interface ScreenFilters {
   query: string;
@@ -137,12 +130,15 @@ export function parseScreenFilters(params: SearchParams): ScreenFilters {
     type: /^[a-z]{2,80}$/.test(type) ? type : null,
     foreign: single(params, "foreign") === "1",
     changed: single(params, "changed") === "1",
-    sort: sort in SORTS ? (sort as ScreenSort) : "code",
+    sort: (SORTS as readonly string[]).includes(sort)
+      ? (sort as ScreenSort)
+      : "code",
   };
 }
 
 export interface ScreenExclusion {
-  reason: string;
+  /** Why companies were left out; the words are in `marketMessages`. */
+  reason: "incomplete" | "not_in_previous" | "no_previous";
   count: number;
 }
 
@@ -259,16 +255,13 @@ export function loadCompanyScreen(
   const excluded: ScreenExclusion[] = [];
   if (incomplete > 0) {
     excluded.push({
-      reason:
-        "register incomplete: holders above 1% total under 15%, so no float figure",
+      reason: "incomplete",
       count: incomplete,
     });
   }
   if (noPrevious > 0) {
     excluded.push({
-      reason: latest.previous
-        ? "not in the previous month's register, so no change to compare"
-        : "no previous month is published",
+      reason: latest.previous ? "not_in_previous" : "no_previous",
       count: noPrevious,
     });
   }

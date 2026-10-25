@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { S1Citation } from "@/app/_components/Citation";
 import { HolderName } from "@/app/_components/HolderName";
-import { StatusBadge } from "@/app/_components/ThesisParts";
+import { TradingViewWidget } from "@/app/_components/TradingViewWidget";
 import {
   formatDate,
   formatHhi,
@@ -13,24 +13,32 @@ import {
   formatShares,
   formatSharesChange,
 } from "@/app/_lib/format";
+import { getLang } from "@/app/_lib/lang";
 import { localForeignLabel, possibleDeadlines } from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
-import { typeLabel } from "@/src/ownership/investor-classes";
+import { localise } from "@/src/i18n/define";
+import type { Lang } from "@/src/i18n/lang";
+import { commonMessages } from "@/src/i18n/messages/common";
+import { tickerMessages } from "@/src/i18n/messages/ticker";
 import {
   FREE_FLOAT_MINIMUM_HUNDREDTHS,
   possibleTranches,
 } from "@/src/investability/rule";
+import { typeLabel } from "@/src/ownership/investor-classes";
 import type { HolderChange } from "@/src/ownership/metrics";
+import { loadEvents } from "@/src/views/events";
 import { loadHolderLinks } from "@/src/views/holders";
 import {
-  ABSENCE_TEXT,
   type ChangesSlice,
   type CompanyFigures,
   loadTickerOwnership,
+  type OwnershipAbsence,
 } from "@/src/views/ownership";
 import { thesesForTicker } from "@/src/views/theses";
 
 type Params = { params: Promise<{ code: string }> };
+type Messages = (typeof tickerMessages)["en"];
+type Links = ReadonlyMap<string, string>;
 
 function shareCodeOf(raw: string): string | null {
   const code = decodeURIComponent(raw).toUpperCase();
@@ -38,20 +46,23 @@ function shareCodeOf(raw: string): string | null {
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const m = tickerMessages[await getLang()];
   const code = shareCodeOf((await params).code);
-  return { title: code ? `${code} ownership` : "Not found" };
+  return { title: code ? m.metaTitle(code) : m.notFound };
 }
-
-type Links = ReadonlyMap<string, string>;
 
 function ChangeTable({
   title,
   rows,
   links,
+  m,
+  lang,
 }: {
   title: string;
   rows: HolderChange[];
   links: Links;
+  m: Messages["changes"];
+  lang: Lang;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -61,11 +72,19 @@ function ChangeTable({
         <table className="data">
           <thead>
             <tr>
-              <th>Holder</th>
-              <th className="num">Before</th>
-              <th className="num">After</th>
-              <th className="num">Shares</th>
-              <th className="num">Change</th>
+              <th scope="col">{m.holder}</th>
+              <th scope="col" className="num">
+                {m.before}
+              </th>
+              <th scope="col" className="num">
+                {m.after}
+              </th>
+              <th scope="col" className="num">
+                {m.shares}
+              </th>
+              <th scope="col" className="num">
+                {m.change}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -77,21 +96,23 @@ function ChangeTable({
                 <td className="num">
                   {row.beforeHundredths === null
                     ? "—"
-                    : formatPercent(row.beforeHundredths)}
+                    : formatPercent(row.beforeHundredths, lang)}
                 </td>
                 <td className="num">
                   {row.afterHundredths === null
                     ? "—"
-                    : formatPercent(row.afterHundredths)}
+                    : formatPercent(row.afterHundredths, lang)}
                 </td>
                 <td className="num">
                   {formatSharesChange(
                     (row.afterShares ?? 0) - (row.beforeShares ?? 0),
+                    lang,
                   )}
                 </td>
                 <td className="num">
                   {formatPercentChange(
                     (row.afterHundredths ?? 0) - (row.beforeHundredths ?? 0),
+                    lang,
                   )}
                 </td>
               </tr>
@@ -103,9 +124,23 @@ function ChangeTable({
   );
 }
 
-function Changes({ slice, links }: { slice: ChangesSlice; links: Links }) {
+function Changes({
+  slice,
+  links,
+  m,
+  lang,
+}: {
+  slice: ChangesSlice;
+  links: Links;
+  m: Messages["changes"];
+  lang: Lang;
+}) {
   if (slice.kind === "absent") {
-    return <p className="absent">{ABSENCE_TEXT[slice.reason]}</p>;
+    return (
+      <p className="absent">
+        {commonMessages[lang].ownershipAbsence[slice.reason]}
+      </p>
+    );
   }
   const { changes, previous } = slice;
   const moved =
@@ -116,34 +151,46 @@ function Changes({ slice, links }: { slice: ChangesSlice; links: Links }) {
   return (
     <div className="stack">
       <p className="muted">
-        Against {formatDate(previous.recordDate)}: {changes.entered.length} new,{" "}
-        {changes.exited.length} gone, {changes.increased.length} up,{" "}
-        {changes.decreased.length} down, {changes.unchanged} unchanged. Holders
-        are matched by name as published (see{" "}
-        <Link href="/investability#methodology">methodology</Link>); crossing 1%
-        shows as new or gone.
+        {m.summaryBefore(
+          formatDate(previous.recordDate, lang),
+          changes.entered.length,
+          changes.exited.length,
+          changes.increased.length,
+          changes.decreased.length,
+          changes.unchanged,
+        )}
+        <Link href="/investability#methodology">{m.methodologyLink}</Link>
+        {m.summaryAfter}
       </p>
       {moved > 0 ? (
         <>
           <ChangeTable
-            title="New above 1%"
+            title={m.entered}
             rows={changes.entered}
             links={links}
+            m={m}
+            lang={lang}
           />
           <ChangeTable
-            title="No longer above 1%"
+            title={m.exited}
             rows={changes.exited}
             links={links}
+            m={m}
+            lang={lang}
           />
           <ChangeTable
-            title="Increased"
+            title={m.increased}
             rows={changes.increased}
             links={links}
+            m={m}
+            lang={lang}
           />
           <ChangeTable
-            title="Decreased"
+            title={m.decreased}
             rows={changes.decreased}
             links={links}
+            m={m}
+            lang={lang}
           />
         </>
       ) : null}
@@ -151,15 +198,21 @@ function Changes({ slice, links }: { slice: ChangesSlice; links: Links }) {
   );
 }
 
-function FreeFloat({ figures }: { figures: CompanyFigures }) {
+function FreeFloat({
+  figures,
+  m,
+  lang,
+}: {
+  figures: CompanyFigures;
+  m: Messages["freeFloat"];
+  lang: Lang;
+}) {
   if (figures.registerIncomplete) {
     return (
       <p className="notice">
-        The register lists only {formatPercent(figures.sumHundredths)} above 1%
-        for this company, too little to be complete: a known controlling holder
-        is missing for every company like this in the files checked so far. No
-        free-float figure is given; see{" "}
-        <Link href="/data">Data &amp; sources</Link>.
+        {m.incompleteBefore(formatPercent(figures.sumHundredths, lang))}
+        <Link href="/data">{m.incompleteLink}</Link>
+        {m.incompleteAfter}
       </p>
     );
   }
@@ -169,42 +222,116 @@ function FreeFloat({ figures }: { figures: CompanyFigures }) {
     <div className="stack">
       {bound < FREE_FLOAT_MINIMUM_HUNDREDTHS ? (
         <p className="notice">
-          <strong>Below the 15% minimum.</strong> Even counted generously, free
-          float is at most {formatPercent(bound)}. Its deadline depends on
-          market capitalisation, which Sigi does not have, so it is one of:{" "}
-          {possibleDeadlines(tranches).join("; ")}.
+          <strong>{m.belowStrong}</strong>
+          {m.below(
+            formatPercent(bound, lang),
+            possibleDeadlines(tranches, lang).join("; "),
+          )}
         </p>
       ) : (
-        <p className="muted">
-          The register does not show this company below the 15% minimum. The
-          official figure can still be lower than the bound shown here.
-        </p>
+        <p className="muted">{m.notBelow}</p>
       )}
       <p className="citation">
-        Free float upper bound: 100% minus every holder of 5% or more, the
-        exchange&apos;s definition as far as the register can see. The official
-        figure also excludes shares below 5% held by the controller&apos;s
-        affiliates, directors, commissioners, treasury and lock-ups, so it is
-        this figure or lower.{" "}
-        <Link href="/investability#methodology">Methodology</Link>.
+        {m.method}
+        <Link href="/investability#methodology">{m.methodLink}</Link>.
       </p>
     </div>
   );
 }
 
-function ThesesSection({ code }: { code: string }) {
-  const theses = thesesForTicker(loadConfig(), code);
+function EventsSection({
+  code,
+  figures,
+  m,
+  lang,
+}: {
+  code: string;
+  /** Null when the code is not in the register. */
+  figures: CompanyFigures | null;
+  m: Messages["events"];
+  lang: Lang;
+}) {
+  const events = loadEvents();
+  const tranches =
+    figures && !figures.registerIncomplete
+      ? possibleTranches(figures.freeFloatUpperBoundHundredths)
+      : [];
   return (
     <section className="panel">
-      <h2>Theses</h2>
+      <h2>{m.heading}</h2>
+      <p className="muted">{m.lede}</p>
+      <div className="table-wrap">
+        <table className="data">
+          <thead>
+            <tr>
+              <th scope="col">{m.date}</th>
+              <th scope="col">{m.event}</th>
+              <th scope="col">{m.source}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((event) => (
+              <tr key={`${event.date} ${event.label.en}`}>
+                <td className="mono">
+                  {formatDate(event.date, lang)}
+                  {event.past ? (
+                    <span className="badge flag">{m.past}</span>
+                  ) : null}
+                </td>
+                <td>{localise(event.label, lang)}</td>
+                <td>
+                  <a href={event.source.url} rel="noopener noreferrer nofollow">
+                    {event.source.publisher}
+                  </a>
+                  {event.source.kind === "secondary" ? ` (${m.secondary})` : ""}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="spaced">
+        {figures === null ? (
+          m.companyNoRegister(code)
+        ) : tranches.length > 0 ? (
+          <>
+            {m.companyBefore(code)}
+            {possibleDeadlines(tranches, lang).join("; ")}.
+          </>
+        ) : (
+          m.companyNone(code)
+        )}
+      </p>
+    </section>
+  );
+}
+
+function ThesesSection({
+  code,
+  m,
+  lang,
+}: {
+  code: string;
+  m: Messages["theses"];
+  lang: Lang;
+}) {
+  const theses = thesesForTicker(loadConfig(), code);
+  const status = commonMessages[lang].thesisStatus;
+  return (
+    <section className="panel">
+      <h2>{m.heading}</h2>
       {theses.length === 0 ? (
-        <p className="absent">No thesis names {code}.</p>
+        <p className="absent">{m.none(code)}</p>
       ) : (
         <ul>
           {theses.map((thesis) => (
             <li key={thesis.slug}>
               <Link href={`/theses/${thesis.slug}`}>{thesis.title}</Link>{" "}
-              <StatusBadge status={thesis.status} />{" "}
+              <span
+                className={thesis.status === "active" ? "badge pass" : "badge"}
+              >
+                {status[thesis.status]}
+              </span>{" "}
               <span className="muted">{thesis.summary}</span>
             </li>
           ))}
@@ -214,9 +341,92 @@ function ThesesSection({ code }: { code: string }) {
   );
 }
 
+/** TradingView's own sections, apart from Sigi's and labelled as theirs (PRD F8, S3). */
+function TradingViewSections({
+  code,
+  m,
+  lang,
+}: {
+  code: string;
+  m: Messages["tradingView"];
+  lang: Lang;
+}) {
+  const symbol = `IDX:${code}`;
+  const common = {
+    symbol,
+    isTransparent: false,
+    support_host: "https://www.tradingview.com",
+  };
+  const heading = commonMessages[lang].thirdParty;
+  return (
+    <section className="panel third-party" aria-labelledby="tradingview">
+      <h2 id="tradingview">{heading.heading}</h2>
+      <p className="muted">{heading.lede}</p>
+      <h3>{m.chart}</h3>
+      <TradingViewWidget
+        lang={lang}
+        title={m.chartTitle(code)}
+        script="embed-widget-advanced-chart.js"
+        height={420}
+        config={{
+          ...common,
+          autosize: true,
+          interval: "D",
+          timezone: "Asia/Jakarta",
+          style: "1",
+          allow_symbol_change: false,
+          hide_side_toolbar: true,
+        }}
+      />
+      <h3>{m.fundamentals}</h3>
+      <TradingViewWidget
+        lang={lang}
+        title={m.fundamentalsTitle(code)}
+        script="embed-widget-financials.js"
+        height={480}
+        config={{
+          ...common,
+          displayMode: "regular",
+          width: "100%",
+          height: "100%",
+        }}
+      />
+      <h3>{m.profile}</h3>
+      <TradingViewWidget
+        lang={lang}
+        title={m.profileTitle(code)}
+        script="embed-widget-symbol-profile.js"
+        height={300}
+        config={{ ...common, width: "100%", height: "100%" }}
+      />
+      <h3>{m.stories}</h3>
+      <TradingViewWidget
+        lang={lang}
+        title={m.storiesTitle(code)}
+        script="embed-widget-timeline.js"
+        height={420}
+        config={{
+          ...common,
+          feedMode: "symbol",
+          displayMode: "regular",
+          width: "100%",
+          height: "100%",
+        }}
+      />
+    </section>
+  );
+}
+
+/** Why the ownership figures are missing, in the page's language. */
+function absenceText(reason: OwnershipAbsence, lang: Lang): string {
+  return commonMessages[lang].ownershipAbsence[reason];
+}
+
 export default async function TickerPage({ params }: Params) {
   const code = shareCodeOf((await params).code);
   if (!code) notFound();
+  const lang = await getLang();
+  const m = tickerMessages[lang];
   const { databasePath } = loadConfig();
   const ownership = loadTickerOwnership(databasePath, code);
 
@@ -227,11 +437,15 @@ export default async function TickerPage({ params }: Params) {
           <h1 className="mono">{code}</h1>
         </div>
         <section className="panel">
-          <h2>Ownership</h2>
-          <p className="absent">{ABSENCE_TEXT[ownership.reason]}</p>
-          {ownership.month ? <S1Citation month={ownership.month} /> : null}
+          <h2>{m.ownership.heading}</h2>
+          <p className="absent">{absenceText(ownership.reason, lang)}</p>
+          {ownership.month ? (
+            <S1Citation month={ownership.month} lang={lang} />
+          ) : null}
         </section>
-        <ThesesSection code={code} />
+        <EventsSection code={code} figures={null} m={m.events} lang={lang} />
+        <ThesesSection code={code} m={m.theses} lang={lang} />
+        <TradingViewSections code={code} m={m.tradingView} lang={lang} />
       </>
     );
   }
@@ -250,68 +464,69 @@ export default async function TickerPage({ params }: Params) {
           {figures.issuerName}
         </h1>
         <p className="lede">
-          Holders above 1% on {formatDate(ownership.month.recordDate)}.{" "}
-          <Link href="/">All companies</Link>
+          {m.lede(formatDate(ownership.month.recordDate, lang))}{" "}
+          <Link href="/">{m.allCompanies}</Link>
         </p>
       </div>
 
       <section className="panel">
-        <h2>Ownership and free float</h2>
+        <h2>{m.ownership.heading}</h2>
         <dl className="figures">
           <div>
-            <dt>Free float, upper bound</dt>
+            <dt>{m.ownership.freeFloat}</dt>
             <dd>
               {figures.registerIncomplete
-                ? "not given"
-                : formatPercent(figures.freeFloatUpperBoundHundredths)}
+                ? m.ownership.notGiven
+                : formatPercent(figures.freeFloatUpperBoundHundredths, lang)}
             </dd>
           </div>
           <div>
-            <dt>Largest holder</dt>
-            <dd>{formatPercent(figures.topHundredths)}</dd>
+            <dt>{m.ownership.largest}</dt>
+            <dd>{formatPercent(figures.topHundredths, lang)}</dd>
           </div>
           <div>
-            <dt>Held below 1%</dt>
-            <dd>{formatPercent(figures.heldBelowOneHundredths)}</dd>
+            <dt>{m.ownership.heldBelow}</dt>
+            <dd>{formatPercent(figures.heldBelowOneHundredths, lang)}</dd>
           </div>
           <div>
-            <dt>HHI, holders above 1%</dt>
-            <dd>{formatHhi(figures.hhi)}</dd>
+            <dt>{m.ownership.hhi}</dt>
+            <dd>{formatHhi(figures.hhi, lang)}</dd>
           </div>
           <div>
-            <dt>Holders above 1%</dt>
+            <dt>{m.ownership.holders}</dt>
             <dd>{figures.holders}</dd>
           </div>
         </dl>
         <div className="spaced">
-          <FreeFloat figures={figures} />
+          <FreeFloat figures={figures} m={m.freeFloat} lang={lang} />
         </div>
       </section>
 
       <section className="panel">
-        <h2>Holders above 1%</h2>
+        <h2>{m.holdersTable.heading}</h2>
         {mismatched.length > 0 ? (
-          <p className="notice">
-            In the source file,{" "}
-            {mismatched.length === 1
-              ? "one row's"
-              : `${mismatched.length} rows'`}{" "}
-            total shares differ from scripless plus scrip. They are shown
-            exactly as published and marked below.
-          </p>
+          <p className="notice">{m.holdersTable.mismatch(mismatched.length)}</p>
         ) : null}
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Holder</th>
-                <th>Type</th>
-                <th>Local / foreign</th>
-                <th>Domicile</th>
-                <th className="num">Scripless</th>
-                <th className="num">Scrip</th>
-                <th className="num">Total shares</th>
-                <th className="num">%</th>
+                <th scope="col">{m.holdersTable.holder}</th>
+                <th scope="col">{m.holdersTable.type}</th>
+                <th scope="col">{m.holdersTable.localForeign}</th>
+                <th scope="col">{m.holdersTable.domicile}</th>
+                <th scope="col" className="num">
+                  {m.holdersTable.scripless}
+                </th>
+                <th scope="col" className="num">
+                  {m.holdersTable.scrip}
+                </th>
+                <th scope="col" className="num">
+                  {m.holdersTable.total}
+                </th>
+                <th scope="col" className="num">
+                  {m.holdersTable.percent}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -325,25 +540,27 @@ export default async function TickerPage({ params }: Params) {
                       <HolderName name={holding.investorName} links={links} />
                     </td>
                     <td>{typeLabel(holding.investorType)}</td>
-                    <td>{localForeignLabel(holding.localForeign)}</td>
+                    <td>{localForeignLabel(holding.localForeign, lang)}</td>
                     <td>{holding.domicile ?? "—"}</td>
                     <td className="num">
-                      {formatShares(holding.sharesScripless)}
+                      {formatShares(holding.sharesScripless, lang)}
                     </td>
-                    <td className="num">{formatShares(holding.sharesScrip)}</td>
                     <td className="num">
-                      {formatShares(holding.sharesTotal)}
+                      {formatShares(holding.sharesScrip, lang)}
+                    </td>
+                    <td className="num">
+                      {formatShares(holding.sharesTotal, lang)}
                       {inconsistent ? (
                         <span
                           className="badge hold flag"
-                          title="Total differs from scripless + scrip in the source"
+                          title={m.holdersTable.asPublishedTitle}
                         >
-                          as published
+                          {m.holdersTable.asPublished}
                         </span>
                       ) : null}
                     </td>
                     <td className="num">
-                      {formatPercent(holding.percentHundredths)}
+                      {formatPercent(holding.percentHundredths, lang)}
                     </td>
                   </tr>
                 );
@@ -351,14 +568,31 @@ export default async function TickerPage({ params }: Params) {
             </tbody>
           </table>
         </div>
-        <S1Citation month={ownership.month} />
+        <S1Citation month={ownership.month} lang={lang} />
       </section>
 
       <section className="panel">
-        <h2>Changes since the previous month</h2>
-        <Changes slice={ownership.changes} links={links} />
+        <h2>{m.changes.heading}</h2>
+        <Changes
+          slice={ownership.changes}
+          links={links}
+          m={m.changes}
+          lang={lang}
+        />
       </section>
-      <ThesesSection code={figures.shareCode} />
+
+      <EventsSection
+        code={figures.shareCode}
+        figures={figures}
+        m={m.events}
+        lang={lang}
+      />
+      <ThesesSection code={figures.shareCode} m={m.theses} lang={lang} />
+      <TradingViewSections
+        code={figures.shareCode}
+        m={m.tradingView}
+        lang={lang}
+      />
     </>
   );
 }

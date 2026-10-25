@@ -4,6 +4,8 @@
  * text itself (revised Peraturan Bursa I-A) was not read in full.
  */
 
+import type { Text } from "../i18n/define";
+
 export interface SourcedFact {
   url: string;
   publisher: string;
@@ -38,24 +40,43 @@ export const INTERIM_MINIMUM_HUNDREDTHS = 1_250;
 /** The staged deadlines, by market capitalisation and free float on 31 March 2026. */
 export const TRANCHES = {
   "large-low": {
-    label: "Market cap at least Rp5 trillion, free float below 12.5%",
-    short: "If Rp5T or more",
+    label: {
+      en: "Market cap at least Rp5 trillion, free float below 12.5%",
+      id: "Kapitalisasi pasar minimal Rp5 triliun, free float di bawah 12,5%",
+    },
+    short: { en: "If Rp5T or more", id: "Jika Rp5 T atau lebih" },
     deadlines: [
       { date: "2027-03-31", requiredHundredths: 1_250 },
       { date: "2028-03-31", requiredHundredths: 1_500 },
     ],
   },
   "large-near": {
-    label: "Market cap at least Rp5 trillion, free float 12.5% to 15%",
-    short: "If Rp5T or more and at 12.5%",
+    label: {
+      en: "Market cap at least Rp5 trillion, free float 12.5% to 15%",
+      id: "Kapitalisasi pasar minimal Rp5 triliun, free float 12,5% sampai 15%",
+    },
+    short: {
+      en: "If Rp5T or more and at 12.5%",
+      id: "Jika Rp5 T atau lebih dan sebesar 12,5%",
+    },
     deadlines: [{ date: "2027-03-31", requiredHundredths: 1_500 }],
   },
   small: {
-    label: "Market cap below Rp5 trillion",
-    short: "If under Rp5T",
+    label: {
+      en: "Market cap below Rp5 trillion",
+      id: "Kapitalisasi pasar di bawah Rp5 triliun",
+    },
+    short: { en: "If under Rp5T", id: "Jika di bawah Rp5 T" },
     deadlines: [{ date: "2029-03-31", requiredHundredths: 1_500 }],
   },
-} as const;
+} as const satisfies Record<
+  string,
+  {
+    label: Text;
+    short: Text;
+    deadlines: readonly { date: string; requiredHundredths: number }[];
+  }
+>;
 export type Tranche = keyof typeof TRANCHES;
 export const RULE_SOURCES: readonly SourcedFact[] = [tirto, kontan];
 
@@ -106,47 +127,65 @@ export const OFFICIAL_COUNTS: readonly OfficialCount[] = [
 
 export interface TimelineEvent {
   date: string;
-  label: string;
+  label: Text;
   source: SourcedFact;
 }
 
 export const TIMELINE: readonly TimelineEvent[] = [
   {
     date: "2026-03-31",
-    label:
-      "Revised Peraturan Bursa I-A takes effect: free-float minimum rises to 15%",
+    label: {
+      en: "Revised Peraturan Bursa I-A takes effect: free-float minimum rises to 15%",
+      id: "Peraturan Bursa I-A yang direvisi berlaku: batas minimal free float naik menjadi 15%",
+    },
     source: tirto,
   },
   {
     date: "2026-10-15",
-    label:
-      "MSCI opens a consultation on reclassifying Indonesia from Emerging to Standalone",
+    label: {
+      en: "MSCI opens a consultation on reclassifying Indonesia from Emerging to Standalone",
+      id: "MSCI membuka konsultasi untuk mengklasifikasikan ulang Indonesia dari Emerging menjadi Standalone",
+    },
     source: msci,
   },
   {
     date: "2027-03-31",
-    label:
-      "First free-float deadline: large caps to 12.5% (or to 15% if already at 12.5%)",
+    label: {
+      en: "First free-float deadline: large caps to 12.5% (or to 15% if already at 12.5%)",
+      id: "Tenggat free float pertama: emiten kapitalisasi besar ke 12,5% (atau ke 15% jika sudah di 12,5%)",
+    },
     source: tirto,
   },
   {
     date: "2027-04-30",
-    label: "MSCI consultation feedback closes",
+    label: {
+      en: "MSCI consultation feedback closes",
+      id: "Masukan untuk konsultasi MSCI ditutup",
+    },
     source: msci,
   },
   {
     date: "2027-06-30",
-    label: "MSCI decision due, on or before this date",
+    label: {
+      en: "MSCI decision due, on or before this date",
+      id: "Keputusan MSCI diumumkan paling lambat pada tanggal ini",
+    },
     source: msci,
   },
   {
     date: "2028-03-31",
-    label: "Large caps below 12.5% in March 2026 reach 15%",
+    label: {
+      en: "Large caps below 12.5% in March 2026 reach 15%",
+      id: "Emiten kapitalisasi besar yang di bawah 12,5% pada Maret 2026 mencapai 15%",
+    },
     source: tirto,
   },
   {
     date: "2029-03-31",
-    label: "Companies under Rp5 trillion market cap reach 15%",
+    label: {
+      en: "Companies under Rp5 trillion market cap reach 15%",
+      id: "Emiten berkapitalisasi di bawah Rp5 triliun mencapai 15%",
+    },
     source: tirto,
   },
 ];

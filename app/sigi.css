@@ -17,17 +17,17 @@
     --panel: #f1f5f9;
     --raised: #e8eef6;
     --text: #0b1530;
-    --muted: #60708d;
+    --muted: #576781;
     --line: #dbe3ee;
-    --positive: #12a967;
-    --negative: #e63b45;
-    --warning: #9a6200;
+    --positive: #107548;
+    --negative: #c03039;
+    --warning: #915c00;
     --info: #0f62cc;
     --info-soft: rgb(22 119 255 / 9%);
     --action: #1b6fd6;
     --action-hover: #1060c4;
     --shadow: rgb(28 55 90 / 9%);
-    --torch: #d9480f;
+    --torch: #b43c0f;
     --mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
   }
 
@@ -38,15 +38,15 @@
       --panel: #253246;
       --raised: #314158;
       --text: #f6f8fc;
-      --muted: #9eacc1;
+      --muted: #a2afc4;
       --line: #3b4a60;
       --positive: #35c982;
-      --negative: #ff626b;
+      --negative: #ff8c92;
       --warning: #ffb62e;
-      --info: #4c94ff;
+      --info: #79b2ff;
       --info-soft: rgb(76 148 255 / 14%);
       --shadow: rgb(0 0 0 / 28%);
-      --torch: #ff8a4c;
+      --torch: #ff9358;
     }
   }
 }
@@ -84,6 +84,16 @@
 
   a:hover {
     text-decoration: underline;
+  }
+
+  /* A link among words is told apart by more than its colour (WCAG 1.4.1). */
+  p a,
+  li a,
+  dd a,
+  td a,
+  figcaption a {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 
   h1,
@@ -170,9 +180,47 @@
     color: var(--muted);
   }
 
-  .masthead nav a[aria-current="page"] {
+  .masthead nav a[aria-current="page"],
+  .masthead nav a[aria-current="true"] {
     color: var(--text);
     font-weight: 600;
+  }
+
+  .masthead nav.lang {
+    margin-left: auto;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .skip {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    padding: 0.5rem 0.8rem;
+    background: var(--panel);
+    color: var(--text);
+    z-index: 10;
+  }
+
+  .skip:focus {
+    left: 0.5rem;
+    top: 0.5rem;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  main:focus {
+    outline: none;
   }
 
   .page-header {
