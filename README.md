@@ -11,6 +11,7 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **Automation** (2026-10-24): a worker fetches the monthly files from the exchange's site and imports them; there is no admin, upload or sign-in (D-021).
 - **M3** (deployed 2026-10-24): the macro dashboard (F6) at `/macro`, fed daily from Bank Indonesia, the World Bank Pink Sheet and FRED (D-023).
 - **M4** (deployed 2026-10-25): theses (F7) at `/theses`, files in `theses/` with typed invalidation conditions that the worker checks daily (D-024).
+- **M5** (deployed 2026-10-25): the daily brief (F12) at `/brief`: an agent reads Sigi's own readings each morning and writes one file that the page validates before showing (D-025).
 
 | Doc | Purpose |
 |---|---|
@@ -83,5 +84,6 @@ Production is two Dokploy applications built from the one `Dockerfile` on the ho
 - **Network:** the web uses the host's network. It listens on `127.0.0.1:3220` (`SIGI_BIND_HOST=127.0.0.1`), and nginx terminates TLS in front of it with rate limits. The site is read-only: anything but GET and HEAD gets 405.
 - **Data:** the host's data directory and its `.env` (owner `1000`, mode `600`) are bind-mounted into both containers. That `.env` sets `SIGI_PUBLIC_ORIGIN` and `SIGI_LOG_LEVEL`; Sigi holds no secrets.
 - **Start-up:** the web container migrates the database before it serves. The worker waits until the database is current, so only one process ever migrates.
+- **Daily brief:** `sh scripts/install-brief-schedule.sh` installs the runner, prompt and permissions in `/opt/sigi-brief` on the host and one cron line (hourly at :10; it acts at 06:00 Jakarta). It needs the unprivileged user `sunrise-agent` with Claude Code and its credential. The web app reads the files through one bind mount, `/opt/sigi-brief` at `/opt/sigi/data/brief`, added once to `sigi-web` in Dokploy. To run it by hand: `/opt/sigi-brief/brief-run.sh --any-hour`. To withdraw a brief, add its date and a reason to `src/brief/unpublished.ts` and deploy.
 
 Not investment advice.

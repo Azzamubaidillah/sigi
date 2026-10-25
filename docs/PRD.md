@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.7, 2026-10-25. **Status:** P1 started 2026-10-22; M1, M2, M3 and M4 deployed; every import runs unattended (§11, D-021, D-023, D-024). **Owner:** Azzam Ubaidillah.
+**Version:** 0.8, 2026-10-25. **Status:** P1 started 2026-10-22; M1 to M5 deployed; every import runs unattended (§11, D-021, D-023, D-024, D-025). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -216,6 +216,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
   - a brief older than 30 h is marked stale;
   - the page shows the inputs table (each section's as-of time, source and evidence status), like Sunrise's;
   - every brief carries the not-investment-advice notice.
+  - **Met 2026-10-25** (M5, D-025), except that no scheduled run has happened yet. Tests cover each rejection: an evidence key missing from the context, a wrong date, a context made for another day, a context timestamp that differs, recommendation wording, an extra field, a quiet brief with items, an oversized file and a missing context, plus the stale marker, a withdrawn brief and a newer rejected file named beside the last good one. On the host the runner ran twice by hand: the exporter in a no-network container, then the agent as an unprivileged user with no shell. Its file passed the page's validation, and `/brief` shows it with the inputs table and the notice. The agent could not list `/opt/sigi` and could write only the analysis folder. The first run from cron is due at 06:10 WIB on 2026-10-26, and the page shows a failure or a stale brief if it does not come.
 
 ## 8. Phases
 
@@ -270,7 +271,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 | M2 | F3 tracker + F4 holder explorer + F9 market page. **Deployed 2026-10-23.** Then, by owner decision on 2026-10-24, the S1 import was automated and the admin removed (D-021, D-022) | 15 h |
 | M3 | F6 macro dashboard. **Built and deployed 2026-10-24** (D-023) | 12 h |
 | M4 | F7 theses + condition evaluation. **Built and deployed 2026-10-25** (D-024); the theses themselves are the owner's to write | 10 h |
-| M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page | 8 h |
+| M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page. **Built and deployed 2026-10-25** (D-025) | 8 h |
 | M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain | 10 h |
 
 That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, re-estimate everything before continuing. **Start date:** 2026-10-22 (owner: "start now").

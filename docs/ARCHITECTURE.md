@@ -1,6 +1,6 @@
 # Architecture (proposed)
 
-**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and the macro series and nothing is uploaded; the admin area is gone (D-021). M3 (macro dashboard) is built (D-023), and so is M4 (theses with conditions the worker checks daily, D-024). The rest is still the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
+**Status:** M1 (import pipeline, data health, ownership section, deployment) and M2 (investability tracker, holder explorer, market page) are built; production runs on Dokploy (D-020). Since 2026-10-24 a worker fetches the monthly holder files and the macro series and nothing is uploaded; the admin area is gone (D-021). M3 (macro dashboard) is built (D-023), and so are M4 (theses with conditions the worker checks daily, D-024) and M5 (the daily brief, D-025). M6 (ticker page, bilingual, tests, launch) is the rest of the plan. Sigi is a fresh repository; modules are copied from Sunrise using the manifest in §7 (D-011). Module paths refer to the Sunrise codebase (public at github.com/Azzamubaidillah/sunrise). Line counts come from a read-only audit on 2026-10-18.
 
 ## 1. Shape
 
@@ -187,6 +187,12 @@ That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (a
 - **Copied:** the markdown-to-block-tree conversion of `src/views/theses.ts` (into `src/theses/markdown.ts`) and the renderer of `app/_components/ThesisBody.tsx`. Changed: links to other theses point to `/theses/<slug>?version=`, and site paths such as `/t/BBRI` are kept. The folds, the contents and the price quotes are not copied.
 - **Written fresh, after Sunrise's pattern:** the strict `thesis` and `conditions` fence grammars, in the manner of `src/thesis-levels.ts` (`src/theses/{header,conditions}.ts`); the folder reader with dated version files (`src/theses/folder.ts`, after `src/thesis-folder.ts`); the line diff; the daily check in the worker (`src/theses/check.ts`); and the pages `/theses` and `/theses/[slug]` (D-024).
 - **Not copied:** hidden theses, plan levels, held positions, quote windows and the publish script. Theses ship with a deploy, not a mirror.
+
+**Daily brief (2026-10-25, M5), from public `sunrise` at `312906f`.** The leak scan ran before the commit.
+
+- **Followed, written fresh:** the two-file design of `src/brief/files.ts` (a strict context schema with an evidence key per item, a strict analysis schema, `contextKeys`, `unknownEvidenceKeys`); the selection logic of `src/views/brief.ts` (newest file that validates, a rejected newer file named, stale after 30 h); `scripts/brief/brief-run.sh` (hourly cron, a lock, a no-network export container, the agent as an unprivileged user in `--restricted` mode with allowlists) and `brief-settings.json`.
+- **Changed for a public site:** the analysis answers "what to look at", not "what to do" (no actions, no stance `act`); the recommendation check; the Jakarta date; the host directory outside `/opt/sigi`; the context holds Sigi's readings, not a portfolio's. The amount and address leak checks, the portfolio sections and `brief-context.ts` of Sunrise are not copied.
+- **Not copied:** the brief card on a dashboard, and the macro review that feeds Sunrise's brief.
 
 ### Never copied
 
