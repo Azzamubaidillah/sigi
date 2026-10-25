@@ -5,6 +5,7 @@ import { formatDate, formatMonth, formatTimestamp } from "@/app/_lib/format";
 import { loadConfig } from "@/src/config";
 import { S1_PAGE_URL } from "@/src/fetch/idx-listing";
 import { FEEDS, type FeedId, S1_FEED } from "@/src/macro/feeds";
+import { NEWS_FEED, NEWS_SOURCE } from "@/src/news/feeds";
 import { SOURCES, STATUS_LABELS } from "@/src/sources/register";
 import {
   loadFeedStatus,
@@ -13,7 +14,7 @@ import {
 } from "@/src/views/data-health";
 import { formatPeriod } from "@/src/views/macro";
 
-const FEED_LIST = [S1_FEED, ...(Object.keys(FEEDS) as FeedId[])];
+const FEED_LIST = [S1_FEED, ...(Object.keys(FEEDS) as FeedId[]), NEWS_FEED];
 
 function feedLabel(feed: string): {
   title: string;
@@ -26,6 +27,9 @@ function feedLabel(feed: string): {
       source: "S1",
       url: S1_PAGE_URL,
     };
+  }
+  if (feed === NEWS_FEED) {
+    return { title: NEWS_SOURCE.title, source: "S10", url: NEWS_SOURCE.url };
   }
   const definition = FEEDS[feed as FeedId];
   return {

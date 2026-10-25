@@ -188,7 +188,8 @@ async function fetchBi(
   );
 }
 
-async function sigiGet(url: string): Promise<Uint8Array> {
+/** A GET under Sigi's own user agent, size-capped; also used for the news feed. */
+export async function sigiGet(url: string): Promise<Uint8Array> {
   return bodyOf(
     await fetch(url, {
       headers: { "user-agent": SIGI_UA },

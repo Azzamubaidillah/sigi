@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//opt/sigi-brief/context/**)",
+      "Read(//opt/sigi-brief/analysis/**)",
+      "Read(//opt/sigi-brief/theses/**)",
+      "Glob",
+      "Grep",
+      "Edit(//opt/sigi-brief/analysis/**)",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "deny": [
+      "Bash",
+      "Edit(//opt/sigi-brief/context/**)",
+      "Edit(//opt/sigi-brief/theses/**)",
+      "Read(//home/**)",
+      "Read(//root/**)",
+      "Read(//opt/sigi/**)",
+      "Read(//opt/sunrise/**)"
+    ]
+  }
+}

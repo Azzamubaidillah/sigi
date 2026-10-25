@@ -98,11 +98,12 @@ export const SOURCES = {
   },
   S10: {
     name: "News and announcements",
-    publisher: "Publisher RSS feeds; MSCI and IDX press releases",
-    url: "https://www.idx.co.id/",
+    publisher: "CNBC Indonesia market RSS feed; MSCI and IDX press releases",
+    url: "https://www.cnbcindonesia.com/market/rss",
     status: "cleared-portfolio",
-    terms: "Headline, publisher, time and link only.",
-    live: false,
+    terms:
+      "Headline, publisher, time and link only, matched to thesis tickers inside the daily brief's context; no article text is stored or shown. The publisher's terms were not read in full [L].",
+    live: true,
   },
 } as const satisfies Record<string, SourceEntry>;
 

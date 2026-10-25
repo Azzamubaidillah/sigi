@@ -29,6 +29,13 @@
       "when": 1792863454624,
       "tag": "0003_thesis_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792865488470,
+      "tag": "0004_news_items",
+      "breakpoints": true
     }
   ]
 }

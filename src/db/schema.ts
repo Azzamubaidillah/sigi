@@ -226,3 +226,21 @@ export const thesisChecks = sqliteTable(
     index("thesis_checks_day_idx").on(table.checkedOn),
   ],
 );
+
+/**
+ * Publisher headlines for the daily brief (PRD F12, DATA-SOURCES S10):
+ * headline, publisher, time and link only. Kept 30 days; not published on a
+ * page, only matched to thesis tickers in the brief's context.
+ */
+export const newsItems = sqliteTable(
+  "news_items",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    url: text("url").notNull().unique(),
+    publisher: text("publisher").notNull(),
+    title: text("title").notNull(),
+    publishedAt: integer("published_at").notNull(),
+    fetchedAt: integer("fetched_at").notNull(),
+  },
+  (table) => [index("news_items_published_idx").on(table.publishedAt)],
+);

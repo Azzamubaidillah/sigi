@@ -111,7 +111,7 @@ deploy_app "$SIGI_DOKPLOY_APP" web
 
 # The new container migrates before it listens; give it two minutes.
 echo "==> checking $SIGI_PUBLIC_URL"
-PAGES="/ /data /investability /holders /macro /theses"
+PAGES="/ /data /investability /holders /macro /theses /brief"
 round() {
   for path in $PAGES; do
     curl -s -o /dev/null -w "$path %{http_code}  " "$SIGI_PUBLIC_URL$path"

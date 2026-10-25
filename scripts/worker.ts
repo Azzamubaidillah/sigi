@@ -6,7 +6,8 @@
  *
  * Feeds:
  * - `idx-s1`: the exchange's ownership-data page, through Chrome (D-021);
- * - the macro feeds of `src/macro/feeds.ts`, over plain HTTP (PRD F6, D-023).
+ * - the macro feeds of `src/macro/feeds.ts`, over plain HTTP (PRD F6, D-023);
+ * - `news-cnbc-market`: publisher headlines for the daily brief (PRD F12, S10).
  *
  *   tsx scripts/worker.ts               run forever (the worker container)
  *   tsx scripts/worker.ts --once        check every feed now, then exit
@@ -34,10 +35,12 @@ import { openDatabase } from "../src/db/client";
 import { pendingMigrationCount } from "../src/db/migrate";
 import { openIdxSession } from "../src/fetch/idx-browser";
 import { runMacroFeed } from "../src/fetch/macro-fetch";
-import { fetchMacroFeed } from "../src/fetch/macro-http";
+import { fetchMacroFeed, sigiGet } from "../src/fetch/macro-http";
 import { runS1Fetch } from "../src/fetch/s1-fetch";
 import { createLogger } from "../src/logger";
 import { FEEDS, type FeedId, S1_FEED } from "../src/macro/feeds";
+import { NEWS_FEED } from "../src/news/feeds";
+import { runNewsFeed } from "../src/news/fetch";
 import { checkTheses } from "../src/theses/check";
 
 const RETRY_AFTER_FAILURE_MS = 3 * 3_600_000;
@@ -49,8 +52,12 @@ const config = loadConfig();
 const logger = createLogger("sigi-worker", config);
 const args = process.argv.slice(2);
 const once = args.includes("--once");
-type Feed = typeof S1_FEED | FeedId;
-const ALL_FEEDS: Feed[] = [S1_FEED, ...(Object.keys(FEEDS) as FeedId[])];
+type Feed = typeof S1_FEED | FeedId | typeof NEWS_FEED;
+const ALL_FEEDS: Feed[] = [
+  S1_FEED,
+  ...(Object.keys(FEEDS) as FeedId[]),
+  NEWS_FEED,
+];
 const named = args.filter((arg) => !arg.startsWith("--"));
 const unknown = named.filter((name) => !(ALL_FEEDS as string[]).includes(name));
 if (unknown.length > 0) {
@@ -94,6 +101,13 @@ async function check(sqlite: Database.Database, feed: Feed): Promise<boolean> {
       { feed, ...summary },
       "checked",
     );
+    return summary.outcome === "ok";
+  }
+  if (feed === NEWS_FEED) {
+    const summary = await runNewsFeed(sqlite, async (url) =>
+      new TextDecoder().decode(await sigiGet(url)),
+    );
+    logger[summary.outcome === "ok" ? "info" : "error"](summary, "checked");
     return summary.outcome === "ok";
   }
   const summary = await runMacroFeed(

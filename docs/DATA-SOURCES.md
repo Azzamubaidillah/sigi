@@ -98,9 +98,9 @@ Commercial reuse requires permission (*"For any potential commercial reuse of IM
 | Source | Use | Status |
 |---|---|---|
 | TradingView "Top Stories" widget | Display only | cleared (S3) |
-| Publisher RSS feeds (e.g. Kontan, Bisnis, CNBC Indonesia) | Headline, publisher, time and link only; no article text | Portfolio phase: cleared [L]; product: re-check each publisher's terms |
+| Publisher RSS feeds (e.g. Kontan, Bisnis, CNBC Indonesia) | Headline, publisher, time and link only; no article text | Portfolio phase: cleared [L]; product: re-check each publisher's terms. **In use since 2026-10-25: CNBC Indonesia's market feed only** (`https://www.cnbcindonesia.com/market/rss`, plain GET under Sigi's user agent, once a day, 30 days kept, never shown on a page). From the host on 2026-10-25, Kontan's feed URL answered with an HTML page, Kontan's investasi subdomain and Bisnis answered 403. The publisher's terms were not read in full [L] |
 | MSCI and IDX press releases | Cited and linked in editorial content | cleared (quotation with a link) |
-| Web pages the brief agent cites (PRD F12) | Link plus a short factual statement in the agent's own words; never quoted article text; only figures that carry a link | Portfolio phase: cleared [L]; the validator requires a URL for every figure that isn't in the context |
+| Web pages the brief agent cites (PRD F12) | Link plus a short factual statement in the agent's own words; never quoted article text; only figures that carry a link | Portfolio phase: cleared [L]. The prompt requires a source URL for every figure that is not in the context. The validator checks that each source is an http(s) link and that no text reads as a recommendation; it cannot check that every figure has a source or that no article text was quoted |
 
 ## Excluded sources
 

@@ -10,6 +10,11 @@ const links = [
     matches: (path: string) => path === "/" || path.startsWith("/t/"),
   },
   {
+    href: "/brief",
+    label: "Brief",
+    matches: (path: string) => path === "/brief",
+  },
+  {
     href: "/investability",
     label: "Investability",
     matches: (path: string) => path === "/investability",
