@@ -23,6 +23,12 @@ export const shellMessages = defineMessages({
     search: {
       label: "Find a company",
       placeholder: "Code or name",
+      button: "Search",
+    },
+    notFound: {
+      title: "Page not found",
+      lede: "That address does not lead anywhere on Sigi. Check it, or find a company by its code or name.",
+      home: "Back to the market",
     },
     siteDescription:
       "Who owns Indonesia's listed companies, how much really floats, and what changed this month. Every figure cites its source.",
@@ -60,6 +66,12 @@ export const shellMessages = defineMessages({
     search: {
       label: "Cari perusahaan",
       placeholder: "Kode atau nama",
+      button: "Cari",
+    },
+    notFound: {
+      title: "Halaman tidak ditemukan",
+      lede: "Alamat itu tidak mengarah ke mana pun di Sigi. Periksa kembali, atau cari perusahaan dengan kode atau namanya.",
+      home: "Kembali ke pasar",
     },
     siteDescription:
       "Siapa pemilik perusahaan tercatat di Indonesia, berapa saham yang benar-benar beredar, dan apa yang berubah bulan ini. Setiap angka mencantumkan sumbernya.",

@@ -13,7 +13,7 @@ import { briefMessages } from "@/src/i18n/messages/brief";
 import { commonMessages } from "@/src/i18n/messages/common";
 import { marketMessages } from "@/src/i18n/messages/market";
 import { FREE_FLOAT_MINIMUM_HUNDREDTHS } from "@/src/investability/rule";
-import { readBrief } from "@/src/views/brief";
+import { loadBrief } from "@/src/views/brief";
 import { loadEvents } from "@/src/views/events";
 import { loadInvestability } from "@/src/views/investability";
 import {
@@ -243,7 +243,7 @@ export default async function MarketPage({ searchParams }: Props) {
   const config = loadConfig();
   const screen = loadCompanyScreen(config.databasePath, filters);
   const investability = loadInvestability(config.databasePath);
-  const brief = readBrief(config.dataDirectory, Date.now());
+  const brief = loadBrief(config.dataDirectory);
   const nextEvent = loadEvents().find((event) => !event.past);
 
   const total = screen.kind === "list" ? screen.companies.length : 0;
@@ -266,7 +266,7 @@ export default async function MarketPage({ searchParams }: Props) {
       />
 
       <form
-        className="home-search"
+        className="find"
         role="search"
         action="/search"
         method="get"

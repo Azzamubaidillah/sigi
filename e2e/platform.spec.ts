@@ -235,13 +235,14 @@ test.describe("language by browser setting", () => {
 });
 
 test.describe("plain routes", () => {
-  test("robots.txt keeps crawlers off /lang and names the sitemap", async ({
+  test("robots.txt keeps crawlers off /lang and /search and names the sitemap", async ({
     request,
   }) => {
     const response = await request.get("/robots.txt");
     expect(response.status()).toBe(200);
     const body = await response.text();
     expect(body).toContain("Disallow: /lang");
+    expect(body).toContain("Disallow: /search");
     expect(body).toContain(`Sitemap: ${ORIGIN}/sitemap.xml`);
   });
 

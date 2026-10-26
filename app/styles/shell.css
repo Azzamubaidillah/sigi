@@ -115,6 +115,11 @@
     pointer-events: none;
   }
 
+  /* A page with its own large search field leaves the masthead's out. */
+  body:has(.find) .masthead-search {
+    display: none;
+  }
+
   .lang {
     grid-area: lang;
     display: inline-flex;
