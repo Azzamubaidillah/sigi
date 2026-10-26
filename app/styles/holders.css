@@ -1,0 +1,93 @@
+/* The holders index at /holders and a holder's page at /holders/<slug> (docs/DESIGN.md). */
+@layer sections {
+  /* The index: a search field and, at its side, how many holders it leaves. */
+  .holders-find {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--s-3) var(--s-5);
+    margin-bottom: var(--s-5);
+  }
+
+  .holders-find .field {
+    flex: 1 1 18rem;
+    max-width: 28rem;
+  }
+
+  .holders-search {
+    position: relative;
+  }
+
+  .holders-search input {
+    padding-left: 2.6rem;
+  }
+
+  .holders-search .icon {
+    position: absolute;
+    top: 50%;
+    left: 0.9rem;
+    translate: 0 -50%;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .holders-count {
+    margin: 0;
+    padding-block: 0.7rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .holders-name {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .holders-name:hover {
+    color: var(--link);
+  }
+
+  .holders-note {
+    max-width: var(--measure);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  /* A holder's page. */
+  .holders-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2.75rem;
+    margin-bottom: var(--s-2);
+    color: var(--muted);
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .holders-back:hover {
+    color: var(--ink);
+  }
+
+  .holders-positions,
+  .holders-moves {
+    max-width: 56rem;
+  }
+
+  /* A move up or down: the arrow says which way, never whether it is good. */
+  .holders-move {
+    white-space: nowrap;
+  }
+
+  .holders-move .icon {
+    margin-right: 0.25rem;
+    color: var(--muted);
+  }
+
+  /* On a phone the two months stay and their dates wrap, so the dash note still applies. */
+  @media (max-width: 40rem) {
+    .holders-moves thead th {
+      white-space: normal;
+    }
+  }
+}

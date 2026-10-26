@@ -32,6 +32,21 @@ test.describe("holders index", () => {
     await expect(fund).toContainText("AAAA 4.50%");
   });
 
+  test("filters the list by part of a name and says how many are left", async ({
+    page,
+  }) => {
+    await page.goto("/holders");
+    const table = page.getByRole("table");
+    await page.getByLabel("Filter holders by name").fill("pensiun");
+    await expect(page.getByText("1 of 6 holders")).toBeVisible();
+    await expect(table.locator("tbody tr")).toHaveCount(1);
+    await expect(
+      table.getByRole("link", { name: HOLDERS.fund.name }),
+    ).toBeVisible();
+    await page.getByLabel("Filter holders by name").fill("");
+    await expect(page.getByText("6 of 6 holders")).toBeVisible();
+  });
+
   test("has no entry and no link for an individual", async ({ page }) => {
     await page.goto("/holders");
     await expect(page.getByText(HOLDERS.individual.name)).toHaveCount(0);
@@ -49,7 +64,9 @@ test.describe("holder page", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       HOLDERS.fund.name,
     );
-    await expect(page.getByText("Pension Funds · INDONESIA.")).toBeVisible();
+    await expect(
+      page.getByText("Pension Funds, domiciled in INDONESIA."),
+    ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "All holders" }),
     ).toHaveAttribute("href", "/holders");

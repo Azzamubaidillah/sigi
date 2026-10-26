@@ -1,0 +1,181 @@
+/* The investability page at /investability (docs/DESIGN.md). */
+@layer sections {
+  /* The next date is a link to the timeline; it reads as a figure first. */
+  .inv-next {
+    color: inherit;
+    text-decoration-line: none;
+  }
+
+  .inv-next:hover {
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  /* The distribution: a bar per band, sized to its count, the count as text. */
+  .inv-bands {
+    max-width: 46rem;
+  }
+
+  .inv-bands tbody th {
+    width: 11rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .inv-bands tbody th a {
+    color: var(--link);
+  }
+
+  .inv-meter {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .inv-bar {
+    flex: 0 1 auto;
+    width: calc(var(--share) * 0.85%);
+    height: 1.125rem;
+    min-width: 2px;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    background: var(--holder-2);
+  }
+
+  tr[data-below] .inv-bar {
+    background: var(--negative);
+  }
+
+  .inv-count {
+    min-width: 2.5rem;
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .inv-none th {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .inv-none .inv-count {
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* The 15% minimum: a strong line between the bands under it and those above. */
+  .inv-bands .inv-line td {
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .inv-line span {
+    display: block;
+    padding-block: var(--s-1);
+    border-top: 2px solid var(--ink);
+    color: var(--ink);
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+
+  .inv-quiet {
+    max-width: var(--measure);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .inv-below {
+    max-width: 54rem;
+  }
+
+  /* Crossings between months, as two quiet rows. A rise is neither good nor bad. */
+  .inv-moves {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text);
+    font-size: 0.9375rem;
+  }
+
+  .inv-moves li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-2);
+    margin: 0;
+    padding-block: var(--s-2);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .inv-moves .icon {
+    color: var(--muted);
+  }
+
+  /* Companies below the line, grouped by the deadlines still possible for them. */
+  .inv-group th {
+    padding-top: var(--s-4);
+    border-bottom: 1px solid var(--rule);
+    background: var(--wash);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .inv-group-title {
+    display: block;
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .inv-group-line {
+    display: block;
+  }
+
+  /* The timeline: the date, with where it stands; the event, with its source. */
+  .inv-timeline tbody th {
+    width: 9.5rem;
+    vertical-align: top;
+  }
+
+  .inv-timeline th .pill {
+    display: flex;
+    width: fit-content;
+    margin-top: var(--s-1);
+  }
+
+  .inv-timeline td {
+    vertical-align: top;
+  }
+
+  .inv-event {
+    display: block;
+    max-width: var(--measure);
+    color: var(--ink);
+  }
+
+  .inv-source {
+    display: block;
+    margin-top: var(--s-1);
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+
+  .inv-timeline tr[data-state="past"] .inv-event {
+    color: var(--muted);
+  }
+
+  .inv-timeline tr[data-state="next"] > * {
+    background: var(--wash);
+  }
+
+  .inv-tranches {
+    margin: 0 0 var(--s-3);
+  }
+
+  @media (max-width: 40rem) {
+    .inv-bands tbody th {
+      width: 8.5rem;
+    }
+
+    .inv-timeline tbody th {
+      width: 6.5rem;
+    }
+  }
+}

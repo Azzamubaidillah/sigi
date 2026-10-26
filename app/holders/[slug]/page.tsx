@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { S1Citation } from "@/app/_components/Citation";
+import { holderTypeLabels } from "@/app/_components/holder-types";
+import { Icon, PageHeader, Section } from "@/app/_components/ui";
 import {
   formatDate,
   formatPercent,
@@ -14,8 +16,9 @@ import { getLang } from "@/app/_lib/lang";
 import { loadConfig } from "@/src/config";
 import { commonMessages } from "@/src/i18n/messages/common";
 import { holdersMessages } from "@/src/i18n/messages/holders";
-import { typeLabel } from "@/src/ownership/investor-classes";
 import { loadHolder } from "@/src/views/holders";
+
+import "../../styles/holders.css";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -28,6 +31,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+/** A figure that is not in a month's file: a dash for the eye, words for a screen reader. */
+function NotReported({ label }: { label: string }) {
+  return (
+    <>
+      <span aria-hidden="true">—</span>
+      <span className="sr-only">{label}</span>
+    </>
+  );
+}
+
 export default async function HolderPage({ params }: Params) {
   const lang = await getLang();
   const m = holdersMessages[lang].page;
@@ -37,28 +50,30 @@ export default async function HolderPage({ params }: Params) {
   if (!holder) notFound();
   return (
     <>
-      <div className="page-header">
-        <h1>{holder.name}</h1>
-        <p className="lede">
-          {holder.types.map(typeLabel).join(", ")}
-          {holder.domiciles.length
-            ? ` · ${holder.domiciles.join(", ")}`
-            : ""}. <Link href="/holders">{m.allHolders}</Link>
-        </p>
-      </div>
+      <Link className="holders-back" href="/holders">
+        <Icon name="back" />
+        {m.allHolders}
+      </Link>
+      <PageHeader
+        title={holder.name}
+        lede={m.about(
+          holderTypeLabels(holder.types),
+          holder.domiciles.join(", "),
+        )}
+      />
 
-      <section className="panel">
-        <h2>
-          {m.holdings(
-            formatDate(holder.month.recordDate, lang),
-            holder.positions.length,
-          )}
-        </h2>
+      <Section
+        id="positions"
+        title={m.holdings(
+          formatDate(holder.month.recordDate, lang),
+          holder.positions.length,
+        )}
+      >
         {holder.positions.length === 0 ? (
           <p className="absent">{m.noHolding}</p>
         ) : (
           <div className="table-wrap">
-            <table className="data">
+            <table className="tbl holders-positions">
               <thead>
                 <tr>
                   <th scope="col">{m.code}</th>
@@ -74,8 +89,8 @@ export default async function HolderPage({ params }: Params) {
               <tbody>
                 {holder.positions.map((position) => (
                   <tr key={position.shareCode}>
-                    <td className="mono">
-                      <Link href={`/t/${position.shareCode}`}>
+                    <td>
+                      <Link className="code" href={`/t/${position.shareCode}`}>
                         {position.shareCode}
                       </Link>
                     </td>
@@ -93,27 +108,26 @@ export default async function HolderPage({ params }: Params) {
           </div>
         )}
         {holder.spellings.length > 1 ? (
-          <p className="citation">
+          <p className="holders-note">
             {m.publishedAs}
             {holder.spellings.map((spelling) => `“${spelling}”`).join(", ")}
           </p>
         ) : null}
         <S1Citation month={holder.month} lang={lang} />
-      </section>
+      </Section>
 
-      <section className="panel">
-        <h2>{m.changes}</h2>
+      <Section id="changes" title={m.changes}>
         {holder.moves === null || holder.previous === null ? (
           <p className="absent">
             {commonMessages[lang].ownershipAbsence.no_previous_month}
           </p>
         ) : holder.moves.length === 0 ? (
-          <p className="muted">
+          <p className="absent">
             {m.noChange(formatDate(holder.previous.recordDate, lang))}
           </p>
         ) : (
           <div className="table-wrap">
-            <table className="data">
+            <table className="tbl holders-moves">
               <thead>
                 <tr>
                   <th scope="col">{m.code}</th>
@@ -124,7 +138,7 @@ export default async function HolderPage({ params }: Params) {
                   <th scope="col" className="num">
                     {formatDate(holder.month.recordDate, lang)}
                   </th>
-                  <th scope="col" className="num">
+                  <th scope="col" className="num hide-md">
                     {m.shares}
                   </th>
                   <th scope="col" className="num">
@@ -133,45 +147,54 @@ export default async function HolderPage({ params }: Params) {
                 </tr>
               </thead>
               <tbody>
-                {holder.moves.map((move) => (
-                  <tr key={move.shareCode}>
-                    <td className="mono">
-                      <Link href={`/t/${move.shareCode}`}>
-                        {move.shareCode}
-                      </Link>
-                    </td>
-                    <td>{move.issuerName}</td>
-                    <td className="num">
-                      {move.beforeHundredths === null
-                        ? "—"
-                        : formatPercent(move.beforeHundredths, lang)}
-                    </td>
-                    <td className="num">
-                      {move.afterHundredths === null
-                        ? "—"
-                        : formatPercent(move.afterHundredths, lang)}
-                    </td>
-                    <td className="num">
-                      {formatSharesChange(
-                        (move.afterShares ?? 0) - (move.beforeShares ?? 0),
-                        lang,
-                      )}
-                    </td>
-                    <td className="num">
-                      {formatPercentChange(
-                        (move.afterHundredths ?? 0) -
-                          (move.beforeHundredths ?? 0),
-                        lang,
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {holder.moves.map((move) => {
+                  const delta =
+                    (move.afterHundredths ?? 0) - (move.beforeHundredths ?? 0);
+                  return (
+                    <tr key={move.shareCode}>
+                      <td>
+                        <Link className="code" href={`/t/${move.shareCode}`}>
+                          {move.shareCode}
+                        </Link>
+                      </td>
+                      <td>{move.issuerName}</td>
+                      <td className="num">
+                        {move.beforeHundredths === null ? (
+                          <NotReported label={m.notReported} />
+                        ) : (
+                          formatPercent(move.beforeHundredths, lang)
+                        )}
+                      </td>
+                      <td className="num">
+                        {move.afterHundredths === null ? (
+                          <NotReported label={m.notReported} />
+                        ) : (
+                          formatPercent(move.afterHundredths, lang)
+                        )}
+                      </td>
+                      <td className="num hide-md">
+                        {formatSharesChange(
+                          (move.afterShares ?? 0) - (move.beforeShares ?? 0),
+                          lang,
+                        )}
+                      </td>
+                      <td className="num">
+                        <span className="holders-move">
+                          {delta === 0 ? null : (
+                            <Icon name={delta > 0 ? "up" : "down"} />
+                          )}
+                          {formatPercentChange(delta, lang)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
-        <p className="citation">{m.dash}</p>
-      </section>
+        <p className="holders-note">{m.dash}</p>
+      </Section>
     </>
   );
 }
