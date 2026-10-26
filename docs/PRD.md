@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.10, 2026-10-26. **Status:** P1 started 2026-10-22; M1 to M6 built and deployed; the public launch (search engines allowed) waits for the owner, and §10's three theses are not yet written (§11, D-021, D-023 to D-027); every page was rebuilt on a new identity and one design system before launch (D-027, [DESIGN.md](DESIGN.md)). **Owner:** Azzam Ubaidillah.
+**Version:** 0.11, 2026-10-26. **Status:** P1 started 2026-10-22; M1 to M6 built and deployed, and the site **launched on 2026-10-26** (search engines allowed, three theses published; §11, D-021, D-023 to D-028); every page was rebuilt on a new identity and one design system before launch (D-027, [DESIGN.md](DESIGN.md)). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
@@ -159,7 +159,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 - **Acceptance:**
   - a malformed condition block makes the thesis show "conditions unreadable: \<reason\>"; it is never guessed;
   - every thesis page carries the not-investment-advice notice.
-  - **Met 2026-10-25** (M4, D-024). Theses live in `theses/<slug>/<YYYY-MM-DD>.md` and show at `/theses` and `/theses/<slug>`; each ticker page lists the theses that name it. A malformed `conditions` block shows "Conditions unreadable: \<reason\>" naming the line, on the thesis and in the list. The notice sits on the list and on every version of every thesis. The worker records each condition's check daily. "Conditions hit" leads the page with the day each condition was first met. A closed thesis without a written post-mortem is refused. Verified against a copy of production data with a throwaway thesis; no thesis is published yet, because the theses are the owner's to write (§10 asks for at least three).
+  - **Met 2026-10-25** (M4, D-024). Theses live in `theses/<slug>/<YYYY-MM-DD>.md` and show at `/theses` and `/theses/<slug>`; each ticker page lists the theses that name it. A malformed `conditions` block shows "Conditions unreadable: \<reason\>" naming the line, on the thesis and in the list. The notice sits on the list and on every version of every thesis. The worker records each condition's check daily. "Conditions hit" leads the page with the day each condition was first met. A closed thesis without a written post-mortem is refused. Verified against a copy of production data with a throwaway thesis. **Three theses published 2026-10-26** (D-028), and `src/theses/published.test.ts` holds the bar of three and that each file parses.
 
 ### F8. Ticker page
 - **Our sections:** ownership (F2), float and tranche (F3), local/foreign (F5 when cleared), theses that mention the ticker (F7), events (float deadline, MSCI dates).
@@ -273,7 +273,7 @@ Each feature lists acceptance criteria. "Absent" means the page shows a typed re
 | M3 | F6 macro dashboard. **Built and deployed 2026-10-24** (D-023) | 12 h |
 | M4 | F7 theses + condition evaluation. **Built and deployed 2026-10-25** (D-024); the theses themselves are the owner's to write | 10 h |
 | M5 | F12 daily brief: context exporter, schemas, validator, agent sandbox and schedule, brief page. **Built and deployed 2026-10-25** (D-025) | 8 h |
-| M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain. **Built and deployed 2026-10-25** (D-026): 133 Playwright specs and Lighthouse accessibility 100 on 120 runs; the launch itself (removing the nginx `noindex` line) is the owner's call | 10 h |
+| M6 | F8 ticker page polish, F11 bilingual, E2E, Lighthouse, public launch on the subdomain. **Built and deployed 2026-10-25** (D-026): 133 Playwright specs and Lighthouse accessibility 100 on 120 runs; **launched 2026-10-26** (D-028: three theses published, nginx `noindex` line removed) | 10 h |
 
 That totals about 75 h. **Kill and re-plan rule:** if M1 takes more than 30 h, re-estimate everything before continuing. **Start date:** 2026-10-22 (owner: "start now").
 
@@ -305,4 +305,4 @@ Resolved by the owner on 2026-10-19:
 | Q4, permission emails | Not now | D-013 |
 | Q5, hosting | A subdomain of the owner's site | D-014 |
 
-Start date: 2026-10-22. Subdomain: `sigi.ubaidillah.id` (DNS added by the owner, 2026-10-23). Production is kept out of search engines (`X-Robots-Tag: noindex`) until the M6 launch, which is one change: remove that line from the site's nginx server block and reload nginx (D-026). Of §10's P1-exit coverage, two items are met (an ownership page for every issuer; 8 published months) and two are not: three published theses (the owner writes them) and at least 5 macro series per group (there are 13 in groups of 4, 6 and 3, so Indonesia and Global are short).
+Start date: 2026-10-22. Subdomain: `sigi.ubaidillah.id` (DNS added by the owner, 2026-10-23). Production was kept out of search engines (`X-Robots-Tag: noindex`) until the launch on 2026-10-26, when that line was removed from the site's nginx server block (D-028). Of §10's P1-exit coverage, three items are met (an ownership page for every issuer; 8 published months; three published theses) and one is not: at least 5 macro series per group (there are 13 in groups of 4, 6 and 3, so Indonesia and Global are short). The owner launched without it. P1 exit also asks for the repository to be public, which it is not yet.

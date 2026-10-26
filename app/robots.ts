@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * What crawlers may fetch once the site is public (PRD M6). `/lang` only sets
- * a cookie and `/search` only redirects, so neither has anything to index. Until launch the web
- * server's `X-Robots-Tag: noindex` header (DECISIONS D-020) overrides this.
+ * a cookie and `/search` only redirects, so neither has anything to index. The site
+ * has been open to search engines since the launch (DECISIONS D-028).
  */
 export default function robots(): MetadataRoute.Robots {
   const { origin } = loadConfig();

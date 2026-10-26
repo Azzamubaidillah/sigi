@@ -9,7 +9,7 @@ A research site for Indonesian listed companies. It covers who owns each company
 
 *Sigi* is a torch; *menyigi* means "to light up" and "to investigate carefully" (KBBI).
 
-**Status:** phase P1, started 2026-10-22, live (not yet indexed by search engines) at https://sigi.ubaidillah.id.
+**Status:** phase P1, started 2026-10-22, live and open to search engines since 2026-10-26 (D-028) at https://sigi.ubaidillah.id.
 
 - **M1** (deployed 2026-10-23): the monthly >1% holders import with validation gates and fail-closed publishing (PRD F1), data health and sources (F10), ownership per company (F2), and the Dokploy deployment.
 - **M2** (deployed 2026-10-23): the investability tracker against the 15% free-float rule (F3), the holder explorer for institutions (F4), and the market page with the ownership screen and TradingView widgets (F9).
@@ -18,7 +18,8 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **M4** (deployed 2026-10-25): theses (F7) at `/theses`, files in `theses/` with typed invalidation conditions that the worker checks daily (D-024).
 - **M5** (deployed 2026-10-25): the daily brief (F12) at `/brief`: an agent reads Sigi's own readings each morning and writes one file that the page validates before showing (D-025).
 - **M6** (deployed 2026-10-25): the company page with its dates and TradingView sections (F8), English and Indonesian on every page (F11, D-026), Playwright and Lighthouse checks in CI.
-- **Redesign** (2026-10-26, D-027): a new identity (the `sigi` wordmark with a flame on each i, the torch, nila indigo and obor amber, Plus Jakarta Sans and Newsreader) and one design system under every page; the register carries an ownership bar per company, with the free float lit and the 15% minimum marked. The site is public but asks search engines not to index it: the launch is removing the `X-Robots-Tag: noindex, nofollow` line from the site's nginx server block and reloading nginx.
+- **Redesign** (2026-10-26, D-027): a new identity (the `sigi` wordmark with a flame on each i, the torch, nila indigo and obor amber, Plus Jakarta Sans and Newsreader) and one design system under every page; the register carries an ownership bar per company, with the free float lit and the 15% minimum marked.
+- **Launch** (2026-10-26, D-028): three theses published (`theses/`: BRIS and CIMB Niaga float steps, coal and the rupiah) and the `X-Robots-Tag: noindex, nofollow` line removed from the site's nginx server block. To take the site out of search engines again, put that header back and reload nginx.
 
 | Doc | Purpose |
 |---|---|
