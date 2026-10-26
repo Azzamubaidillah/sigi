@@ -63,7 +63,14 @@ const PAGES: Expected[] = [
   {
     path: "/brief",
     h1: "Daily brief",
-    h2: ["Notable", "Inputs"],
+    h2: [
+      "Worth a closer look",
+      "Changes since yesterday",
+      "Risks to this reading",
+      "Set aside, and why",
+      "Web sources",
+      "Inputs",
+    ],
     current: "Brief",
   },
   {
@@ -78,7 +85,12 @@ const PAGES: Expected[] = [
     ],
     current: "Investability",
   },
-  { path: "/holders", h1: "Holders", h2: [], current: "Holders" },
+  {
+    path: "/holders",
+    h1: "Holders",
+    h2: ["Institutional holders"],
+    current: "Holders",
+  },
   {
     path: `/holders/${HOLDERS.fund.slug}`,
     h1: HOLDERS.fund.name,
@@ -101,19 +113,26 @@ const PAGES: Expected[] = [
   {
     path: "/theses",
     h1: "Theses",
-    h2: ["Conditions hit", "All theses"],
+    h2: ["Conditions hit", "Views held"],
     current: "Theses",
   },
   {
     path: `/theses/${THESES.valid.slug}`,
     h1: THESES.valid.title,
-    h2: ["Summary", "Invalidation conditions", "Thesis", "History"],
+    h2: [
+      "Where it stands",
+      "Invalidation conditions",
+      "Dates",
+      "The thesis",
+      "Version history",
+    ],
     current: "Theses",
   },
   {
     path: `/theses/${THESES.unreadable.slug}`,
     h1: THESES.unreadable.title,
-    h2: ["Summary", "Invalidation conditions", "Thesis", "History"],
+    // Conditions that cannot be read have no readings to summarise.
+    h2: ["Invalidation conditions", "Dates", "The thesis", "Version history"],
     current: "Theses",
   },
   {
@@ -140,7 +159,6 @@ for (const expected of PAGES) {
       expected.h1,
     );
     const sections = await headings(page, 2);
-    // The brief's section heading carries the date; only its badge is stable.
     for (const wanted of expected.h2) {
       expect(sections.some((text) => text.endsWith(wanted))).toBe(true);
     }

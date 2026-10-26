@@ -1,4 +1,9 @@
-# Sigi
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/wordmark-dark.svg">
+    <img src="docs/brand/wordmark-light.svg" alt="Sigi" height="56">
+  </picture>
+</h1>
 
 A research site for Indonesian listed companies. It covers who owns each company and what changed this month, how much of it really floats against the new 15% rule, how macro conditions move each sector, investment theses with explicit invalidation conditions, and a daily AI brief that cites its evidence. It uses only free data, and every figure shows its source.
 
@@ -12,10 +17,12 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **M3** (deployed 2026-10-24): the macro dashboard (F6) at `/macro`, fed daily from Bank Indonesia, the World Bank Pink Sheet and FRED (D-023).
 - **M4** (deployed 2026-10-25): theses (F7) at `/theses`, files in `theses/` with typed invalidation conditions that the worker checks daily (D-024).
 - **M5** (deployed 2026-10-25): the daily brief (F12) at `/brief`: an agent reads Sigi's own readings each morning and writes one file that the page validates before showing (D-025).
-- **M6** (deployed 2026-10-25): the company page with its dates and TradingView sections (F8), English and Indonesian on every page (F11, D-026), Playwright and Lighthouse checks in CI. The site is public but asks search engines not to index it: the launch is removing the `X-Robots-Tag: noindex, nofollow` line from the site's nginx server block and reloading nginx.
+- **M6** (deployed 2026-10-25): the company page with its dates and TradingView sections (F8), English and Indonesian on every page (F11, D-026), Playwright and Lighthouse checks in CI.
+- **Redesign** (2026-10-26, D-027): a new identity (the `sigi` wordmark with a flame on each i, the torch, nila indigo and obor amber, Plus Jakarta Sans and Newsreader) and one design system under every page; the register carries an ownership bar per company, with the free float lit and the 15% minimum marked. The site is public but asks search engines not to index it: the launch is removing the `X-Robots-Tag: noindex, nofollow` line from the site's nginx server block and reloading nginx.
 
 | Doc | Purpose |
 |---|---|
+| [docs/DESIGN.md](docs/DESIGN.md) | The identity (wordmark, nila and obor, the lit ownership bar), tokens, shared parts and the rules for using them |
 | [docs/PRD.md](docs/PRD.md) | What we build, for whom, under which constraints; features with acceptance criteria; phases; risks |
 | [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md) | Register of every data source: terms, quotes, status, attribution, known issues |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Decisions and their consequences |

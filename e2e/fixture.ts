@@ -58,10 +58,14 @@ export const test = base.extend<Options>({
     );
     page.on("requestfailed", (request) => {
       const reason = request.failure()?.errorText;
-      // Leaving a page cancels the prefetches it started; that is not a failure.
-      const cancelledPrefetch =
-        reason === "net::ERR_ABORTED" && request.url().includes("_rsc=");
-      if (ownOrigin(request.url()) && !cancelledPrefetch)
+      // Leaving a page cancels the prefetches it started, and any stylesheet it
+      // had not finished loading; that is not a failure. A stylesheet that is
+      // missing or broken is an error response, caught below.
+      const cancelled =
+        reason === "net::ERR_ABORTED" &&
+        (request.url().includes("_rsc=") ||
+          /\/_next\/static\/.+\.css(\?|$)/.test(request.url()));
+      if (ownOrigin(request.url()) && !cancelled)
         problems.push(`request failed: ${request.url()} ${reason}`);
     });
     page.on("response", (response) => {

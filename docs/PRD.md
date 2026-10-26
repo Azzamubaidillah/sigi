@@ -1,6 +1,6 @@
 # Sigi: Product Requirements
 
-**Version:** 0.9, 2026-10-25. **Status:** P1 started 2026-10-22; M1 to M6 built and deployed; the public launch (search engines allowed) waits for the owner, and §10's three theses are not yet written (§11, D-021, D-023 to D-026). **Owner:** Azzam Ubaidillah.
+**Version:** 0.10, 2026-10-26. **Status:** P1 started 2026-10-22; M1 to M6 built and deployed; the public launch (search engines allowed) waits for the owner, and §10's three theses are not yet written (§11, D-021, D-023 to D-027); every page was rebuilt on a new identity and one design system before launch (D-027, [DESIGN.md](DESIGN.md)). **Owner:** Azzam Ubaidillah.
 **Name:** Sigi. In the KBBI, *sigi* is a torch, and *menyigi* means "to light up" and, figuratively, "to investigate carefully" (D-009). **Hosting:** a subdomain of the owner's site (D-014).
 **Companion docs:** [DATA-SOURCES.md](DATA-SOURCES.md) (what data we may use and under which terms), [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md).
 **Confidence labels:** [H] read on a primary source, [M] secondary source or partial read, [L] inference. Claims about third-party terms are not legal advice.
