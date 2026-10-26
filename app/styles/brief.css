@@ -1,0 +1,89 @@
+/* The daily brief (docs/DESIGN.md). Its text is the agent's, in English (D-026). */
+@layer sections {
+  .br-stance {
+    margin: 0;
+  }
+
+  /* The page's one focal element: the headline, set large in the serif. */
+  .br-headline {
+    max-width: 36ch;
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: clamp(1.625rem, 1.25rem + 1.8vw, 2.5rem);
+    line-height: 1.22;
+    letter-spacing: -0.01em;
+  }
+
+  /* Worth a closer look: a ruled row each, the subject on the left. */
+  .br-looks {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  .br-looks > li {
+    display: grid;
+    grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
+    gap: var(--s-2) var(--s-5);
+    margin: 0;
+    padding: var(--s-4) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .br-looks p {
+    max-width: var(--measure);
+    margin: 0;
+  }
+
+  .br-subject {
+    display: grid;
+    align-content: start;
+    gap: 0.15rem;
+  }
+
+  .br-subject strong {
+    color: var(--ink);
+    font-size: 1.0625rem;
+  }
+
+  .br-subject span {
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 40rem) {
+    .br-looks > li {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .br-fold > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--link);
+    font-size: 0.9375rem;
+    font-weight: 700;
+  }
+
+  .br-fold > summary:hover {
+    text-decoration-line: underline;
+  }
+
+  .br-fold > p {
+    margin: 0 0 var(--s-2);
+    font-size: 0.9375rem;
+  }
+
+  .br-key {
+    overflow-wrap: anywhere;
+  }
+
+  .br-list {
+    max-width: var(--measure);
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+}

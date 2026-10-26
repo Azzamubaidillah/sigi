@@ -56,7 +56,7 @@ function Blocks({
   return blocks.map((block, index) => {
     switch (block.type) {
       case "heading": {
-        // The page owns h1 and each panel's h2, so a file's # and ## both
+        // The page owns h1 and each section title’s h2, so a file’s # and ## both
         // become h3 and deeper levels follow, without skipping a level.
         const Tag = `h${Math.min(Math.max(block.level, 2) + 1, 6)}` as
           "h3" | "h4" | "h5" | "h6";
@@ -105,7 +105,7 @@ function Blocks({
       case "table":
         return (
           <div className="table-wrap" key={index}>
-            <table className="data">
+            <table className="tbl">
               <thead>
                 <tr>
                   {block.header.map((cell, cellIndex) => (
@@ -164,7 +164,7 @@ export function ThesisBody({
   lang: Lang;
 }) {
   return (
-    <div className="prose thesis-body">
+    <div className="prose">
       <Blocks blocks={blocks} lang={lang} />
     </div>
   );

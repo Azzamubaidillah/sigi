@@ -1,0 +1,239 @@
+/* The theses list and a thesis (docs/DESIGN.md). */
+@layer sections {
+  .th-tickers {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0 var(--s-3);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .th-aside {
+    display: grid;
+    justify-items: end;
+    gap: var(--s-2);
+  }
+
+  @media (max-width: 40rem) {
+    .th-aside {
+      justify-items: start;
+    }
+  }
+
+  /* A second or third line in a cell, quieter than the first. */
+  .th-line {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+    font-weight: 400;
+  }
+
+  /* Review and latest check, under the title where their columns give way. */
+  .th-compact {
+    display: none;
+  }
+
+  @media (max-width: 56rem) {
+    .th-compact {
+      display: block;
+    }
+  }
+
+  .th-title {
+    color: var(--ink);
+    font-size: 1.0625rem;
+    font-weight: 700;
+  }
+
+  .th-written {
+    max-width: 22rem;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  /* What a thesis holds, and what each condition state means. */
+  .th-defs {
+    display: grid;
+    max-width: var(--measure);
+    border-top: 1px solid var(--rule);
+  }
+
+  .th-defs > div {
+    display: grid;
+    grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+    gap: var(--s-1) var(--s-5);
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .th-defs dt {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  @media (max-width: 40rem) {
+    .th-defs > div {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* The conditions table: the threshold moves under the condition on a phone. */
+  .th-conditions td:first-child {
+    max-width: 22rem;
+  }
+
+  .th-inline-threshold {
+    display: none;
+  }
+
+  @media (max-width: 40rem) {
+    .th-inline-threshold {
+      display: inline;
+    }
+  }
+
+  /* On a phone each condition is a stacked row: the condition and its status, then the reading. */
+  @media (max-width: 40rem) {
+    .th-conditions thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    .th-conditions tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--s-2) var(--s-3);
+      padding: var(--s-3) 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .th-conditions tbody td {
+      padding: 0;
+      border: 0;
+    }
+
+    .th-conditions tbody td:nth-child(3) {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .th-conditions tbody td:nth-child(4) {
+      grid-column: 2;
+      grid-row: 1;
+      text-align: right;
+    }
+
+    .th-conditions tbody td.absent {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .th-source {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+
+  /* Dated list: the review date and the catalysts. */
+  .th-dates {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  .th-dates li {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr) auto;
+    gap: var(--s-1) var(--s-4);
+    align-items: baseline;
+    margin: 0;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--rule);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .th-dates time {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .th-review {
+    color: var(--muted);
+  }
+
+  .th-away {
+    color: var(--muted);
+    font-size: 0.875rem;
+    text-align: right;
+  }
+
+  @media (max-width: 40rem) {
+    .th-dates li {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .th-dates li > :nth-child(2) {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+  }
+
+  .th-plain {
+    margin: 0 0 var(--s-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  .th-plain li {
+    padding: var(--s-2) 0;
+  }
+
+  /* Version history and the diff, folded once. */
+  .th-fold > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--link);
+    font-weight: 700;
+  }
+
+  .th-fold > summary:hover {
+    text-decoration-line: underline;
+  }
+
+  .th-fold h3 {
+    margin: var(--s-5) 0 var(--s-2);
+  }
+
+  .th-diff {
+    overflow-x: auto;
+    margin: 0 0 var(--s-3);
+    padding: var(--s-3) 0;
+    border-block: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .th-diff span {
+    display: block;
+    padding-inline: var(--s-3);
+    white-space: pre-wrap;
+  }
+
+  .th-diff .th-added {
+    background: var(--positive-wash);
+    color: var(--positive);
+  }
+
+  .th-diff .th-removed {
+    background: var(--negative-wash);
+    color: var(--negative);
+  }
+}

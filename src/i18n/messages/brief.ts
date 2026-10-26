@@ -4,7 +4,9 @@ export const briefMessages = defineMessages({
   en: {
     metaTitle: "Daily brief",
     heading: "Daily brief",
-    lede: "What changed in the data Sigi tracks, and what is worth a closer look. An AI agent writes it each morning from Sigi’s own readings; every item cites the readings it rests on, and a file that cites anything else is not shown.",
+    lede: "What changed in the data Sigi tracks, and what is worth a closer look today.",
+    howSummary: "How this brief is written",
+    how: "An AI agent writes it each morning from Sigi’s own readings; every item cites the readings it rests on, and a file that cites anything else is not shown. The brief itself is in English.",
     notice:
       "Written by an AI agent from Sigi’s published data and linked sources. It is not investment advice, recommends no transaction, and can be wrong: check each item against the pages it links to.",
     withdrawn: (date: string, reason: string) =>
@@ -24,9 +26,7 @@ export const briefMessages = defineMessages({
     },
     lookAt: "Worth a closer look",
     nothingToday: "Nothing today.",
-    what: "What",
-    why: "Why",
-    evidence: "Evidence",
+    evidence: (count: number) => `Evidence (${count})`,
     changes: "Changes since yesterday",
     noneNoted: "None noted.",
     risks: "Risks to this reading",
@@ -37,6 +37,9 @@ export const briefMessages = defineMessages({
     written: (written: string, readings: string) =>
       `Written ${written} from Sigi’s readings of ${readings}.`,
     inputs: "Inputs",
+    inputsNote: "What the agent was given, and which readings were missing.",
+    inputsFold: (built: number, total: number) =>
+      `${built} of ${total} inputs built`,
     input: "Input",
     asOf: "As of",
     source: "Source",
@@ -56,7 +59,9 @@ export const briefMessages = defineMessages({
   id: {
     metaTitle: "Ringkasan harian",
     heading: "Ringkasan harian",
-    lede: "Apa yang berubah pada data yang dipantau Sigi, dan apa yang layak dicermati. Seorang agen AI menulisnya setiap pagi dari hasil bacaan Sigi sendiri; setiap butir mencantumkan bacaan yang mendasarinya, dan berkas yang mengutip hal lain tidak ditampilkan. Isi ringkasan ditulis dalam bahasa Inggris.",
+    lede: "Apa yang berubah pada data yang dipantau Sigi, dan apa yang layak dicermati hari ini.",
+    howSummary: "Cara ringkasan ini ditulis",
+    how: "Seorang agen AI menulisnya setiap pagi dari hasil bacaan Sigi sendiri; setiap butir mencantumkan bacaan yang mendasarinya, dan berkas yang mengutip hal lain tidak ditampilkan. Isi ringkasan ditulis dalam bahasa Inggris.",
     notice:
       "Ditulis oleh agen AI dari data yang diterbitkan Sigi dan sumber yang ditautkan. Ini bukan nasihat investasi, tidak merekomendasikan transaksi apa pun, dan bisa keliru: periksa setiap butir pada halaman yang ditautkannya.",
     withdrawn: (date: string, reason: string) =>
@@ -77,9 +82,7 @@ export const briefMessages = defineMessages({
     },
     lookAt: "Layak dicermati",
     nothingToday: "Tidak ada hari ini.",
-    what: "Apa",
-    why: "Mengapa",
-    evidence: "Bukti",
+    evidence: (count: number) => `Bukti (${count})`,
     changes: "Perubahan sejak kemarin",
     noneNoted: "Tidak ada yang dicatat.",
     risks: "Risiko terhadap pembacaan ini",
@@ -90,6 +93,10 @@ export const briefMessages = defineMessages({
     written: (written: string, readings: string) =>
       `Ditulis ${written} dari bacaan Sigi pada ${readings}.`,
     inputs: "Masukan",
+    inputsNote:
+      "Apa yang diberikan kepada agen, dan bacaan mana yang tidak ada.",
+    inputsFold: (built: number, total: number) =>
+      `${built} dari ${total} masukan tersedia`,
     input: "Masukan",
     asOf: "Per tanggal",
     source: "Sumber",

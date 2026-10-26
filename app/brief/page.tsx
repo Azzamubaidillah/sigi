@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import {
+  Notice,
+  PageHeader,
+  Pill,
+  Section,
+  SourceNote,
+} from "@/app/_components/ui";
 import { formatDate, formatTimestamp } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
 import { type BriefContext, CONTEXT_SECTIONS } from "@/src/brief/files";
@@ -8,6 +15,8 @@ import { loadConfig } from "@/src/config";
 import type { Lang } from "@/src/i18n/lang";
 import { briefMessages } from "@/src/i18n/messages/brief";
 import { loadBrief, type PassedOver } from "@/src/views/brief";
+
+import "../styles/brief.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: briefMessages[await getLang()].metaTitle };
@@ -50,17 +59,15 @@ function Evidence({
   return keys.map((key, index) => {
     const href = evidenceHref(key, context);
     return (
-      <span key={key}>
+      <span className="br-key" key={key}>
         {index > 0 ? ", " : ""}
         {href === null ? (
-          <code>{key}</code>
+          key
         ) : href.startsWith("/") ? (
-          <Link href={href}>
-            <code>{key}</code>
-          </Link>
+          <Link href={href}>{key}</Link>
         ) : (
           <a href={href} rel="noopener noreferrer nofollow">
-            <code>{key}</code>
+            {key}
           </a>
         )}
       </span>
@@ -68,13 +75,28 @@ function Evidence({
   });
 }
 
-function TextList({ items, empty }: { items: string[]; empty: string }) {
+/** The brief's own text is English by decision D-026; mark it so on the Indonesian page. */
+function contentLang(lang: Lang): "en" | undefined {
+  return lang === "id" ? "en" : undefined;
+}
+
+function TextList({
+  items,
+  empty,
+  lang,
+}: {
+  items: string[];
+  empty: string;
+  lang: Lang;
+}) {
   return items.length === 0 ? (
     <p className="absent">{empty}</p>
   ) : (
-    <ul>
+    <ul className="br-list">
       {items.map((item) => (
-        <li key={item}>{item}</li>
+        <li key={item} lang={contentLang(lang)}>
+          {item}
+        </li>
       ))}
     </ul>
   );
@@ -82,52 +104,60 @@ function TextList({ items, empty }: { items: string[]; empty: string }) {
 
 function Withdrawn({ items, lang }: { items: PassedOver[]; lang: Lang }) {
   return items.map((item) => (
-    <p className="notice" key={item.file}>
+    <Notice tone="negative" key={item.file}>
       {briefMessages[lang].withdrawn(
         formatDate(item.file.slice(0, 10), lang),
         item.reason,
       )}
-    </p>
+    </Notice>
   ));
 }
 
 function Inputs({ context, lang }: { context: BriefContext; lang: Lang }) {
   const m = briefMessages[lang];
   const absent = new Map(context.absent.map((a) => [a.section, a.reason]));
+  const built = CONTEXT_SECTIONS.filter((name) => context[name]).length;
   return (
-    <div className="table-wrap">
-      <table className="data">
-        <thead>
-          <tr>
-            <th scope="col">{m.input}</th>
-            <th scope="col">{m.asOf}</th>
-            <th scope="col">{m.source}</th>
-            <th scope="col">{m.worth}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {CONTEXT_SECTIONS.map((name) => {
-            const section = context[name];
-            return (
-              <tr key={name}>
-                <td>{m.sections[name]}</td>
-                {section ? (
-                  <>
-                    <td className="mono">{section.asOf}</td>
-                    <td>{section.source}</td>
-                    <td>{section.evidenceStatus}</td>
-                  </>
-                ) : (
-                  <td colSpan={3} className="absent">
-                    {m.absent(absent.get(name) ?? m.notBuilt)}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <details className="br-fold">
+      <summary>{m.inputsFold(built, CONTEXT_SECTIONS.length)}</summary>
+      <div className="table-wrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th scope="col">{m.input}</th>
+              <th scope="col">{m.asOf}</th>
+              <th scope="col" className="hide-sm">
+                {m.source}
+              </th>
+              <th scope="col" className="hide-md">
+                {m.worth}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {CONTEXT_SECTIONS.map((name) => {
+              const section = context[name];
+              return (
+                <tr key={name}>
+                  <th scope="row">{m.sections[name]}</th>
+                  {section ? (
+                    <>
+                      <td>{section.asOf}</td>
+                      <td className="hide-sm">{section.source}</td>
+                      <td className="hide-md">{section.evidenceStatus}</td>
+                    </>
+                  ) : (
+                    <td colSpan={3} className="absent">
+                      {m.absent(absent.get(name) ?? m.notBuilt)}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </details>
   );
 }
 
@@ -136,95 +166,131 @@ export default async function BriefPage() {
   const m = briefMessages[lang];
   const config = loadConfig();
   const brief = loadBrief(config.dataDirectory);
+  const en = contentLang(lang);
   return (
     <>
-      <div className="page-header">
-        <h1>{m.heading}</h1>
-        <p className="lede">{m.lede}</p>
-      </div>
-      <p className="notice">{m.notice}</p>
+      <PageHeader title={m.heading} lede={m.lede} />
+      <Notice>{m.notice}</Notice>
       <Withdrawn items={brief.withdrawn} lang={lang} />
 
       {brief.status === "missing" ? (
-        <section className="panel">
-          <h2>{m.today}</h2>
+        <Section id="today" title={m.today}>
           <p className="absent">{m.missing}</p>
-        </section>
+        </Section>
       ) : brief.status === "unreadable" ? (
-        <section className="panel">
-          <h2>{m.today}</h2>
-          <p className="notice">{m.unreadable(brief.reason)}</p>
-        </section>
+        <Section id="today" title={m.today}>
+          <Notice tone="negative">{m.unreadable(brief.reason)}</Notice>
+        </Section>
       ) : (
         <>
           {brief.stale ? (
-            <p className="notice">
+            <Notice tone="warn">
               {m.stale(
                 formatTimestamp(Date.parse(brief.analysis.generatedAt), lang),
               )}
-            </p>
+            </Notice>
           ) : null}
           {brief.rejected ? (
-            <p className="notice">
+            <Notice tone="warn">
               {m.rejected(brief.rejected.file, brief.rejected.reason)}
-            </p>
+            </Notice>
           ) : null}
-          <section className="panel">
-            <h2>
-              {formatDate(brief.analysis.date, lang)}{" "}
-              <span className="badge">{m.stance[brief.analysis.stance]}</span>
-            </h2>
-            <p className="lede">{brief.analysis.headline}</p>
-            <h3>{m.lookAt}</h3>
+
+          <Section id="today" title={formatDate(brief.analysis.date, lang)}>
+            <p className="br-stance">
+              <Pill
+                tone={
+                  brief.analysis.stance === "watch"
+                    ? "warn"
+                    : brief.analysis.stance === "notable"
+                      ? "info"
+                      : undefined
+                }
+              >
+                {m.stance[brief.analysis.stance]}
+              </Pill>
+            </p>
+            <p className="br-headline" lang={en}>
+              {brief.analysis.headline}
+            </p>
+            <SourceNote summary={m.howSummary}>
+              <p>{m.how}</p>
+              <p>
+                {m.written(
+                  formatTimestamp(Date.parse(brief.analysis.generatedAt), lang),
+                  formatTimestamp(Date.parse(brief.context.generatedAt), lang),
+                )}
+              </p>
+            </SourceNote>
+          </Section>
+
+          <Section id="look-at" title={m.lookAt}>
             {brief.analysis.lookAt.length === 0 ? (
               <p className="absent">{m.nothingToday}</p>
             ) : (
-              <div className="table-wrap">
-                <table className="data">
-                  <thead>
-                    <tr>
-                      <th scope="col">{m.what}</th>
-                      <th scope="col">{m.why}</th>
-                      <th scope="col">{m.evidence}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {brief.analysis.lookAt.map((item) => (
-                      <tr key={`${item.kind} ${item.subject}`}>
-                        <td>
-                          <strong>{item.subject}</strong>
-                          <div className="muted">{item.kind}</div>
-                        </td>
-                        <td>{item.reason}</td>
-                        <td>
+              <ol className="br-looks">
+                {brief.analysis.lookAt.map((item) => (
+                  <li key={`${item.kind} ${item.subject}`}>
+                    <div className="br-subject" lang={en}>
+                      <strong>{item.subject}</strong>
+                      <span>{item.kind}</span>
+                    </div>
+                    <div>
+                      <p lang={en}>{item.reason}</p>
+                      <details className="br-fold">
+                        <summary>
+                          {m.evidence(item.evidenceKeys.length)}
+                        </summary>
+                        <p>
                           <Evidence
                             keys={item.evidenceKeys}
                             context={brief.context}
                           />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </p>
+                      </details>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             )}
-            <h3>{m.changes}</h3>
+          </Section>
+
+          <Section id="changes" title={m.changes}>
             <TextList
               items={brief.analysis.changesSinceYesterday}
               empty={m.noneNoted}
+              lang={lang}
             />
-            <h3>{m.risks}</h3>
-            <TextList items={brief.analysis.risks} empty={m.noneNoted} />
-            <h3>{m.setAside}</h3>
-            <TextList items={brief.analysis.setAside} empty={m.nothing} />
-            <h3>{m.webSources}</h3>
+          </Section>
+
+          <Section id="risks" title={m.risks}>
+            <TextList
+              items={brief.analysis.risks}
+              empty={m.noneNoted}
+              lang={lang}
+            />
+          </Section>
+
+          <Section id="set-aside" title={m.setAside}>
+            <TextList
+              items={brief.analysis.setAside}
+              empty={m.nothing}
+              lang={lang}
+            />
+          </Section>
+
+          <Section id="web-sources" title={m.webSources}>
             {brief.analysis.sources.length === 0 ? (
               <p className="absent">{m.noWebSources}</p>
             ) : (
-              <ul>
+              <ul className="br-list">
                 {brief.analysis.sources.map((source) => (
                   <li key={source.url}>
-                    <a href={source.url} rel="noopener noreferrer nofollow">
+                    <a
+                      href={source.url}
+                      lang={en}
+                      rel="noopener noreferrer nofollow"
+                    >
                       {source.title}
                     </a>
                     {source.publisher ? `, ${source.publisher}` : ""}
@@ -233,17 +299,11 @@ export default async function BriefPage() {
                 ))}
               </ul>
             )}
-            <p className="citation">
-              {m.written(
-                formatTimestamp(Date.parse(brief.analysis.generatedAt), lang),
-                formatTimestamp(Date.parse(brief.context.generatedAt), lang),
-              )}
-            </p>
-          </section>
-          <section className="panel">
-            <h2>{m.inputs}</h2>
+          </Section>
+
+          <Section id="inputs" title={m.inputs} note={m.inputsNote}>
             <Inputs context={brief.context} lang={lang} />
-          </section>
+          </Section>
         </>
       )}
     </>
