@@ -5,25 +5,32 @@ export const investabilityMessages = defineMessages({
   en: {
     metaTitle: "Investability",
     title: "Investability: the 15% free-float rule",
-    lede: "The exchange's minimum free float rose to 15% on 31 March 2026, with staged deadlines to 2029, while MSCI weighs moving Indonesia to Standalone status. This page counts which companies the monthly register shows below the line. It is Sigi's estimate, never the official count, which is shown beside it.",
+    lede: "The exchange raised the minimum free float to 15% on 31 March 2026, with staged deadlines to 2029, while MSCI weighs moving Indonesia to Standalone status. Sigi counts the companies its monthly register shows below the line. The count is an estimate, never the official one, which stands beside it.",
+    asOf: (date: string) => `As of ${date}`,
     pressReport: " (press report)",
     counts: {
       heading: "Below 15%: Sigi's count and the exchange's",
       sigi: (date: string) => `Sigi, ${date}: certainly below 15%`,
-      exchangeNearest: (date: string) =>
-        `Exchange, ${date} (nearest to Sigi's month)`,
-      exchangeLatest: (date: string) => `Exchange, ${date} (latest reported)`,
+      sigiNote: "Even the upper bound on the float is under 15%",
+      exchangeNearest: (date: string) => `Exchange, ${date}`,
+      exchangeNearestNote: "Nearest to Sigi's month",
+      exchangeLatest: (date: string) => `Exchange, ${date}`,
+      exchangeLatestNote: "Latest reported",
       ofListed: (listed: number) => ` of ${listed}`,
-      incomplete: "Companies with no float figure (register incomplete)",
-      citation:
-        "Sigi counts a company only when even its upper bound is under 15%, so its count is a floor: the exchange also removes affiliates, insiders, treasury and locked-up shares below 5%, which the register cannot see. The exchange counts all listed companies from its own records, so the gap is the definition, the date and the source together. Exchange figures as reported by ",
+      nextDate: "Next date on the timeline",
+      note: "Sigi counts a company only when even its upper bound is under 15%, so its count is a floor: the exchange also removes affiliates, insiders, treasury and locked-up shares below 5%, which the register cannot see.",
+      sourceSummary: "Where the exchange's count comes from",
+      gap: "The exchange counts all listed companies from its own records, so the gap between the two counts is the definition, the date and the source together. Exchange figures as reported by ",
       and: " and ",
       end: ".",
+      method: "How the bound is worked out",
     },
     bands: {
       heading: "Companies by free-float bound",
+      note: "Each band opens the register filtered to it. Red bars are the bands under the 15% line.",
       bound: "Upper bound on free float",
       companies: "Companies",
+      line: "15% minimum",
       labels: {
         "under-5": "Under 5%",
         "5-to-12.5": "5% to 12.5%",
@@ -39,34 +46,39 @@ export const investabilityMessages = defineMessages({
     },
     below: {
       heading: (count: number) => `Certainly below 15% (${count})`,
+      stamp: (shown: number, total: number) =>
+        shown < total ? `The ${shown} with the lowest bound` : `All ${total}`,
       intro:
-        "The deadline depends on market capitalisation, which Sigi does not have (it stores no prices), so each company shows the tranches still possible given its bound.",
-      moved: (
-        date: string,
-        up: number,
-        upList: string,
-        down: number,
-        downList: string,
-      ) =>
-        ` Since ${date}: ${up} rose above 15% (${upList}), ${down} fell below (${downList}).`,
+        "The deadline depends on market capitalisation, which Sigi does not have (it stores no prices), so each group shows the tranches still possible given its bound.",
+      rose: (count: number, date: string) =>
+        `${count} rose above 15% since ${date}:`,
+      fell: (count: number, date: string) =>
+        `${count} fell below 15% since ${date}:`,
       none: "none",
       noPrevious:
-        " No earlier month is published, so there is no movement to show yet.",
+        "No earlier month is published, so there is no movement to show yet.",
+      all: (total: number) => `All ${total} in the register`,
       code: "Code",
       company: "Company",
       bound: "Bound",
       before: "Month before",
+      notInPrior: "Not in the earlier register",
       deadlines: "Possible deadlines",
     },
     timeline: {
       heading: "Timeline",
-      passed: " (passed)",
-      tranches: "Deadlines by tranche: ",
-      trancheJoin: ". ",
-      ruleBefore: ". The rule as reported by ",
+      note: "Dates are as reported in the press unless a source is marked primary. The rule text itself (revised Peraturan Bursa I-A) was not read in full.",
+      date: "Date",
+      event: "Event and source",
+      passed: "Passed",
+      next: "Next",
+      source: "Source: ",
+      primary: " (primary source)",
+      foldSummary: "Deadlines by tranche, and the rule's sources",
+      tranches: "Deadlines by tranche",
+      ruleBefore: "The rule as reported by ",
       sourceJoin: " and ",
-      ruleAfter:
-        "; the rule text itself (revised Peraturan Bursa I-A) was not read in full.",
+      ruleAfter: ".",
     },
     method: {
       heading: "Methodology",
@@ -101,25 +113,32 @@ export const investabilityMessages = defineMessages({
   id: {
     metaTitle: "Kelayakan investasi",
     title: "Kelayakan investasi: aturan free float 15%",
-    lede: "Batas minimum free float bursa naik menjadi 15% pada 31 Maret 2026, dengan tenggat bertahap hingga 2029, sementara MSCI mempertimbangkan memindahkan Indonesia ke status Standalone. Halaman ini menghitung emiten mana yang menurut daftar bulanan berada di bawah batas itu. Angka ini perkiraan Sigi, bukan hitungan resmi, yang ditampilkan di sebelahnya.",
+    lede: "Bursa menaikkan batas minimum free float menjadi 15% pada 31 Maret 2026, dengan tenggat bertahap hingga 2029, sementara MSCI mempertimbangkan memindahkan Indonesia ke status Standalone. Sigi menghitung emiten yang menurut daftar bulanannya berada di bawah batas itu. Angka ini perkiraan, bukan hitungan resmi, yang berdiri di sebelahnya.",
+    asOf: (date: string) => `Per ${date}`,
     pressReport: " (laporan pers)",
     counts: {
       heading: "Di bawah 15%: hitungan Sigi dan hitungan bursa",
       sigi: (date: string) => `Sigi, ${date}: pasti di bawah 15%`,
-      exchangeNearest: (date: string) =>
-        `Bursa, ${date} (terdekat dengan bulan Sigi)`,
-      exchangeLatest: (date: string) => `Bursa, ${date} (laporan terbaru)`,
+      sigiNote: "Batas atas free float pun di bawah 15%",
+      exchangeNearest: (date: string) => `Bursa, ${date}`,
+      exchangeNearestNote: "Terdekat dengan bulan Sigi",
+      exchangeLatest: (date: string) => `Bursa, ${date}`,
+      exchangeLatestNote: "Laporan terbaru",
       ofListed: (listed: number) => ` dari ${listed}`,
-      incomplete: "Emiten tanpa angka free float (daftar tidak lengkap)",
-      citation:
-        "Sigi menghitung sebuah emiten hanya bila batas atasnya pun di bawah 15%, sehingga hitungannya adalah batas bawah: bursa juga mengeluarkan afiliasi, orang dalam, saham treasuri, dan saham yang dikunci di bawah 5%, yang tidak terlihat dalam daftar. Bursa menghitung semua emiten tercatat dari catatannya sendiri, jadi selisihnya berasal dari definisi, tanggal, dan sumber sekaligus. Angka bursa sebagaimana dilaporkan oleh ",
+      nextDate: "Tanggal berikutnya di lini masa",
+      note: "Sigi hanya menghitung emiten yang batas atasnya pun di bawah 15%, sehingga hitungannya adalah batas bawah: bursa juga mengeluarkan afiliasi, orang dalam, saham treasuri, dan saham yang dikunci di bawah 5%, yang tidak terlihat dalam daftar.",
+      sourceSummary: "Dari mana hitungan bursa berasal",
+      gap: "Bursa menghitung semua emiten tercatat dari catatannya sendiri, jadi selisih kedua hitungan berasal dari definisi, tanggal, dan sumber sekaligus. Angka bursa sebagaimana dilaporkan oleh ",
       and: " dan ",
       end: ".",
+      method: "Cara batas atas dihitung",
     },
     bands: {
       heading: "Emiten menurut batas atas free float",
+      note: "Setiap rentang membuka daftar yang disaring ke rentang itu. Batang merah adalah rentang di bawah garis 15%.",
       bound: "Batas atas free float",
       companies: "Emiten",
+      line: "Batas minimum 15%",
       labels: {
         "under-5": "Di bawah 5%",
         "5-to-12.5": "5% hingga 12,5%",
@@ -135,34 +154,41 @@ export const investabilityMessages = defineMessages({
     },
     below: {
       heading: (count: number) => `Pasti di bawah 15% (${count})`,
+      stamp: (shown: number, total: number) =>
+        shown < total
+          ? `${shown} dengan batas atas terendah`
+          : `Semua ${total}`,
       intro:
-        "Tenggatnya bergantung pada kapitalisasi pasar, yang tidak dimiliki Sigi (Sigi tidak menyimpan harga), sehingga setiap emiten menampilkan tahap yang masih mungkin berlaku berdasarkan batas atasnya.",
-      moved: (
-        date: string,
-        up: number,
-        upList: string,
-        down: number,
-        downList: string,
-      ) =>
-        ` Sejak ${date}: ${up} naik di atas 15% (${upList}), ${down} turun di bawahnya (${downList}).`,
+        "Tenggatnya bergantung pada kapitalisasi pasar, yang tidak dimiliki Sigi (Sigi tidak menyimpan harga), sehingga setiap kelompok menampilkan tahap yang masih mungkin berlaku berdasarkan batas atasnya.",
+      rose: (count: number, date: string) =>
+        `${count} naik di atas 15% sejak ${date}:`,
+      fell: (count: number, date: string) =>
+        `${count} turun di bawah 15% sejak ${date}:`,
       none: "tidak ada",
       noPrevious:
-        " Belum ada bulan sebelumnya yang diterbitkan, sehingga belum ada pergerakan untuk ditampilkan.",
+        "Belum ada bulan sebelumnya yang diterbitkan, sehingga belum ada pergerakan untuk ditampilkan.",
+      all: (total: number) => `Semua ${total} di daftar`,
       code: "Kode",
       company: "Perusahaan",
       bound: "Batas atas",
       before: "Bulan sebelumnya",
+      notInPrior: "Tidak ada di daftar sebelumnya",
       deadlines: "Tenggat yang mungkin",
     },
     timeline: {
       heading: "Lini masa",
-      passed: " (sudah lewat)",
-      tranches: "Tenggat menurut tahap: ",
-      trancheJoin: ". ",
-      ruleBefore: ". Aturan sebagaimana dilaporkan oleh ",
+      note: "Tanggal sebagaimana dilaporkan pers, kecuali sumbernya ditandai primer. Teks aturannya sendiri (Peraturan Bursa I-A yang direvisi) belum dibaca secara penuh.",
+      date: "Tanggal",
+      event: "Peristiwa dan sumber",
+      passed: "Sudah lewat",
+      next: "Berikutnya",
+      source: "Sumber: ",
+      primary: " (sumber primer)",
+      foldSummary: "Tenggat menurut tahap, dan sumber aturannya",
+      tranches: "Tenggat menurut tahap",
+      ruleBefore: "Aturan sebagaimana dilaporkan oleh ",
       sourceJoin: " dan ",
-      ruleAfter:
-        "; teks aturannya sendiri (Peraturan Bursa I-A yang direvisi) belum dibaca secara penuh.",
+      ruleAfter: ".",
     },
     method: {
       heading: "Metodologi",

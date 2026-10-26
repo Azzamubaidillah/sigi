@@ -6,8 +6,12 @@ import { useDeferredValue, useState } from "react";
 import { formatPercent } from "@/app/_lib/format";
 import type { Lang } from "@/src/i18n/lang";
 import type { holdersMessages } from "@/src/i18n/messages/holders";
-import { typeLabel } from "@/src/ownership/investor-classes";
 import type { HolderSummary } from "@/src/views/holders";
+
+import { holderTypeLabels } from "./holder-types";
+import { Icon } from "./ui";
+
+const ROW_LIMIT = 100;
 
 export function HolderTable({
   holders,
@@ -25,23 +29,33 @@ export function HolderTable({
     : holders;
   return (
     <>
-      <input
-        className="filter"
-        type="search"
-        placeholder={labels.filterPlaceholder}
-        aria-label={labels.filterLabel}
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
-      <p className="muted">
-        {shown.length} {labels.of} {holders.length} {labels.holders}
-      </p>
+      <div className="holders-find">
+        <div className="field">
+          <label htmlFor="holders-q">{labels.filterLabel}</label>
+          <div className="holders-search">
+            <Icon name="search" />
+            <input
+              id="holders-q"
+              type="search"
+              autoComplete="off"
+              placeholder={labels.filterPlaceholder}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+        </div>
+        <p className="holders-count" role="status">
+          {shown.length} {labels.of} {holders.length} {labels.holders}
+        </p>
+      </div>
       <div className="table-wrap">
-        <table className="data">
+        <table className="tbl holders-table">
           <thead>
             <tr>
               <th scope="col">{labels.holder}</th>
-              <th scope="col">{labels.type}</th>
+              <th scope="col" className="hide-sm">
+                {labels.type}
+              </th>
               <th scope="col" className="num">
                 {labels.companies}
               </th>
@@ -49,17 +63,22 @@ export function HolderTable({
             </tr>
           </thead>
           <tbody>
-            {shown.slice(0, 500).map((holder) => (
+            {shown.slice(0, ROW_LIMIT).map((holder) => (
               <tr key={holder.slug}>
                 <td>
-                  <Link href={`/holders/${holder.slug}`}>{holder.name}</Link>
-                </td>
-                <td>{holder.types.map(typeLabel).join(", ")}</td>
-                <td className="num">{holder.companies}</td>
-                <td>
                   <Link
+                    className="holders-name"
+                    href={`/holders/${holder.slug}`}
+                  >
+                    {holder.name}
+                  </Link>
+                </td>
+                <td className="hide-sm">{holderTypeLabels(holder.types)}</td>
+                <td className="num">{holder.companies}</td>
+                <td className="nowrap">
+                  <Link
+                    className="code"
                     href={`/t/${holder.largest.shareCode}`}
-                    className="mono"
                   >
                     {holder.largest.shareCode}
                   </Link>{" "}
@@ -70,7 +89,9 @@ export function HolderTable({
           </tbody>
         </table>
       </div>
-      {shown.length > 500 ? <p className="muted">{labels.truncated}</p> : null}
+      {shown.length > ROW_LIMIT ? (
+        <p className="holders-note">{labels.truncated}</p>
+      ) : null}
     </>
   );
 }
