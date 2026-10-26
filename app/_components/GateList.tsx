@@ -1,7 +1,19 @@
+import { Icon, Pill, type Tone } from "@/app/_components/ui";
 import type { Lang } from "@/src/i18n/lang";
 import { dataMessages } from "@/src/i18n/messages/data";
 import type { GateRow } from "@/src/views/data-health";
 
+const TONES: Record<GateRow["verdict"], Tone> = {
+  pass: "positive",
+  warn: "warn",
+  fail: "negative",
+};
+
+/**
+ * An import's checks as a checklist: one line says how they came out, and
+ * opens to every check with its verdict as a word and an icon. Styles:
+ * app/styles/data.css.
+ */
 export function GateList({ gates, lang }: { gates: GateRow[]; lang: Lang }) {
   if (gates.length === 0) return <span className="muted">—</span>;
   const m = dataMessages[lang].gates;
@@ -14,15 +26,23 @@ export function GateList({ gates, lang }: { gates: GateRow[]; lang: Lang }) {
         ? m.warned(warned)
         : m.allPassed(gates.length);
   return (
-    <details>
-      <summary>{summary}</summary>
-      <ul>
+    <details className="gates">
+      <summary>
+        <Icon name={failed > 0 || warned > 0 ? "alert" : "check"} />
+        {summary}
+      </summary>
+      <ul className="gate-list">
         {gates.map((gate) => (
           <li key={gate.gate}>
-            <span className={`badge ${gate.verdict}`}>
-              {m.verdicts[gate.verdict] ?? gate.verdict}
-            </span>{" "}
-            {m.names[gate.gate] ?? gate.gate}: {gate.detail}
+            <Icon name={gate.verdict === "pass" ? "check" : "alert"} />
+            <span>
+              <Pill tone={TONES[gate.verdict]}>
+                {m.verdicts[gate.verdict] ?? gate.verdict}
+              </Pill>{" "}
+              <strong>{m.names[gate.gate] ?? gate.gate}</strong>
+              <br />
+              {gate.detail}
+            </span>
           </li>
         ))}
       </ul>

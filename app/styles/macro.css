@@ -1,0 +1,159 @@
+/* The macro page at /macro (docs/DESIGN.md): a dashboard of one tile per series. */
+@layer sections {
+  /* The lede is serif; its status words are interface and keep the sans. */
+  .lede .pill {
+    font-family: var(--font-sans);
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+    gap: var(--s-6) var(--s-5);
+  }
+
+  /* A tile is flat: a hairline on the canvas, no box. */
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--rule);
+  }
+
+  .tile h3 {
+    font-size: 1rem;
+  }
+
+  /* Two lines of name in every tile, so the values line up across a row. */
+  @media (min-width: 40rem) {
+    .tile h3 {
+      min-height: 2.6em;
+    }
+  }
+
+  .tile > p {
+    margin: 0;
+  }
+
+  .tile-value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--s-2);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .tile-value strong {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* A line under the value: a figure, a word, and who made it. */
+  .tile-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--s-2);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  .tile-line .pill {
+    font-size: 0.75rem;
+  }
+
+  .tile-move {
+    display: grid;
+  }
+
+  .tile-move .icon {
+    color: var(--ink);
+  }
+
+  .tile-sub {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  .tile-chart {
+    margin-top: auto;
+    padding-top: var(--s-2);
+  }
+
+  .tile-range {
+    margin: var(--s-1) 0 0;
+    color: var(--muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  .tile-folds {
+    display: grid;
+    gap: var(--s-1);
+    margin-top: var(--s-1);
+  }
+
+  .tile-folds .src {
+    margin-top: 0;
+  }
+
+  .tile-sectors {
+    margin: 0;
+    padding: var(--s-2) 0 0;
+    list-style: none;
+  }
+
+  .tile-sectors li + li {
+    margin-top: var(--s-2);
+  }
+
+  /* The year as a filled line with a dot on the latest value. */
+  .sparkline {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--link);
+    overflow: visible;
+  }
+
+  .sparkline-area {
+    fill: currentColor;
+    opacity: 0.14;
+  }
+
+  .sparkline-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .sparkline-dot {
+    fill: currentColor;
+    stroke: var(--canvas);
+    stroke-width: 2;
+  }
+
+  /* Third-party charts, framed and captioned as theirs. */
+  .indices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: var(--s-4);
+  }
+
+  /* On a phone the folds are touch targets. */
+  @media (max-width: 40rem) {
+    .tile-folds .src > summary {
+      min-height: 2.75rem;
+    }
+  }
+}

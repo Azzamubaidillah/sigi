@@ -1,69 +1,95 @@
 import { expect, type Page, test } from "./fixture";
 import { EMPTY_ORIGIN, MACRO_ABSENT } from "./world";
 
-const card = (page: Page, name: string) =>
-  page.locator("article.macro-card").filter({
+const tile = (page: Page, name: string) =>
+  page.locator("article.tile").filter({
     has: page.getByRole("heading", { level: 3, name, exact: true }),
   });
 
 test.describe("macro page", () => {
-  test("groups the series under three headings, each with its cards", async ({
+  test("groups the series under three headings, each with its tiles, then the sector indices", async ({
     page,
   }) => {
     await page.goto("/macro");
-    const groups = page.locator("section.panel");
-    await expect(groups.getByRole("heading", { level: 2 })).toHaveText([
+    await expect(
+      page.locator("main").getByRole("heading", { level: 2 }),
+    ).toHaveText([
       "Indonesia: rates, prices and the rupiah",
       "Commodities Indonesia sells",
       "Global money",
+      "Sector indices",
     ]);
-    // 4 + 6 + 3 series, each with a card.
-    await expect(page.locator("article.macro-card")).toHaveCount(13);
+    // 4 + 6 + 3 series, each with a tile.
+    await expect(page.locator("article.tile")).toHaveCount(13);
   });
 
-  test("a published series shows its value, change, chart, source and next release", async ({
+  test("a published series shows its value, move, chart, range and, folded, its source and next release", async ({
     page,
   }) => {
     await page.goto("/macro");
-    const rate = card(page, "BI-Rate");
-    await expect(rate.locator(".macro-value")).toContainText("6.50");
-    await expect(rate.locator(".macro-value")).toContainText("published");
-    await expect(rate.getByText("Previous, 19 Aug 2026")).toBeVisible();
-    // Sigi's own calculation is labelled as such.
-    await expect(rate.locator(".badge.derived").first()).toHaveText("Sigi");
+    const rate = tile(page, "BI-Rate");
+    await expect(rate.locator(".tile-value")).toContainText("6.50");
+    // The value is as published; the move beside it is Sigi's own calculation.
+    await expect(rate.locator(".tile-line .pill").first()).toHaveText(
+      "published",
+    );
+    await expect(rate.getByText("from 6.50 on 19 Aug 2026")).toBeVisible();
+    await expect(rate.locator(".tile-move")).toContainText("unchanged");
+    await expect(rate.locator(".tile-move .pill")).toHaveText("Sigi");
     await expect(
       rate.getByRole("img", { name: "BI-Rate over the past year" }),
     ).toBeVisible();
     await expect(rate.getByText("Past year: 5.25 to 6.50")).toBeVisible();
-    const citation = rate.locator("p.citation");
-    await expect(citation).toContainText("Source: Bank Indonesia");
-    await expect(citation).toContainText("accessed 24 Oct 2026");
-    await expect(citation).toContainText("Next release expected around");
+
+    const source = rate.locator("details.src").filter({
+      hasText: "Source: Bank Indonesia",
+    });
+    await expect(source).not.toHaveAttribute("open", "");
+    await source.locator("summary").click();
+    await expect(source).toHaveAttribute("open", "");
+    await expect(source).toContainText("Bank Indonesia,");
+    await expect(source).toContainText("accessed 24 Oct 2026");
+    await expect(source).toContainText("Next release expected around");
     await expect(
-      citation.getByRole("link", { name: "example.test" }),
+      source.getByRole("link", { name: "example.test" }),
     ).toHaveAttribute("href", "https://example.test/macro/bi-rate");
+  });
+
+  test("a move is an icon, a signed number and a word, never green or red", async ({
+    page,
+  }) => {
+    await page.goto("/macro");
+    const brent = tile(page, "Crude oil, Brent");
+    const move = brent.locator(".tile-move");
+    await expect(move).toContainText(/[+−]\d/);
+    await expect(move).toContainText(/up|down/);
+    await expect(move.locator("svg.icon")).toHaveCount(1);
+    await expect(move.locator(".tone-positive, .tone-negative")).toHaveCount(0);
   });
 
   test("a year-on-year series adds Sigi's percentage against a year earlier", async ({
     page,
   }) => {
     await page.goto("/macro");
-    const brent = card(page, "Crude oil, Brent");
-    await expect(brent.locator(".macro-value")).toContainText("80.40");
-    await expect(brent.getByText("On Sept 2025")).toBeVisible();
+    const brent = tile(page, "Crude oil, Brent");
+    await expect(brent.locator(".tile-value")).toContainText("80.40");
+    await expect(brent.getByText("against Sept 2025")).toBeVisible();
     await expect(brent).toContainText("+13.6%");
-    await expect(brent.locator("p.citation")).toContainText(
+    const source = brent.locator("details.src").first();
+    await expect(source).toContainText(
       "World Bank Commodity Price Data (The Pink Sheet)",
     );
-    await expect(brent.locator("p.citation")).toContainText("CC BY 4.0");
+    await expect(source).toContainText("CC BY 4.0");
   });
 
   test("shows why a series matters for sectors, behind a disclosure", async ({
     page,
   }) => {
     await page.goto("/macro");
-    const rate = card(page, "BI-Rate");
-    const details = rate.locator("details");
+    const rate = tile(page, "BI-Rate");
+    const details = rate.locator("details.src").filter({
+      hasText: "Why it matters for IDX sectors",
+    });
     await expect(details).not.toHaveAttribute("open", "");
     await details.getByText("Why it matters for IDX sectors").click();
     await expect(details).toHaveAttribute("open", "");
@@ -75,31 +101,32 @@ test.describe("macro page", () => {
     page,
   }) => {
     await page.goto("/macro");
-    const notFetched = card(page, MACRO_ABSENT.notFetched);
+    const notFetched = tile(page, MACRO_ABSENT.notFetched);
     await expect(notFetched.locator("p.absent")).toHaveText(
       "Not fetched yet: the worker has not checked this source.",
     );
-    const failed = card(page, MACRO_ABSENT.fetchFailed);
+    const failed = tile(page, MACRO_ABSENT.fetchFailed);
     await expect(failed.locator("p.absent")).toHaveText(
       "The source could not be reached on the last check, and nothing has been published from it yet. (HTTP 503 from fred.stlouisfed.org)",
     );
-    const rejected = card(page, MACRO_ABSENT.rejected);
+    const rejected = tile(page, MACRO_ABSENT.rejected);
     await expect(rejected.locator("p.absent")).toHaveText(
       "The last file from the source failed its checks, and nothing has been published from it yet.",
     );
     for (const absent of [notFetched, failed, rejected]) {
-      await expect(absent.locator(".macro-value")).toHaveCount(0);
+      await expect(absent.locator(".tile-value")).toHaveCount(0);
       await expect(absent.getByRole("img")).toHaveCount(0);
       // Even with no figure the source and its licence status are named.
-      await expect(absent.locator("p.citation")).not.toBeEmpty();
+      await expect(absent.locator("details.src")).toContainText("Licence:");
     }
   });
 
-  test("shows the TradingView sector indices beside the groups", async ({
+  test("shows the TradingView sector indices in their own framed section", async ({
     page,
   }) => {
     await page.goto("/macro");
-    await expect(page.locator("figure.widget")).toHaveCount(6);
+    await expect(page.locator("#indices figure.widget")).toHaveCount(6);
+    await expect(page.locator("article.tile figure.widget")).toHaveCount(0);
   });
 });
 
@@ -108,8 +135,8 @@ test.describe("macro page with nothing fetched yet", () => {
 
   test("every series shows that it has not been fetched", async ({ page }) => {
     await page.goto("/macro");
-    await expect(page.locator("article.macro-card")).toHaveCount(13);
-    await expect(page.locator("article.macro-card p.absent")).toHaveCount(13);
-    await expect(page.locator(".macro-value")).toHaveCount(0);
+    await expect(page.locator("article.tile")).toHaveCount(13);
+    await expect(page.locator("article.tile p.absent")).toHaveCount(13);
+    await expect(page.locator(".tile-value")).toHaveCount(0);
   });
 });
