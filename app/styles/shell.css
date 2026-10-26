@@ -1,0 +1,245 @@
+@layer shell {
+  .skip {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    z-index: 20;
+    padding: 0.6rem 1rem;
+    background: var(--ink);
+    color: var(--canvas);
+    font-weight: 700;
+    border-radius: 0 0 var(--r-md) 0;
+  }
+
+  .skip:focus {
+    left: 0;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .shell {
+    width: min(100% - 2 * var(--gutter), var(--page));
+    margin-inline: auto;
+  }
+
+  main {
+    padding-top: var(--s-7);
+  }
+
+  /* Masthead: the wordmark, the sections, a company search, the language. */
+  .masthead {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "brand nav search lang";
+    align-items: center;
+    column-gap: var(--s-6);
+    padding-block: var(--s-4) var(--s-3);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .brand {
+    grid-area: brand;
+    display: inline-flex;
+    align-items: center;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .brand svg,
+  .foot-brand svg {
+    display: block;
+    width: auto;
+    height: 2.6rem;
+  }
+
+  .flame {
+    fill: var(--obor);
+  }
+
+  .primary-nav {
+    grid-area: nav;
+    display: flex;
+    gap: var(--s-5);
+    min-width: 0;
+  }
+
+  .primary-nav a {
+    padding: var(--s-2) 0;
+    color: var(--muted);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color 120ms;
+  }
+
+  .primary-nav a:hover {
+    color: var(--ink);
+    text-decoration-line: none;
+  }
+
+  .primary-nav a[aria-current="page"] {
+    color: var(--ink);
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.5em;
+  }
+
+  .masthead-search {
+    grid-area: search;
+    position: relative;
+  }
+
+  .masthead-search input {
+    width: 14rem;
+    min-height: 2.5rem;
+    padding-left: 2.5rem;
+    border-radius: var(--r-pill);
+  }
+
+  .masthead-search .icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    translate: 0 -50%;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .lang {
+    grid-area: lang;
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-pill);
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+
+  .lang a {
+    min-width: 2.5rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--r-pill);
+    color: var(--muted);
+    text-align: center;
+    text-decoration-line: none;
+  }
+
+  .lang a:hover {
+    color: var(--ink);
+  }
+
+  .lang a[aria-current="true"] {
+    background: var(--ink);
+    color: var(--canvas);
+  }
+
+  @media (max-width: 62rem) {
+    .masthead {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "brand lang"
+        "nav nav";
+      row-gap: var(--s-2);
+      padding-bottom: 0;
+    }
+
+    .masthead-search {
+      display: none;
+    }
+
+    .brand svg {
+      height: 2rem;
+    }
+
+    /* Seven sections do not fit a phone: the strip scrolls, and fades to say so. */
+    .primary-nav {
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent);
+    }
+
+    .primary-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .primary-nav a {
+      padding-block: var(--s-3);
+    }
+  }
+
+  @media (max-width: 40rem) {
+    main {
+      padding-top: var(--s-6);
+    }
+  }
+
+  /* Footer: what Sigi is, what it is not, where the data comes from. */
+  footer.site {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: var(--s-5) var(--s-7);
+    margin-top: var(--s-8);
+    padding-block: var(--s-6) var(--s-7);
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  footer.site .foot-brand {
+    display: inline-flex;
+    margin-bottom: var(--s-3);
+    color: var(--ink);
+  }
+
+  footer.site .foot-brand svg {
+    height: 1.75rem;
+  }
+
+  footer.site .tagline {
+    max-width: 44ch;
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  footer.site ul {
+    margin: 0 0 var(--s-4);
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-5);
+  }
+
+  footer.site li + li {
+    margin-top: 0;
+  }
+
+  footer.site ul a {
+    font-weight: 600;
+  }
+
+  footer.site p {
+    max-width: 62ch;
+  }
+
+  @media (max-width: 48rem) {
+    footer.site {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

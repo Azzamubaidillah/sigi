@@ -1,0 +1,36 @@
+/**
+ * Sigi's wordmark: the lowercase name in Plus Jakarta Sans ExtraBold (drawn as
+ * outlines, so it needs no font), with a flame where each i is dotted. The
+ * letters follow the text colour; the flames are the torch colour of the
+ * current theme (`--obor`). It is decorative inside a link that carries the
+ * name, so it is hidden from assistive technology. Brand files: docs/brand/.
+ */
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 1603 1130"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <g transform="translate(0 900) scale(1 -1)">
+        <g fill="currentColor">
+          <path
+            transform="translate(0 0)"
+            d="M269 -12Q179 -12 112.5 30.5Q46 73 22 145L132 197Q153 153 189 128Q225 103 269 103Q301 103 318 116Q335 129 335 152Q335 164 329 172.5Q323 181 311 188Q299 195 281 200L188 226Q121 245 85 287.5Q49 330 49 388Q49 439 75 477Q101 515 148 536.5Q195 558 256 558Q336 558 396.5 520.5Q457 483 482 415L371 363Q359 397 327.5 417.5Q296 438 256 438Q227 438 210.5 426Q194 414 194 393Q194 382 200 373Q206 364 219.5 357Q233 350 253 344L340 318Q408 298 444 257.5Q480 217 480 158Q480 107 453.5 69Q427 31 380 9.5Q333 -12 269 -12Z"
+          />
+          <path transform="translate(503 0)" d="M44 0V546H194V0Z" />
+          <path
+            transform="translate(729 0)"
+            d="M323 -220Q260 -220 206 -199Q152 -178 113.5 -140.5Q75 -103 58 -52L197 -3Q208 -41 242 -63Q276 -85 323 -85Q360 -85 387 -71.5Q414 -58 428.5 -32Q443 -6 443 29V154L472 118Q444 72 400 49.5Q356 27 297 27Q221 27 161 61.5Q101 96 67 156.5Q33 217 33 294Q33 371 67 430.5Q101 490 160 524Q219 558 294 558Q353 558 397 534.5Q441 511 472 463L453 427V546H593V29Q593 -43 558 -99.5Q523 -156 462.5 -188Q402 -220 323 -220ZM318 163Q356 163 384 179Q412 195 427.5 224Q443 253 443 292Q443 331 427 360.5Q411 390 383 406.5Q355 423 318 423Q280 423 250.5 406.5Q221 390 204.5 360.5Q188 331 188 292Q188 254 204.5 225Q221 196 250.5 179.5Q280 163 318 163Z"
+          />
+          <path transform="translate(1365 0)" d="M44 0V546H194V0Z" />
+        </g>
+        <g className="flame">
+          <path d="M634.3 889.2C639.6 832 710 783.6 710 700C710 651.4 670.6 612 622 612C573.4 612 534 651.4 534 700C534 783.6 613.2 832 634.3 889.2Z" />
+          <path d="M1496.3 889.2C1501.6 832 1572 783.6 1572 700C1572 651.4 1532.6 612 1484 612C1435.4 612 1396 651.4 1396 700C1396 783.6 1475.2 832 1496.3 889.2Z" />
+        </g>
+      </g>
+    </svg>
+  );
+}

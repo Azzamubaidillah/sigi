@@ -1,0 +1,135 @@
+/*
+ * Sigi's design tokens (docs/DESIGN.md). Every colour, size and radius a page
+ * uses comes from here; a page never writes a hex value.
+ *
+ * Layer order is declared once, in this file, so the cascade does not depend
+ * on which stylesheet loads first.
+ *
+ *   tokens      custom properties, light and dark (the system's choice)
+ *   base        element defaults
+ *   shell       masthead, navigation, footer
+ *   primitives  the shared parts: sections, figures, tables, bars, forms
+ *   sections    one page's own rules (app/styles/<page>.css)
+ *   states      semantic tones; last so they win without !important
+ */
+@layer tokens, base, shell, primitives, sections, states;
+
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* Surfaces: the page, a lifted field, a quiet well. */
+    --canvas: #f6f6f9;
+    --paper: #ffffff;
+    --wash: #ecedf5;
+
+    /* Text, softest last. Headings and figures use --ink; running text --text. */
+    --ink: #151a3e;
+    --text: #262b52;
+    --muted: #565c84;
+
+    /* Lines. --rule divides rows; --rule-strong opens a section; --field outlines controls (3:1 on --paper). */
+    --rule: #d9dbe8;
+    --rule-strong: #151a3e;
+    --field: #7b80a6;
+
+    /* Nila, the indigo of batik: the brand, links, primary actions. */
+    --brand: #2b3790;
+    --brand-hover: #1c2570;
+    --on-brand: #ffffff;
+    --link: #2b3790;
+    --focus: #2b3790;
+
+    /* Obor, the torch: the one warm colour. It marks what is lit: the free
+       float in an ownership bar, a flame, and a thing to look at (a warning). */
+    --obor: #f59a12;
+    --obor-ink: #8a4b00;
+    --obor-wash: #fff1d6;
+    --on-obor: #151a3e;
+
+    /* Signals. Always beside a word or an icon, never alone. */
+    --positive: #0b7a4b;
+    --positive-wash: #e3f4ec;
+    --negative: #b42318;
+    --negative-wash: #fbe9e7;
+
+    /* Holders in an ownership bar, largest first, and the text on each. */
+    --holder-1: #2b3790;
+    --holder-2: #5662be;
+    --holder-3: #8e97d8;
+    --holder-4: #c3c8ea;
+    --on-holder-1: #ffffff;
+    --on-holder-2: #ffffff;
+    --on-holder-3: #151a3e;
+    --on-holder-4: #151a3e;
+
+    /* Type. The families are loaded in layout.tsx (next/font). */
+    --font-sans:
+      var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+      sans-serif;
+    --font-serif:
+      var(--font-newsreader), "Iowan Old Style", "Palatino Linotype", Georgia,
+      serif;
+    --mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+
+    /* Space (rem) and shape. Shapes follow the part: a hairline for data, a
+       small radius for controls, a pill for a status. Sections have none. */
+    --s-1: 0.25rem;
+    --s-2: 0.5rem;
+    --s-3: 0.75rem;
+    --s-4: 1rem;
+    --s-5: 1.5rem;
+    --s-6: 2rem;
+    --s-7: 3rem;
+    --s-8: 4.5rem;
+    --r-sm: 3px;
+    --r-md: 6px;
+    --r-pill: 999px;
+
+    /* Layout. */
+    --gutter: clamp(1rem, 4vw, 2rem);
+    --page: 75rem;
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --canvas: #0d112c;
+      --paper: #151a40;
+      --wash: #1b2150;
+
+      --ink: #f1f2ff;
+      --text: #d8dbf5;
+      --muted: #a1a7d3;
+
+      --rule: #2a3166;
+      --rule-strong: #f1f2ff;
+      --field: #6f76b5;
+
+      --brand: #4f5bd0;
+      --brand-hover: #3f4ab8;
+      --on-brand: #ffffff;
+      --link: #a9b4ff;
+      --focus: #a9b4ff;
+
+      --obor: #ffc247;
+      --obor-ink: #ffc247;
+      --obor-wash: rgb(255 194 71 / 12%);
+      --on-obor: #0d112c;
+
+      --positive: #4ade9a;
+      --positive-wash: rgb(74 222 154 / 12%);
+      --negative: #ff8a80;
+      --negative-wash: rgb(255 138 128 / 12%);
+
+      --holder-1: #7c88f0;
+      --holder-2: #5964cc;
+      --holder-3: #414ba3;
+      --holder-4: #2d3580;
+      --on-holder-1: #0d112c;
+      --on-holder-2: #ffffff;
+      --on-holder-3: #ffffff;
+      --on-holder-4: #d8dbf5;
+    }
+  }
+}

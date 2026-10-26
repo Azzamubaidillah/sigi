@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Parallel end-to-end runs each build into their own directory.
+  distDir: process.env.SIGI_DIST_DIR ?? ".next",
   poweredByHeader: false,
   reactStrictMode: true,
   // Loaded from node_modules at runtime rather than bundled: better-sqlite3 is

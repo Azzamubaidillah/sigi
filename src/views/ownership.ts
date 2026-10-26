@@ -26,6 +26,24 @@ export function loadLatestMonth(databasePath: string): PublishedMonth | null {
   return loadSnapshot(databasePath)?.months[0] ?? null;
 }
 
+/**
+ * The share code a search entry names exactly in the latest month, or null.
+ * "bbca " finds BBCA; "bank" and a code the register does not list find
+ * nothing, and the caller falls back to the screen's name search.
+ */
+export function exactShareCode(
+  databasePath: string,
+  query: string,
+): string | null {
+  const code = query.trim().toUpperCase();
+  if (!/^[A-Z]{4}$/.test(code)) return null;
+  const snapshot = loadSnapshot(databasePath);
+  const month = snapshot?.months[0];
+  return month && snapshot.companies.get(month.recordDate)?.has(code)
+    ? code
+    : null;
+}
+
 export interface CompanyFigures {
   shareCode: string;
   issuerName: string;

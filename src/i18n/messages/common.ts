@@ -13,6 +13,7 @@ export const commonMessages = defineMessages({
     },
     /** The attribution DATA-SOURCES S1 requires, in pieces around the title and link. */
     citationS1: {
+      short: (date: string) => `Source: KSEI via IDX, ${date}`,
       source: "Source: ",
       title: "Data Kepemilikan Saham Perusahaan Terbuka di atas 1%",
       via: ", KSEI via PT Bursa Efek Indonesia, record date ",
@@ -42,6 +43,7 @@ export const commonMessages = defineMessages({
       lede: "Semua yang ada di bagian ini milik TradingView, ditampilkan langsung di peramban Anda. Sigi tidak membaca, menyimpan, atau menghitung dari data itu, dan data itu bisa tidak tersedia atau berbeda dari angka resmi bursa.",
     },
     citationS1: {
+      short: (date: string) => `Sumber: KSEI melalui BEI, ${date}`,
       source: "Sumber: ",
       title: "Data Kepemilikan Saham Perusahaan Terbuka di atas 1%",
       via: ", KSEI melalui PT Bursa Efek Indonesia, tanggal pencatatan ",

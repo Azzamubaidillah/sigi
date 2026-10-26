@@ -4,7 +4,16 @@ import { notFound } from "next/navigation";
 
 import { S1Citation } from "@/app/_components/Citation";
 import { HolderName } from "@/app/_components/HolderName";
+import { OwnershipBar } from "@/app/_components/OwnershipBar";
 import { TradingViewWidget } from "@/app/_components/TradingViewWidget";
+import {
+  Figures,
+  Icon,
+  Notice,
+  PageHeader,
+  Pill,
+  Section,
+} from "@/app/_components/ui";
 import {
   formatDate,
   formatHhi,
@@ -25,7 +34,11 @@ import {
   possibleTranches,
 } from "@/src/investability/rule";
 import { typeLabel } from "@/src/ownership/investor-classes";
-import type { HolderChange } from "@/src/ownership/metrics";
+import {
+  type HolderChange,
+  MAJOR_HOLDER_HUNDREDTHS,
+  positionsOf,
+} from "@/src/ownership/metrics";
 import { loadEvents } from "@/src/views/events";
 import { loadHolderLinks } from "@/src/views/holders";
 import {
@@ -33,8 +46,11 @@ import {
   type CompanyFigures,
   loadTickerOwnership,
   type OwnershipAbsence,
+  type PublishedHolding,
 } from "@/src/views/ownership";
 import { thesesForTicker } from "@/src/views/theses";
+
+import "../../styles/ticker.css";
 
 type Params = { params: Promise<{ code: string }> };
 type Messages = (typeof tickerMessages)["en"];
@@ -49,6 +65,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const m = tickerMessages[await getLang()];
   const code = shareCodeOf((await params).code);
   return { title: code ? m.metaTitle(code) : m.notFound };
+}
+
+function Move({ delta, lang }: { delta: number; lang: Lang }) {
+  return (
+    <span className="move">
+      {delta === 0 ? null : <Icon name={delta > 0 ? "up" : "down"} />}
+      {formatPercentChange(delta, lang)}
+    </span>
+  );
 }
 
 function ChangeTable({
@@ -67,9 +92,9 @@ function ChangeTable({
   if (rows.length === 0) return null;
   return (
     <>
-      <h3>{title}</h3>
+      <h3 className="sub">{title}</h3>
       <div className="table-wrap">
-        <table className="data">
+        <table className="tbl">
           <thead>
             <tr>
               <th scope="col">{m.holder}</th>
@@ -79,7 +104,7 @@ function ChangeTable({
               <th scope="col" className="num">
                 {m.after}
               </th>
-              <th scope="col" className="num">
+              <th scope="col" className="num hide-sm">
                 {m.shares}
               </th>
               <th scope="col" className="num">
@@ -103,17 +128,19 @@ function ChangeTable({
                     ? "—"
                     : formatPercent(row.afterHundredths, lang)}
                 </td>
-                <td className="num">
+                <td className="num hide-sm">
                   {formatSharesChange(
                     (row.afterShares ?? 0) - (row.beforeShares ?? 0),
                     lang,
                   )}
                 </td>
                 <td className="num">
-                  {formatPercentChange(
-                    (row.afterHundredths ?? 0) - (row.beforeHundredths ?? 0),
-                    lang,
-                  )}
+                  <Move
+                    delta={
+                      (row.afterHundredths ?? 0) - (row.beforeHundredths ?? 0)
+                    }
+                    lang={lang}
+                  />
                 </td>
               </tr>
             ))}
@@ -149,7 +176,7 @@ function Changes({
     changes.increased.length +
     changes.decreased.length;
   return (
-    <div className="stack">
+    <>
       <p className="muted">
         {m.summaryBefore(
           formatDate(previous.recordDate, lang),
@@ -194,11 +221,49 @@ function Changes({
           />
         </>
       ) : null}
-    </div>
+    </>
   );
 }
 
-function FreeFloat({
+/** The company's holders as one bar: holders of 5% or more, then the lit float. */
+function HoldingBar({
+  holdings,
+  figures,
+  m,
+  lang,
+}: {
+  holdings: PublishedHolding[];
+  figures: CompanyFigures;
+  m: Messages["ownership"]["bar"];
+  lang: Lang;
+}) {
+  const controllers = positionsOf(holdings)
+    .filter((position) => position.hundredths >= MAJOR_HOLDER_HUNDREDTHS)
+    .sort((a, b) => b.hundredths - a.hundredths)
+    .map((position) => ({
+      key: position.key,
+      label: position.investorName,
+      value: formatPercent(position.hundredths, lang),
+      hundredths: position.hundredths,
+    }));
+  const float = figures.freeFloatUpperBoundHundredths;
+  const held = controllers.map((c) => `${c.label} ${c.value}`).join(", ");
+  return (
+    <OwnershipBar
+      size="lg"
+      controllers={controllers}
+      float={{
+        label: m.float,
+        value: formatPercent(float, lang),
+        hundredths: float,
+      }}
+      minimumLabel={m.minimum}
+      summary={m.summary(held || m.none, formatPercent(float, lang))}
+    />
+  );
+}
+
+function FreeFloatVerdict({
   figures,
   m,
   lang,
@@ -209,34 +274,30 @@ function FreeFloat({
 }) {
   if (figures.registerIncomplete) {
     return (
-      <p className="notice">
-        {m.incompleteBefore(formatPercent(figures.sumHundredths, lang))}
-        <Link href="/data">{m.incompleteLink}</Link>
-        {m.incompleteAfter}
-      </p>
+      <Notice tone="warn">
+        <p>
+          {m.incompleteBefore(formatPercent(figures.sumHundredths, lang))}
+          <Link href="/data">{m.incompleteLink}</Link>
+          {m.incompleteAfter}
+        </p>
+      </Notice>
     );
   }
   const bound = figures.freeFloatUpperBoundHundredths;
-  const tranches = possibleTranches(bound);
-  return (
-    <div className="stack">
-      {bound < FREE_FLOAT_MINIMUM_HUNDREDTHS ? (
-        <p className="notice">
+  if (bound < FREE_FLOAT_MINIMUM_HUNDREDTHS) {
+    return (
+      <Notice tone="negative">
+        <p>
           <strong>{m.belowStrong}</strong>
           {m.below(
             formatPercent(bound, lang),
-            possibleDeadlines(tranches, lang).join("; "),
+            possibleDeadlines(possibleTranches(bound), lang).join("; "),
           )}
         </p>
-      ) : (
-        <p className="muted">{m.notBelow}</p>
-      )}
-      <p className="citation">
-        {m.method}
-        <Link href="/investability#methodology">{m.methodLink}</Link>.
-      </p>
-    </div>
-  );
+      </Notice>
+    );
+  }
+  return <p className="verdict">{m.notBelow}</p>;
 }
 
 function EventsSection({
@@ -257,29 +318,32 @@ function EventsSection({
       ? possibleTranches(figures.freeFloatUpperBoundHundredths)
       : [];
   return (
-    <section className="panel">
-      <h2>{m.heading}</h2>
-      <p className="muted">{m.lede}</p>
+    <Section id="dates" title={m.heading} note={m.lede}>
       <div className="table-wrap">
-        <table className="data">
+        <table className="tbl">
           <thead>
             <tr>
               <th scope="col">{m.date}</th>
               <th scope="col">{m.event}</th>
-              <th scope="col">{m.source}</th>
+              <th scope="col" className="hide-sm">
+                {m.source}
+              </th>
             </tr>
           </thead>
           <tbody>
             {events.map((event) => (
               <tr key={`${event.date} ${event.label.en}`}>
-                <td className="mono">
+                <td className="nowrap">
                   {formatDate(event.date, lang)}
                   {event.past ? (
-                    <span className="badge flag">{m.past}</span>
+                    <>
+                      {" "}
+                      <Pill>{m.past}</Pill>
+                    </>
                   ) : null}
                 </td>
                 <td>{localise(event.label, lang)}</td>
-                <td>
+                <td className="hide-sm">
                   <a href={event.source.url} rel="noopener noreferrer nofollow">
                     {event.source.publisher}
                   </a>
@@ -290,7 +354,7 @@ function EventsSection({
           </tbody>
         </table>
       </div>
-      <p className="spaced">
+      <p>
         {figures === null ? (
           m.companyNoRegister(code)
         ) : tranches.length > 0 ? (
@@ -302,7 +366,7 @@ function EventsSection({
           m.companyNone(code)
         )}
       </p>
-    </section>
+    </Section>
   );
 }
 
@@ -318,26 +382,23 @@ function ThesesSection({
   const theses = thesesForTicker(loadConfig(), code);
   const status = commonMessages[lang].thesisStatus;
   return (
-    <section className="panel">
-      <h2>{m.heading}</h2>
+    <Section id="theses" title={m.heading}>
       {theses.length === 0 ? (
         <p className="absent">{m.none(code)}</p>
       ) : (
-        <ul>
+        <ul className="thesis-list">
           {theses.map((thesis) => (
             <li key={thesis.slug}>
               <Link href={`/theses/${thesis.slug}`}>{thesis.title}</Link>{" "}
-              <span
-                className={thesis.status === "active" ? "badge pass" : "badge"}
-              >
+              <Pill tone={thesis.status === "active" ? "positive" : undefined}>
                 {status[thesis.status]}
-              </span>{" "}
+              </Pill>{" "}
               <span className="muted">{thesis.summary}</span>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   );
 }
 
@@ -359,9 +420,7 @@ function TradingViewSections({
   };
   const heading = commonMessages[lang].thirdParty;
   return (
-    <section className="panel third-party" aria-labelledby="tradingview">
-      <h2 id="tradingview">{heading.heading}</h2>
-      <p className="muted">{heading.lede}</p>
+    <Section id="tradingview" title={heading.heading} note={heading.lede}>
       <h3>{m.chart}</h3>
       <TradingViewWidget
         lang={lang}
@@ -413,13 +472,22 @@ function TradingViewSections({
           height: "100%",
         }}
       />
-    </section>
+    </Section>
   );
 }
 
 /** Why the ownership figures are missing, in the page's language. */
 function absenceText(reason: OwnershipAbsence, lang: Lang): string {
   return commonMessages[lang].ownershipAbsence[reason];
+}
+
+function BackLink({ m }: { m: Messages }) {
+  return (
+    <Link className="back" href="/">
+      <Icon name="back" />
+      {m.allCompanies}
+    </Link>
+  );
 }
 
 export default async function TickerPage({ params }: Params) {
@@ -433,16 +501,16 @@ export default async function TickerPage({ params }: Params) {
   if (ownership.kind === "absent") {
     return (
       <>
-        <div className="page-header">
-          <h1 className="mono">{code}</h1>
-        </div>
-        <section className="panel">
-          <h2>{m.ownership.heading}</h2>
+        <PageHeader
+          title={<span className="ticker-code">{code}</span>}
+          aside={<BackLink m={m} />}
+        />
+        <Section id="ownership" title={m.ownership.heading}>
           <p className="absent">{absenceText(ownership.reason, lang)}</p>
           {ownership.month ? (
             <S1Citation month={ownership.month} lang={lang} />
           ) : null}
-        </section>
+        </Section>
         <EventsSection code={code} figures={null} m={m.events} lang={lang} />
         <ThesesSection code={code} m={m.theses} lang={lang} />
         <TradingViewSections code={code} m={m.tradingView} lang={lang} />
@@ -458,67 +526,85 @@ export default async function TickerPage({ params }: Params) {
   );
   return (
     <>
-      <div className="page-header">
-        <h1>
-          <span className="mono">{figures.shareCode}</span> ·{" "}
-          {figures.issuerName}
-        </h1>
-        <p className="lede">
-          {m.lede(formatDate(ownership.month.recordDate, lang))}{" "}
-          <Link href="/">{m.allCompanies}</Link>
+      <PageHeader
+        title={
+          <span className="ticker-title">
+            <span className="ticker-code">{figures.shareCode}</span>{" "}
+            <span className="ticker-name">{figures.issuerName}</span>
+          </span>
+        }
+        lede={m.lede(formatDate(ownership.month.recordDate, lang))}
+        aside={<BackLink m={m} />}
+      />
+
+      <Section id="ownership" title={m.ownership.heading}>
+        <FreeFloatVerdict figures={figures} m={m.freeFloat} lang={lang} />
+        {figures.registerIncomplete ? null : (
+          <HoldingBar
+            holdings={ownership.holdings}
+            figures={figures}
+            m={m.ownership.bar}
+            lang={lang}
+          />
+        )}
+        <Figures
+          items={[
+            // The bar and its legend already give the float; without a bar
+            // the figure says why there is none.
+            ...(figures.registerIncomplete
+              ? [
+                  {
+                    label: m.ownership.freeFloat,
+                    value: m.ownership.notGiven,
+                  },
+                ]
+              : []),
+            {
+              label: m.ownership.largest,
+              value: formatPercent(figures.topHundredths, lang),
+            },
+            {
+              label: m.ownership.heldBelow,
+              value: formatPercent(figures.heldBelowOneHundredths, lang),
+            },
+            {
+              label: m.ownership.hhi,
+              value: formatHhi(figures.hhi, lang),
+            },
+            { label: m.ownership.holders, value: figures.holders },
+          ]}
+        />
+        <p className="muted method">
+          {m.freeFloat.method}
+          <Link href="/investability#methodology">
+            {m.freeFloat.methodLink}
+          </Link>
+          .
         </p>
-      </div>
+      </Section>
 
-      <section className="panel">
-        <h2>{m.ownership.heading}</h2>
-        <dl className="figures">
-          <div>
-            <dt>{m.ownership.freeFloat}</dt>
-            <dd>
-              {figures.registerIncomplete
-                ? m.ownership.notGiven
-                : formatPercent(figures.freeFloatUpperBoundHundredths, lang)}
-            </dd>
-          </div>
-          <div>
-            <dt>{m.ownership.largest}</dt>
-            <dd>{formatPercent(figures.topHundredths, lang)}</dd>
-          </div>
-          <div>
-            <dt>{m.ownership.heldBelow}</dt>
-            <dd>{formatPercent(figures.heldBelowOneHundredths, lang)}</dd>
-          </div>
-          <div>
-            <dt>{m.ownership.hhi}</dt>
-            <dd>{formatHhi(figures.hhi, lang)}</dd>
-          </div>
-          <div>
-            <dt>{m.ownership.holders}</dt>
-            <dd>{figures.holders}</dd>
-          </div>
-        </dl>
-        <div className="spaced">
-          <FreeFloat figures={figures} m={m.freeFloat} lang={lang} />
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>{m.holdersTable.heading}</h2>
+      <Section id="holders" title={m.holdersTable.heading}>
         {mismatched.length > 0 ? (
-          <p className="notice">{m.holdersTable.mismatch(mismatched.length)}</p>
+          <Notice tone="warn">
+            <p>{m.holdersTable.mismatch(mismatched.length)}</p>
+          </Notice>
         ) : null}
         <div className="table-wrap">
-          <table className="data">
+          <table className="tbl">
             <thead>
               <tr>
                 <th scope="col">{m.holdersTable.holder}</th>
                 <th scope="col">{m.holdersTable.type}</th>
-                <th scope="col">{m.holdersTable.localForeign}</th>
-                <th scope="col">{m.holdersTable.domicile}</th>
-                <th scope="col" className="num">
+                <th scope="col" className="hide-sm">
+                  {m.holdersTable.localForeign}
+                </th>
+                <th scope="col" className="hide-md">
+                  {m.holdersTable.domicile}
+                </th>
+                <th scope="col" className="num hide-md">
                   {m.holdersTable.scripless}
                 </th>
-                <th scope="col" className="num">
+                <th scope="col" className="num hide-md">
                   {m.holdersTable.scrip}
                 </th>
                 <th scope="col" className="num">
@@ -540,23 +626,27 @@ export default async function TickerPage({ params }: Params) {
                       <HolderName name={holding.investorName} links={links} />
                     </td>
                     <td>{typeLabel(holding.investorType)}</td>
-                    <td>{localForeignLabel(holding.localForeign, lang)}</td>
-                    <td>{holding.domicile ?? "—"}</td>
-                    <td className="num">
+                    <td className="hide-sm">
+                      {localForeignLabel(holding.localForeign, lang)}
+                    </td>
+                    <td className="hide-md">{holding.domicile ?? "—"}</td>
+                    <td className="num hide-md">
                       {formatShares(holding.sharesScripless, lang)}
                     </td>
-                    <td className="num">
+                    <td className="num hide-md">
                       {formatShares(holding.sharesScrip, lang)}
                     </td>
                     <td className="num">
                       {formatShares(holding.sharesTotal, lang)}
                       {inconsistent ? (
-                        <span
-                          className="badge hold flag"
-                          title={m.holdersTable.asPublishedTitle}
-                        >
-                          {m.holdersTable.asPublished}
-                        </span>
+                        <>
+                          {" "}
+                          <span title={m.holdersTable.asPublishedTitle}>
+                            <Pill tone="warn">
+                              {m.holdersTable.asPublished}
+                            </Pill>
+                          </span>
+                        </>
                       ) : null}
                     </td>
                     <td className="num">
@@ -569,17 +659,16 @@ export default async function TickerPage({ params }: Params) {
           </table>
         </div>
         <S1Citation month={ownership.month} lang={lang} />
-      </section>
+      </Section>
 
-      <section className="panel">
-        <h2>{m.changes.heading}</h2>
+      <Section id="changes" title={m.changes.heading}>
         <Changes
           slice={ownership.changes}
           links={links}
           m={m.changes}
           lang={lang}
         />
-      </section>
+      </Section>
 
       <EventsSection
         code={figures.shareCode}

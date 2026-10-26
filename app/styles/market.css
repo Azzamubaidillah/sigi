@@ -1,0 +1,152 @@
+/* The market page at / (docs/DESIGN.md). */
+@layer sections {
+  /* The page's first move is to find a company. */
+  .home-search {
+    position: relative;
+    display: flex;
+    gap: var(--s-3);
+    max-width: 42rem;
+    margin-bottom: var(--s-7);
+  }
+
+  .home-search input {
+    flex: 1;
+    min-width: 0;
+    min-height: 3.25rem;
+    padding-left: 2.9rem;
+    font-size: 1.0625rem;
+  }
+
+  .home-search .icon {
+    position: absolute;
+    top: 1.625rem;
+    left: 1rem;
+    translate: 0 -50%;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .home-search .btn {
+    min-height: 3.25rem;
+    padding-inline: var(--s-5);
+  }
+
+  /* The home page carries its own search, so the masthead's steps aside. */
+  body:has(.home-search) .masthead-search {
+    display: none;
+  }
+
+  .home-figures .v a {
+    color: inherit;
+    text-decoration-line: none;
+  }
+
+  .home-figures .v a:hover {
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  /* Today's brief, in one line. */
+  .today {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-5);
+    padding-block: var(--s-4);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .today-meta {
+    margin: 0 0 var(--s-1);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .today-headline {
+    max-width: 60ch;
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 40rem) {
+    .today {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  /* The screen's filters stay folded until they are used. */
+  .filterbox {
+    margin-bottom: var(--s-5);
+  }
+
+  .filterbox > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 2.75rem;
+    padding: 0 var(--s-4);
+    border: 1px solid var(--field);
+    border-radius: var(--r-md);
+    color: var(--ink);
+    font-weight: 700;
+    list-style: none;
+  }
+
+  .filterbox > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .filterbox > summary::after {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-top: -0.2rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    rotate: 45deg;
+    transition: rotate 120ms;
+  }
+
+  .filterbox[open] > summary {
+    background: var(--wash);
+  }
+
+  .filterbox[open] > summary::after {
+    margin-top: 0.15rem;
+    rotate: -135deg;
+  }
+
+  .filterbox .filters {
+    padding-top: var(--s-5);
+  }
+
+  .register-legend {
+    margin-bottom: var(--s-4);
+  }
+
+  .sw--line {
+    width: 2px;
+    height: 0.9rem;
+    border-radius: 0;
+    background: var(--muted);
+  }
+
+  .register .bar-col {
+    width: 10rem;
+    min-width: 8rem;
+    padding-right: 1.25rem;
+  }
+
+  .register .obar-fig {
+    display: block;
+  }
+
+  .bound-note {
+    margin-top: var(--s-4);
+    font-size: 0.875rem;
+  }
+}

@@ -11,6 +11,7 @@ import { closeReadDatabases } from "../db/read";
 import { loadHolder, loadHolderIndex, loadHolderLinks } from "./holders";
 import { loadInvestability } from "./investability";
 import {
+  exactShareCode,
   loadCompanyScreen,
   loadTickerOwnership,
   parseScreenFilters,
@@ -191,6 +192,18 @@ describe("ownership screen (PRD F9)", () => {
       type: null,
       sort: "code",
     });
+  });
+});
+
+describe("company search", () => {
+  it("names a company only on an exact code in the latest month", () => {
+    const db = database({ "2026-02-27": february, "2026-03-31": march });
+    expect(exactShareCode(db, " dddd ")).toBe("DDDD");
+    // Not in the latest register, a name, and malformed codes.
+    expect(exactShareCode(db, "ZZZZ")).toBeNull();
+    expect(exactShareCode(db, "induk")).toBeNull();
+    expect(exactShareCode(db, "AAAAA")).toBeNull();
+    expect(exactShareCode(db, "")).toBeNull();
   });
 });
 

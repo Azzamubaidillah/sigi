@@ -9,7 +9,7 @@ import path from "node:path";
  * no real file and no real person is used.
  */
 
-export const PORT = 3231;
+export const PORT = Number(process.env.SIGI_E2E_PORT ?? 3231);
 export const ORIGIN = `http://127.0.0.1:${PORT}`;
 
 /** The seeded data directory; `seed.ts` recreates it from nothing on every run. */
@@ -22,7 +22,7 @@ const MANIFEST = path.join(DATA_DIR, "manifest.json");
  * A second site on its own port with a migrated database and nothing in it:
  * no month, no series, no thesis, no brief. It shows every "nothing yet" state.
  */
-export const EMPTY_PORT = 3232;
+export const EMPTY_PORT = PORT + 1;
 export const EMPTY_ORIGIN = `http://127.0.0.1:${EMPTY_PORT}`;
 export const EMPTY_DIR = `${DATA_DIR}-empty`;
 

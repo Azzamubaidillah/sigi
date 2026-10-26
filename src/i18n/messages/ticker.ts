@@ -15,6 +15,13 @@ export const tickerMessages = defineMessages({
       heldBelow: "Held below 1%",
       hhi: "HHI, holders above 1%",
       holders: "Holders above 1%",
+      bar: {
+        summary: (holders: string, float: string) =>
+          `${holders}; free float up to ${float}`,
+        none: "No holder of 5% or more",
+        minimum: "15% minimum",
+        float: "Free float, upper bound",
+      },
     },
     freeFloat: {
       incompleteBefore: (pct: string) =>
@@ -111,6 +118,13 @@ export const tickerMessages = defineMessages({
       heldBelow: "Dimiliki di bawah 1%",
       hhi: "HHI, pemegang di atas 1%",
       holders: "Pemegang di atas 1%",
+      bar: {
+        summary: (holders: string, float: string) =>
+          `${holders}; free float hingga ${float}`,
+        none: "Tidak ada pemegang 5% atau lebih",
+        minimum: "Batas minimal 15%",
+        float: "Free float, batas atas",
+      },
     },
     freeFloat: {
       incompleteBefore: (pct: string) =>

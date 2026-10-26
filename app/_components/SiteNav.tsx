@@ -49,12 +49,29 @@ const links = [
   matches: (path: string) => boolean;
 }[];
 
-export function SiteNav({
-  labels,
+/** The sections of the site; the one you are in is marked and underlined. */
+export function PrimaryNav({ labels }: { labels: Shell["nav"] }) {
+  const pathname = usePathname();
+  return (
+    <nav aria-label={labels.label} className="primary-nav">
+      {links.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          aria-current={link.matches(pathname) ? "page" : undefined}
+        >
+          {labels[link.key]}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/** English and Indonesian. Plain links, not `Link`: a prefetch of /lang would switch the language. */
+export function LanguageSwitch({
   language,
   current,
 }: {
-  labels: Shell["nav"];
   language: Shell["language"];
   current: "en" | "id";
 }) {
@@ -62,33 +79,19 @@ export function SiteNav({
   const query = useSearchParams().toString();
   const here = query ? `${pathname}?${query}` : pathname;
   return (
-    <>
-      <nav aria-label={labels.label}>
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            aria-current={link.matches(pathname) ? "page" : undefined}
-          >
-            {labels[link.key]}
-          </Link>
-        ))}
-      </nav>
-      {/* Plain links, not `Link`: a prefetch of /lang would switch the language. */}
-      <nav aria-label={language.label} className="lang">
-        {(["en", "id"] as const).map((code) => (
-          <a
-            key={code}
-            href={`/lang?set=${code}&next=${encodeURIComponent(here)}`}
-            lang={code}
-            aria-current={code === current ? "true" : undefined}
-            rel="nofollow"
-          >
-            {code.toUpperCase()}
-            <span className="sr-only"> {language[code]}</span>
-          </a>
-        ))}
-      </nav>
-    </>
+    <nav aria-label={language.label} className="lang">
+      {(["en", "id"] as const).map((code) => (
+        <a
+          key={code}
+          href={`/lang?set=${code}&next=${encodeURIComponent(here)}`}
+          lang={code}
+          aria-current={code === current ? "true" : undefined}
+          rel="nofollow"
+        >
+          {code.toUpperCase()}
+          <span className="sr-only"> {language[code]}</span>
+        </a>
+      ))}
+    </nav>
   );
 }

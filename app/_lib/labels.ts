@@ -2,6 +2,8 @@ import { localise } from "@/src/i18n/define";
 import type { Lang } from "@/src/i18n/lang";
 import { TRANCHES, type Tranche } from "@/src/investability/rule";
 
+import { formatDate } from "./format";
+
 const LOCAL_FOREIGN = {
   en: { L: "Local", F: "Foreign", none: "Unclassified" },
   id: { L: "Lokal", F: "Asing", none: "Tidak terklasifikasi" },
@@ -19,18 +21,18 @@ function requiredPercent(hundredths: number, lang: Lang): string {
   return lang === "id" ? text.replace(".", ",") : text;
 }
 
-/** "12.5% by 2027-03-31, 15% by 2028-03-31" for one tranche. */
+/** "12.5% by 31 Mar 2027, 15% by 31 Mar 2028" for one tranche. */
 export function trancheDeadlines(tranche: Tranche, lang: Lang): string {
   const by = lang === "id" ? "paling lambat" : "by";
   return TRANCHES[tranche].deadlines
     .map(
       (deadline) =>
-        `${requiredPercent(deadline.requiredHundredths, lang)}% ${by} ${deadline.date}`,
+        `${requiredPercent(deadline.requiredHundredths, lang)}% ${by} ${formatDate(deadline.date, lang)}`,
     )
     .join(", ");
 }
 
-/** "If Rp5T or more: 12.5% by 2027-03-31, 15% by 2028-03-31" per tranche. */
+/** "If Rp5T or more: 12.5% by 31 Mar 2027, 15% by 31 Mar 2028" per tranche. */
 export function possibleDeadlines(
   tranches: readonly Tranche[],
   lang: Lang,

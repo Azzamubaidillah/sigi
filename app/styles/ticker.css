@@ -1,0 +1,62 @@
+/* The company page at /t/<code> (docs/DESIGN.md). */
+@layer sections {
+  .ticker-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1em 0.5em;
+  }
+
+  .ticker-code {
+    letter-spacing: 0.01em;
+  }
+
+  .ticker-name {
+    color: var(--muted);
+    font-size: 0.5em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--muted);
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+
+  .verdict {
+    max-width: var(--measure);
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.0625rem;
+  }
+
+  .method {
+    max-width: 78ch;
+    font-size: 0.875rem;
+  }
+
+  .move {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .thesis-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .thesis-list li {
+    padding-block: var(--s-3);
+    border-bottom: 1px solid var(--rule);
+  }
+}
