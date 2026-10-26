@@ -173,7 +173,8 @@ test.describe("language route", () => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "id");
     await page
-      .getByRole("navigation", { name: /./ })
+      .getByRole("banner")
+      .getByRole("navigation")
       .last()
       .getByRole("link", { name: /^EN/ })
       .click();
@@ -326,46 +327,66 @@ test.describe("keyboard", () => {
     });
   }
 
-  test("every control in the masthead is reachable in order with a visible focus ring", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    const order: string[] = [];
-    for (let step = 0; step < 11; step++) {
-      await page.keyboard.press("Tab");
-      const focused = await page.evaluate(() => {
-        const element = document.activeElement as HTMLElement | null;
-        const style = element ? getComputedStyle(element) : null;
-        return {
-          text: (element?.textContent ?? "").replace(/\s+/g, " ").trim(),
-          outline: style ? `${style.outlineStyle} ${style.outlineWidth}` : "",
-          inHeader: element?.closest("header") !== null,
-        };
-      });
-      order.push(focused.text);
-      if (focused.inHeader) {
-        expect(focused.outline, focused.text).not.toMatch(/^none /);
-        expect(focused.outline, focused.text).not.toMatch(/ 0px$/);
+  // The market page carries its own search, so the masthead's is not there.
+  const MASTHEAD_ORDER = [
+    ["/", []],
+    ["/macro", ["Find a company"]],
+  ] as const;
+  for (const [path, search] of MASTHEAD_ORDER) {
+    test(`every control in the masthead of ${path} is reachable in order with a visible focus ring`, async ({
+      page,
+    }) => {
+      await page.goto(path);
+      const expected = [
+        "Skip to content",
+        "Sigi, home page",
+        "Market",
+        "Brief",
+        "Investability",
+        "Holders",
+        "Macro",
+        "Theses",
+        "Data & sources",
+        ...search,
+        expect.stringMatching(/^EN/),
+        expect.stringMatching(/^ID/),
+      ];
+      const order: string[] = [];
+      for (let step = 0; step < expected.length; step++) {
+        await page.keyboard.press("Tab");
+        const focused = await page.evaluate(() => {
+          const element = document.activeElement as HTMLElement | null;
+          const style = element ? getComputedStyle(element) : null;
+          const label =
+            element?.getAttribute("aria-label") ??
+            (element instanceof HTMLInputElement
+              ? element.labels?.[0]?.textContent
+              : null) ??
+            element?.textContent ??
+            "";
+          return {
+            text: label.replace(/\s+/g, " ").trim(),
+            outline: style ? `${style.outlineStyle} ${style.outlineWidth}` : "",
+            inHeader: element?.closest("header") !== null,
+          };
+        });
+        order.push(focused.text);
+        if (focused.inHeader) {
+          expect(focused.outline, focused.text).not.toMatch(/^none /);
+          expect(focused.outline, focused.text).not.toMatch(/ 0px$/);
+        }
       }
-    }
-    expect(order.slice(0, 11)).toEqual([
-      "Skip to content",
-      "Sigi",
-      "Market",
-      "Brief",
-      "Investability",
-      "Holders",
-      "Macro",
-      "Theses",
-      "Data & sources",
-      expect.stringMatching(/^EN/),
-      expect.stringMatching(/^ID/),
-    ]);
-  });
+      expect(order).toEqual(expected);
+    });
+  }
 
   test("the screen form is operable by keyboard alone", async ({ page }) => {
     await page.goto("/");
-    await page.getByLabel("Code or name").focus();
+    // The filters open with Enter on their summary; Tab then reaches the first field.
+    await page.getByText("Filter and sort", { exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Tab");
+    await expect(page.getByLabel("Code or name")).toBeFocused();
     await page.keyboard.type("dharma");
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/q=dharma/);

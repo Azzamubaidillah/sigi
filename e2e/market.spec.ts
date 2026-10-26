@@ -12,11 +12,19 @@ const { steady, sellingDown, incomplete, belowMinimum } = COMPANIES;
 const screenRow = (page: Page, code: string) =>
   page.getByRole("table").getByRole("row", { name: new RegExp(`^${code}`) });
 
-/** The value beside one label of a figures list (`<dl class="figures">`). */
+/** The value beside one label of a key-figures list (`<dl class="kf">`). */
 const figure = (page: Page, label: string) =>
   page
-    .locator("dl.figures > div")
+    .locator("dl.kf > div")
     .filter({ has: page.getByText(label, { exact: true }) });
+
+/** The ownership bar of a company page, named by what it shows. */
+const ownershipBar = (page: Page) =>
+  page.getByRole("img", { name: /free float up to/ });
+
+/** The screen's filters are folded until used. */
+const openFilters = (page: Page) =>
+  page.getByText("Filter and sort", { exact: true }).click();
 
 test.describe("market page: the ownership screen", () => {
   test("lists every company of the latest month with its figures", async ({
@@ -31,9 +39,10 @@ test.describe("market page: the ownership screen", () => {
     await expect(page.getByRole("table").getByRole("columnheader")).toHaveText([
       "Code",
       "Company",
-      "Holders above 1%",
-      "Largest holder",
+      "Who holds it",
       "Free float bound",
+      "Largest holder",
+      "Holders above 1%",
       "HHI",
       "Since last month",
     ]);
@@ -69,8 +78,11 @@ test.describe("market page: the ownership screen", () => {
     page,
   }) => {
     await page.goto("/");
+    await expect(page.locator(".src > summary").first()).toContainText(
+      "Source: KSEI via IDX, 30 Sept 2026",
+    );
     await expect(
-      page.locator("p.citation", { hasText: "record date 30 Sept 2026" }),
+      page.locator(".src-body", { hasText: "record date 30 Sept 2026" }),
     ).toContainText("accessed 24 Oct 2026");
   });
 
@@ -78,6 +90,7 @@ test.describe("market page: the ownership screen", () => {
     page,
   }) => {
     await page.goto("/");
+    await openFilters(page);
     await page.getByLabel("Free float bound below (%)").fill("15");
     await page.getByRole("button", { name: "Apply" }).click();
     await expect(page).toHaveURL(/floatMax=15/);
@@ -92,7 +105,7 @@ test.describe("market page: the ownership screen", () => {
     );
 
     await page.getByRole("link", { name: "Reset" }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/(#register)?$/);
     await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(4);
   });
 
@@ -140,13 +153,60 @@ test.describe("market page: the ownership screen", () => {
   });
 });
 
+test.describe("company search", () => {
+  test("goes straight to a company named by its exact code", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("search").getByRole("searchbox").fill(" dddd ");
+    await page.getByRole("search").getByRole("searchbox").press("Enter");
+    await expect(page).toHaveURL(`/t/${belowMinimum.code}`);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      belowMinimum.issuer,
+    );
+  });
+
+  test("falls back to the screen's name search for anything else", async ({
+    page,
+  }) => {
+    // The masthead's own search, on a page that is not the market page.
+    await page.goto("/macro");
+    await page
+      .getByRole("searchbox", { name: "Find a company" })
+      .fill("dharma");
+    await page
+      .getByRole("searchbox", { name: "Find a company" })
+      .press("Enter");
+    await expect(page).toHaveURL(/\/\?q=dharma/);
+    await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(1);
+    await expect(screenRow(page, belowMinimum.code)).toBeVisible();
+
+    // A code the register does not list is a name search too: no match, said plainly.
+    await page.goto("/search?q=ZZZZ");
+    await expect(page).toHaveURL(/\/\?q=ZZZZ/);
+    await expect(
+      page.getByText("No company matches these filters."),
+    ).toBeVisible();
+  });
+
+  test("an empty search returns to the market page", async ({ page }) => {
+    const response = await page.goto("/search?q=");
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/$/);
+  });
+});
+
 test.describe("ticker page", () => {
   test("shows the figures, holders and changes of a company", async ({
     page,
   }) => {
     await page.goto(`/t/${steady.code}`);
-    await expect(figure(page, "Free float, upper bound")).toContainText(
-      "40.00%",
+    // The bar says it in words; its legend names the holders and the lit float.
+    await expect(ownershipBar(page)).toHaveAccessibleName(
+      "PT INDUK AAAA 60.00%; free float up to 40.00%",
+    );
+    await expect(page.locator(".obar-legend")).toContainText(
+      "Free float, upper bound 40.00%",
     );
     await expect(figure(page, "Largest holder")).toContainText("60.00%");
     await expect(figure(page, "Held below 1%")).toContainText("31.00%");
@@ -209,9 +269,10 @@ test.describe("ticker page", () => {
     page,
   }) => {
     await page.goto(`/t/${belowMinimum.code}`);
-    await expect(figure(page, "Free float, upper bound")).toContainText(
-      "10.00%",
+    await expect(page.locator(".obar-legend")).toContainText(
+      "Free float, upper bound 10.00%",
     );
+    await expect(page.getByText("Below the 15% minimum.")).toBeVisible();
     await expect(
       page.getByText(`Possible deadlines for ${belowMinimum.code}:`),
     ).toBeVisible();
@@ -224,6 +285,7 @@ test.describe("ticker page", () => {
     await expect(figure(page, "Free float, upper bound")).toContainText(
       "not given",
     );
+    await expect(ownershipBar(page)).toHaveCount(0);
     await expect(page.getByText(/too little to be complete/)).toBeVisible();
     await expect(
       page.getByText(
@@ -258,7 +320,7 @@ test.describe("ticker page", () => {
     const response = await page.goto(`/t/${steady.code.toLowerCase()}`);
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      `${steady.code} · ${steady.issuer}`,
+      `${steady.code} ${steady.issuer}`,
     );
   });
 

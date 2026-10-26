@@ -32,7 +32,7 @@ async function structure(page: Page): Promise<Structure> {
       // The language links differ only in which one is current; keep them as written.
       .sort();
     const codes = [
-      ...document.querySelectorAll("main td.mono a, main h1 .mono"),
+      ...document.querySelectorAll("main td a.code, main h1 .ticker-code"),
     ]
       .map((element) => element.textContent?.trim() ?? "")
       .sort();
@@ -85,16 +85,17 @@ for (const sitePage of SITE_PAGES) {
     // Whether the title is in Indonesian is for the copy to say; the shell
     // check above holds that it still ends with the site name.
 
-    // Both navigations are named, so a screen reader can tell them apart.
+    // Every navigation is named, so a screen reader can tell them apart.
     const names = await page
       .getByRole("navigation")
       .evaluateAll((navs) => navs.map((nav) => nav.getAttribute("aria-label")));
-    expect(names).toHaveLength(2);
+    expect(names.length).toBeGreaterThanOrEqual(3);
     for (const name of names)
       expect(name?.trim().length ?? 0).toBeGreaterThan(0);
 
     // The language links mark the current one, in the right language.
     const current = page
+      .getByRole("banner")
       .getByRole("navigation")
       .last()
       .locator('[aria-current="true"]');

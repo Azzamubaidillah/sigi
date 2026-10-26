@@ -20,16 +20,12 @@ const PAGES: Expected[] = [
   {
     path: "/",
     h1: "Who owns Indonesia's listed companies",
-    h2: [
-      "IHSG (Jakarta Composite)",
-      "Ownership screen",
-      "Prices and fundamentals screener",
-    ],
+    h2: ["The register", "Prices and charts"],
     current: "Market",
   },
   {
     path: `/t/${steady.code}`,
-    h1: `${steady.code} · ${steady.issuer}`,
+    h1: `${steady.code} ${steady.issuer}`,
     h2: [
       "Ownership and free float",
       "Holders above 1%",
@@ -42,7 +38,7 @@ const PAGES: Expected[] = [
   },
   {
     path: `/t/${COMPANIES.incomplete.code}`,
-    h1: `${COMPANIES.incomplete.code} · ${COMPANIES.incomplete.issuer}`,
+    h1: `${COMPANIES.incomplete.code} ${COMPANIES.incomplete.issuer}`,
     h2: [
       "Ownership and free float",
       "Holders above 1%",
@@ -170,7 +166,7 @@ test("the footer links to the sources and the privacy notice", async ({
     footer.getByRole("link", { name: "Data & sources" }),
   ).toHaveAttribute("href", "/data");
   await expect(
-    footer.getByRole("link", { name: "privacy notice" }),
+    footer.getByRole("link", { name: "Privacy notice" }),
   ).toHaveAttribute("href", "/privacy");
 });
 
