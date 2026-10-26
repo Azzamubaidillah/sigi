@@ -28,8 +28,9 @@ export function loadLatestMonth(databasePath: string): PublishedMonth | null {
 
 /**
  * The share code a search entry names exactly in the latest month, or null.
- * "bbca " finds BBCA; "bank" and a code the register does not list find
- * nothing, and the caller falls back to the screen's name search.
+ * "bbca " finds BBCA. A name, a longer word and a code the register does not
+ * list find nothing, and the caller falls back to the screen's name search. A
+ * four-letter word that is also a code (BANK) is that company's code first.
  */
 export function exactShareCode(
   databasePath: string,

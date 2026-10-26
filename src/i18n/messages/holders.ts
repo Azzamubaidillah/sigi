@@ -9,7 +9,7 @@ export const holdersMessages = defineMessages({
       lede: "Companies, funds and institutions holding more than 1% of a listed company, and what each holds.",
       heading: "Institutional holders",
       summary: (date: string, holders: number, withheld: number) =>
-        `As of ${date}: ${holders} institutional holders. ${withheld} other holders (individuals, or holders the source leaves unclassified) have no page.`,
+        `As of ${date}: ${holders.toLocaleString("en-US")} institutional holders. ${withheld.toLocaleString("en-US")} other holders (individuals, or holders the source leaves unclassified) have no page.`,
     },
     /** Plain strings only: the table is a client component. */
     table: {
@@ -51,7 +51,7 @@ export const holdersMessages = defineMessages({
       lede: "Perusahaan, dana, dan lembaga yang memegang lebih dari 1% saham sebuah emiten tercatat, beserta yang dipegang masing-masing.",
       heading: "Pemegang saham institusi",
       summary: (date: string, holders: number, withheld: number) =>
-        `Per ${date}: ${holders} pemegang saham institusi. ${withheld} pemegang saham lain (perorangan, atau yang oleh sumber dibiarkan tidak terklasifikasi) tidak punya halaman.`,
+        `Per ${date}: ${holders.toLocaleString("id-ID")} pemegang saham institusi. ${withheld.toLocaleString("id-ID")} pemegang saham lain (perorangan, atau yang oleh sumber dibiarkan tidak terklasifikasi) tidak punya halaman.`,
     },
     table: {
       filterPlaceholder: "Sebagian nama",

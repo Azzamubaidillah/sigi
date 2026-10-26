@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 
-import { formatPercent } from "@/app/_lib/format";
+import { formatPercent, formatShares } from "@/app/_lib/format";
 import type { Lang } from "@/src/i18n/lang";
 import type { holdersMessages } from "@/src/i18n/messages/holders";
 import type { HolderSummary } from "@/src/views/holders";
@@ -45,7 +45,8 @@ export function HolderTable({
           </div>
         </div>
         <p className="holders-count" role="status">
-          {shown.length} {labels.of} {holders.length} {labels.holders}
+          {formatShares(shown.length, lang)} {labels.of}{" "}
+          {formatShares(holders.length, lang)} {labels.holders}
         </p>
       </div>
       <div className="table-wrap">
