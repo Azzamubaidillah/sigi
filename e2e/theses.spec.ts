@@ -15,21 +15,20 @@ test.describe("theses index", () => {
       "they do not recommend any transaction in any security",
     );
 
-    const hit = page
-      .getByRole("heading", { level: 2, name: "Conditions hit" })
-      .locator("xpath=following::table[1]");
+    const hit = page.locator("#hits table");
     await expect(hit.getByRole("columnheader")).toHaveText([
       "Thesis",
       "Condition",
-      "What was compared",
-      "Met since",
+      "Reading",
+      "Hit since",
     ]);
     await expect(hit.locator("tbody tr")).toHaveCount(1);
     const row = hit.locator("tbody tr");
     await expect(
       row.getByRole("link", { name: THESES.valid.title }),
     ).toHaveAttribute("href", `/theses/${THESES.valid.slug}`);
-    await expect(row).toContainText("macro bi-rate above 6.25");
+    await expect(row).toContainText("Hit");
+    await expect(row).toContainText("BI-Rate: above 6.25%");
     await expect(row).toContainText(
       "BI-Rate is 6.50 (%) for 2026-09-16, as published (condition: above 6.25).",
     );
@@ -39,16 +38,12 @@ test.describe("theses index", () => {
     page,
   }) => {
     await page.goto("/theses");
-    const all = page
-      .getByRole("heading", { level: 2, name: "All theses" })
-      .locator("xpath=following::table[1]");
+    const all = page.locator("#held table");
     await expect(all.getByRole("columnheader")).toHaveText([
       "Thesis",
-      "Tickers",
       "Status",
-      "Stance",
-      "Review",
-      "Version",
+      "Review by",
+      "Latest check",
     ]);
     await expect(all.locator("tbody tr")).toHaveCount(2);
 
@@ -57,6 +52,7 @@ test.describe("theses index", () => {
     });
     await expect(valid).toContainText("Active");
     await expect(valid).toContainText("2 versions");
+    await expect(valid).toContainText("1 hit, 3 holding, 1 to check by hand");
     await expect(
       valid.getByRole("link", { name: COMPANIES.steady.code }),
     ).toHaveAttribute("href", `/t/${COMPANIES.steady.code}`);
@@ -81,49 +77,69 @@ test.describe("thesis page", () => {
       page.getByRole("main").getByText("not investment advice"),
     ).toHaveCount(1);
 
-    const summary = page.locator("dl").first();
-    await expect(summary).toContainText("Active");
-    await expect(summary).toContainText("AAAA");
-    await expect(summary).toContainText(
+    const head = page.locator("header.page-head");
+    await expect(head).toContainText("Active");
+    await expect(head).toContainText("AAAA");
+    await expect(head.locator(".lede")).toContainText(
       "The register suggests the controller must sell down by 2030",
     );
-    await expect(summary).toContainText("30 Jun 2030");
-    await expect(summary).toContainText("20 Oct 2026");
+    await expect(head).toContainText("Version of 20 Oct 2026");
+    await expect(page.locator("#thesis .sec-note")).toContainText(
+      "The float rule forces a placement",
+    );
 
-    const catalysts = page
-      .getByRole("heading", { level: 3, name: "Catalysts" })
-      .locator("xpath=following::table[1]");
-    // Sorted by date, earliest first.
-    await expect(catalysts.locator("tbody tr")).toHaveText([
+    const standing = page.locator("#standing");
+    await expect(standing).toContainText("1 of 5 conditions hit.");
+    await expect(standing.locator(".kf .lead")).toContainText("Hit");
+    await expect(standing.locator(".kf .lead .v")).toHaveText("1");
+    await expect(standing).toContainText("Holding");
+    await expect(standing).toContainText("Check by hand");
+
+    // Sorted by date, earliest first; the review date is one of them.
+    await expect(page.locator("#dates li")).toHaveText([
       /15 Dec 2029\s*Board meeting/,
       /31 Mar 2030\s*First deadline for large caps/,
+      /30 Jun 2030\s*Review: the author reads this thesis again\./,
     ]);
 
-    const conditions = page
-      .getByRole("heading", { level: 2, name: "Invalidation conditions" })
-      .locator("xpath=following::table[1]");
+    const conditions = page.locator("#conditions table");
     await expect(conditions.getByRole("columnheader")).toHaveText([
       "Condition",
+      "Threshold",
+      "Current reading",
       "Status",
-      "What was compared",
-      "Checked",
-      "Data",
     ]);
     await expect(conditions.locator("tbody tr")).toHaveCount(5);
     const row = (text: string) =>
       conditions.getByRole("row").filter({ hasText: text });
-    await expect(row("ownership AAAA")).toContainText("Not met");
-    await expect(row("ownership AAAA")).toContainText(
+    await expect(row("Stake of PT INDUK AAAA in AAAA")).toContainText(
+      "below 50%",
+    );
+    await expect(row("Stake of PT INDUK AAAA in AAAA")).toContainText(
+      "Holding",
+    );
+    await expect(row("Stake of PT INDUK AAAA in AAAA")).toContainText(
       "Holds 60.00% of AAAA on 2026-09-30 (condition: below 50.00%).",
     );
     await expect(
-      row("ownership AAAA").getByRole("link", { name: "holder page" }),
+      row("Stake of PT INDUK AAAA in AAAA").getByRole("link", {
+        name: "holder page",
+      }),
     ).toHaveAttribute("href", "/holders/pt-induk-aaaa");
-    await expect(row("float BBBB")).toContainText("Not met");
-    await expect(row("macro bi-rate")).toContainText(/Met since/);
-    await expect(row("date 2030-01-01")).toContainText("Not met");
-    await expect(row("price AAAA")).toContainText("Manual check");
-    await expect(row("price AAAA")).toContainText("Sigi stores no prices");
+    await expect(row("Free float of BBBB")).toContainText("Holding");
+    await expect(row("Free float of BBBB")).toContainText("12.5%");
+    await expect(row("BI-Rate")).toContainText("Hit");
+    await expect(row("BI-Rate")).toContainText(/Hit since/);
+    await expect(row("BI-Rate")).toContainText("above 6.25%");
+    await expect(
+      row("By the date: no placement announced by then"),
+    ).toContainText("Holding");
+    await expect(
+      row("By the date: no placement announced by then"),
+    ).toContainText("1 Jan 2030");
+    await expect(row("Price of AAAA")).toContainText("Check by hand");
+    await expect(row("Price of AAAA")).toContainText("Sigi stores no prices");
+    await expect(row("Price of AAAA")).toContainText("As of");
   });
 
   test("renders the body with safe links only", async ({ page }) => {
@@ -132,7 +148,7 @@ test.describe("thesis page", () => {
       page.getByRole("heading", { level: 3, name: "Why" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Data & sources" }).last(),
+      page.locator("#thesis").getByRole("link", { name: "Data & sources" }),
     ).toHaveAttribute("href", "/data");
     const external = page.getByRole("link", { name: "the exchange notice" });
     await expect(external).toHaveAttribute(
@@ -148,9 +164,10 @@ test.describe("thesis page", () => {
   }) => {
     const [current, older] = THESES.valid.versions;
     await page.goto(`/theses/${THESES.valid.slug}`);
-    const history = page
-      .getByRole("heading", { level: 2, name: "History" })
-      .locator("xpath=following-sibling::ul[1]");
+    const history = page.locator("#history details");
+    // The history is folded until asked for.
+    await expect(history.locator("li").first()).toBeHidden();
+    await history.locator("summary").click();
     await expect(history.locator("li")).toHaveCount(2);
     await expect(history.locator("li").first()).toContainText("(current)");
     await expect(history.getByRole("link")).toHaveAttribute(
@@ -160,10 +177,10 @@ test.describe("thesis page", () => {
     await expect(
       page.getByText(/\d+ lines? added, \d+ removed since 15 Sept 2026\./),
     ).toBeVisible();
-    await expect(page.locator("pre.diff").first()).toContainText(
+    await expect(page.locator("pre.th-diff").first()).toContainText(
       "+ review: 2030-06-30",
     );
-    await expect(page.locator("pre.diff").first()).toContainText(
+    await expect(page.locator("pre.th-diff").first()).toContainText(
       "- review: 2030-03-31",
     );
 
@@ -176,11 +193,16 @@ test.describe("thesis page", () => {
     await expect(
       page.getByText("Only the current version’s conditions are checked."),
     ).toBeVisible();
-    await expect(page.getByText("This is the first version.")).toBeVisible();
     await expect(notAdvice(page)).toBeVisible();
+    // The client-side navigation keeps the fold as it was left: open.
+    await expect(page.locator("#history details")).toHaveJSProperty(
+      "open",
+      true,
+    );
+    await expect(page.getByText("This is the first version.")).toBeVisible();
     await expect(
       page
-        .locator("li", { hasText: `${current.slice(8)} Oct 2026` })
+        .locator("#history li", { hasText: `${current.slice(8)} Oct 2026` })
         .getByRole("link"),
     ).toHaveAttribute(
       "href",
@@ -200,9 +222,7 @@ test.describe("thesis page", () => {
       page.getByText(/^Conditions unreadable: Line 1 of the conditions block/),
     ).toBeVisible();
     // The conditions table is absent, not empty.
-    await expect(
-      page.getByRole("table").filter({ hasText: "What was compared" }),
-    ).toHaveCount(0);
+    await expect(page.locator("#conditions table")).toHaveCount(0);
 
     // Markup in the file stays text: no element, no handler, no script link.
     await expect(page.locator('img[src="/hostile.png"]')).toHaveCount(0);
@@ -236,38 +256,45 @@ test.describe("daily brief", () => {
     await page.goto("/brief");
     await expect(notAdvice(page)).toContainText("recommends no transaction");
 
-    const brief = page.locator("section.panel").first();
-    await expect(brief.locator(".badge")).toHaveText("Notable");
-    await expect(brief.locator("p.lede")).toContainText(
+    const today = page.locator("#today");
+    await expect(today.locator(".pill")).toHaveText("Notable");
+    await expect(today.locator(".br-headline")).toContainText(
       "free-float bound is 10% in the September register.",
     );
-    const looks = brief.getByRole("table");
-    await expect(looks.getByRole("columnheader")).toHaveText([
-      "What",
-      "Why",
-      "Evidence",
-    ]);
-    const row = looks.locator("tbody tr");
+    const row = page.locator("#look-at li");
     await expect(row).toHaveCount(1);
     await expect(row).toContainText(COMPANIES.belowMinimum.code);
     await expect(row).toContainText("certainly below the minimum");
-    // Evidence leads to the page that holds it.
+    // The evidence keys are folded; each leads to the page that holds it.
+    const evidence = row.locator("details");
+    await evidence.locator("summary").click();
     await expect(
-      row.getByRole("link", { name: `float:${COMPANIES.belowMinimum.code}` }),
+      evidence.getByRole("link", {
+        name: `float:${COMPANIES.belowMinimum.code}`,
+      }),
     ).toHaveAttribute("href", `/t/${COMPANIES.belowMinimum.code}`);
-    await expect(brief.getByRole("heading", { level: 3 })).toHaveText([
+    await expect(
+      page.getByRole("main").getByRole("heading", { level: 2 }),
+    ).toHaveText([
+      /^\d{1,2} \w+ \d{4}$/,
       "Worth a closer look",
       "Changes since yesterday",
       "Risks to this reading",
       "Set aside, and why",
       "Web sources",
+      "Inputs",
     ]);
-    await expect(brief.getByText("No brief yesterday.")).toBeVisible();
-    await expect(brief.getByText("Nothing.")).toBeVisible();
-    const source = brief.getByRole("link", { name: "Example exchange notice" });
+    await expect(page.getByText("No brief yesterday.")).toBeVisible();
+    await expect(
+      page.locator("#set-aside").getByText("Nothing."),
+    ).toBeVisible();
+    const source = page
+      .locator("#web-sources")
+      .getByRole("link", { name: "Example exchange notice" });
     await expect(source).toHaveAttribute("href", "https://example.test/notice");
     await expect(source).toHaveAttribute("rel", /noopener/);
-    await expect(brief.locator("p.citation")).toContainText("Written");
+    await today.locator("summary").click();
+    await expect(today.locator(".src-body")).toContainText("Written");
   });
 
   test("names a newer file that failed validation and keeps the last good brief up", async ({
@@ -280,7 +307,7 @@ test.describe("daily brief", () => {
         `A newer file (${rejectedFile}) was not shown: ${rejectedReason}.`,
       ),
     ).toBeVisible();
-    await expect(page.locator("section.panel .lede")).toHaveCount(1);
+    await expect(page.locator(".br-headline")).toHaveCount(1);
     // A fresh brief is not marked stale.
     await expect(page.getByText(/^Stale:/)).toHaveCount(0);
   });
@@ -289,9 +316,8 @@ test.describe("daily brief", () => {
     page,
   }) => {
     await page.goto("/brief");
-    const inputs = page
-      .getByRole("heading", { level: 2, name: "Inputs" })
-      .locator("xpath=following::table[1]");
+    const inputs = page.locator("#inputs");
+    await inputs.locator("summary").click();
     await expect(inputs.getByRole("columnheader")).toHaveText([
       "Input",
       "As of",
@@ -314,11 +340,27 @@ test.describe("daily brief", () => {
 test.describe("theses and brief with nothing published yet", () => {
   test.use({ baseURL: EMPTY_ORIGIN });
 
-  test("the index says so, and keeps the notice", async ({ page }) => {
+  test("the index explains what a thesis is, labels its example, and keeps the notice", async ({
+    page,
+  }) => {
     await page.goto("/theses");
     await expect(notAdvice(page)).toBeVisible();
-    await expect(page.getByText("No thesis is published yet.")).toHaveCount(2);
-    await expect(page.getByRole("table")).toHaveCount(0);
+    await expect(page.getByText("No thesis is published yet.")).toBeVisible();
+    await expect(page.locator("#held table")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { level: 2, name: "What a thesis is on Sigi" }),
+    ).toBeVisible();
+    // The example is marked as one, and sits in its own section.
+    const example = page.locator("#example");
+    await expect(example).toContainText("Example, not a published view");
+    await expect(example.locator("tbody tr")).toHaveCount(5);
+    await expect(example).toContainText("macro bi-rate above 6.25");
+    await expect(page.locator("#states .pill")).toHaveText([
+      "Holding",
+      "Hit",
+      "Check by hand",
+      "Unknown",
+    ]);
   });
 
   test("the brief says none has been written, and keeps the notice", async ({
