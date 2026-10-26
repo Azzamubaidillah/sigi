@@ -25,5 +25,5 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": ["node_modules", "dist-worker"]
+  "exclude": ["node_modules", "dist-worker", ".next-*"]
 }

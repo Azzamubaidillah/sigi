@@ -5,7 +5,7 @@ import nextTypeScript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypeScript,
-  globalIgnores([".next/**", "dist-worker/**", "coverage/**"]),
+  globalIgnores([".next/**", ".next-*/**", "dist-worker/**", "coverage/**"]),
   {
     /**
      * Views read and shape; adapters talk to providers. A view that imports an
