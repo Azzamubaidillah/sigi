@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageHeader, Section } from "@/app/_components/ui";
 import { getLang } from "@/app/_lib/lang";
 import { privacyMessages } from "@/src/i18n/messages/privacy";
 
@@ -13,34 +14,40 @@ export default async function PrivacyPage() {
   const m = privacyMessages[lang];
   return (
     <>
-      <div className="page-header">
-        <h1>{m.heading}</h1>
-      </div>
-      <section className="panel stack prose">
-        <p>
-          <strong>{m.visitorsLabel}</strong>
-          {m.visitors}
-        </p>
-        <p>
-          <strong>{m.cookiesLabel}</strong>
-          {m.cookies}
-        </p>
-        <p>
-          <strong>{m.tradingViewLabel}</strong>
-          {m.tradingViewBefore}
-          <a
-            href="https://www.tradingview.com/privacy-policy/"
-            rel="noreferrer"
-          >
-            {m.tradingViewLink}
-          </a>
-          {m.tradingViewAfter}
-        </p>
-        <p>
-          <strong>{m.personalLabel}</strong>
-          {m.personal}
-        </p>
-      </section>
+      <PageHeader title={m.heading} lede={m.lede} />
+      <Section id="visitors" title={m.visitorsTitle}>
+        <div className="prose">
+          <p>{m.visitors}</p>
+        </div>
+      </Section>
+      <Section id="cookies" title={m.cookiesTitle}>
+        <div className="prose">
+          <p>
+            {m.cookiesBefore}
+            <code>{m.cookieName}</code>
+            {m.cookiesAfter}
+          </p>
+        </div>
+      </Section>
+      <Section id="tradingview" title={m.tradingViewTitle}>
+        <div className="prose">
+          <p>
+            {m.tradingViewBefore}
+            <a
+              href="https://www.tradingview.com/privacy-policy/"
+              rel="noreferrer"
+            >
+              {m.tradingViewLink}
+            </a>
+            {m.tradingViewAfter}
+          </p>
+        </div>
+      </Section>
+      <Section id="personal" title={m.personalTitle}>
+        <div className="prose">
+          <p>{m.personal}</p>
+        </div>
+      </Section>
     </>
   );
 }

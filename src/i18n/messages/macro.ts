@@ -7,17 +7,15 @@ export const macroMessages = defineMessages({
     heading: "Macro",
     lede: {
       intro:
-        "The rates, prices and currencies that move Indonesian listed companies, with the sectors each one bears on and why. Values marked ",
+        "The rates, prices and currencies that move Indonesian listed companies. A value marked ",
       published: "published",
-      middle: " are as the source publishes them; values marked ",
+      middle: " is as the source publishes it; a figure marked ",
       sigi: "Sigi",
       afterSigi:
-        " are Sigi's own calculations from them. The sector links are Sigi's reading, not the sources'. Every source is fetched automatically once a day; see ",
+        " is Sigi's own calculation from it. The sector links are Sigi's reading, not the sources'. Every source is fetched once a day; see ",
       dataLink: "Data & sources",
       end: ".",
     },
-    publishedTitle: "As the source publishes it",
-    derivedTitle: "Calculated by Sigi from the published values",
     absence: {
       not_fetched: "Not fetched yet: the worker has not checked this source.",
       fetch_failed:
@@ -25,30 +23,41 @@ export const macroMessages = defineMessages({
       rejected:
         "The last file from the source failed its checks, and nothing has been published from it yet.",
     },
-    previous: "Previous, ",
-    change: "Change",
-    on: "On ",
+    asOf: (date: string) => `as of ${date}`,
+    moved: { up: "up", down: "down", flat: "unchanged" },
+    from: (value: string, period: string) => `from ${value} on ${period}`,
+    against: "against ",
     pointsSuffix: " pp",
     sparklineLabel: (name: string) => `${name} over the past year`,
     pastYear: (low: string, high: string) => `Past year: ${low} to ${high}`,
-    seen: (timestamp: string) =>
-      `. First seen by Sigi ${timestamp}. Next release expected `,
-    around: "around ",
-    late: " (late)",
+    sourceSummary: (publisher: string) => `Source: ${publisher}`,
+    licence: "Licence: ",
+    seen: (timestamp: string) => `First seen by Sigi ${timestamp}.`,
+    next: (approximate: boolean, date: string) =>
+      `Next release expected ${approximate ? "around " : ""}${date}.`,
+    late: "Late",
     why: "Why it matters for IDX sectors",
+    indices: {
+      heading: "Sector indices",
+      stamp: "Charts by TradingView",
+      note: "Twelve months of each IDX sector index, drawn by TradingView in your browser. Sigi does not store or read these prices.",
+    },
     chart: (symbol: string) => `${symbol} chart by TradingView`,
     accessed: (date: string) => `accessed ${date}`,
     citation: {
       source: "Source: ",
       S6: {
+        name: "Bank Indonesia",
         publisher: "Bank Indonesia, ",
         after: (accessed: string) => `, ${accessed}, `,
       },
       S7: {
+        name: "World Bank",
         publisher: "World Bank Commodity Price Data (The Pink Sheet), ",
         after: (accessed: string) => `, CC BY 4.0, ${accessed}, `,
       },
       S8: {
+        name: "FRED",
         publisher: "Board of Governors of the Federal Reserve System (US), ",
         after: (accessed: string) =>
           `, retrieved from FRED, Federal Reserve Bank of St. Louis, ${accessed}, `,
@@ -68,18 +77,16 @@ export const macroMessages = defineMessages({
     heading: "Makro",
     lede: {
       intro:
-        "Suku bunga, harga, dan mata uang yang menggerakkan emiten di bursa Indonesia, beserta sektor yang terkait dengan masing-masing dan alasannya. Nilai bertanda ",
+        "Suku bunga, harga, dan mata uang yang menggerakkan emiten di bursa Indonesia. Nilai bertanda ",
       published: "dipublikasikan",
       middle:
-        " adalah angka sebagaimana diterbitkan sumbernya; nilai bertanda ",
+        " adalah angka sebagaimana diterbitkan sumbernya; angka bertanda ",
       sigi: "Sigi",
       afterSigi:
         " adalah hitungan Sigi sendiri dari angka tersebut. Kaitan dengan sektor adalah pembacaan Sigi, bukan pembacaan sumbernya. Setiap sumber diambil otomatis sekali sehari; lihat ",
       dataLink: "Data & sumber",
       end: ".",
     },
-    publishedTitle: "Sebagaimana diterbitkan sumbernya",
-    derivedTitle: "Dihitung Sigi dari nilai yang dipublikasikan",
     absence: {
       not_fetched: "Belum diambil: worker belum memeriksa sumber ini.",
       fetch_failed:
@@ -87,31 +94,42 @@ export const macroMessages = defineMessages({
       rejected:
         "Berkas terakhir dari sumber tidak lolos pemeriksaan, dan belum ada data dari sumber ini yang dipublikasikan.",
     },
-    previous: "Sebelumnya, ",
-    change: "Perubahan",
-    on: "Terhadap ",
+    asOf: (date: string) => `per ${date}`,
+    moved: { up: "naik", down: "turun", flat: "tetap" },
+    from: (value: string, period: string) => `dari ${value} pada ${period}`,
+    against: "terhadap ",
     pointsSuffix: " poin persentase",
     sparklineLabel: (name: string) => `${name} selama setahun terakhir`,
     pastYear: (low: string, high: string) =>
       `Setahun terakhir: ${low} sampai ${high}`,
-    seen: (timestamp: string) =>
-      `. Pertama kali dilihat Sigi ${timestamp}. Rilis berikutnya diperkirakan `,
-    around: "sekitar ",
-    late: " (terlambat)",
+    sourceSummary: (publisher: string) => `Sumber: ${publisher}`,
+    licence: "Lisensi: ",
+    seen: (timestamp: string) => `Pertama kali dilihat Sigi ${timestamp}.`,
+    next: (approximate: boolean, date: string) =>
+      `Rilis berikutnya diperkirakan ${approximate ? "sekitar " : ""}${date}.`,
+    late: "Terlambat",
     why: "Mengapa penting bagi sektor IDX",
+    indices: {
+      heading: "Indeks sektor",
+      stamp: "Grafik oleh TradingView",
+      note: "Dua belas bulan setiap indeks sektor IDX, digambar TradingView di peramban Anda. Sigi tidak menyimpan atau membaca harga ini.",
+    },
     chart: (symbol: string) => `Grafik ${symbol} oleh TradingView`,
     accessed: (date: string) => `diakses ${date}`,
     citation: {
       source: "Sumber: ",
       S6: {
+        name: "Bank Indonesia",
         publisher: "Bank Indonesia, ",
         after: (accessed: string) => `, ${accessed}, `,
       },
       S7: {
+        name: "Bank Dunia",
         publisher: "Bank Dunia, Commodity Price Data (The Pink Sheet), ",
         after: (accessed: string) => `, CC BY 4.0, ${accessed}, `,
       },
       S8: {
+        name: "FRED",
         publisher: "Board of Governors of the Federal Reserve System (AS), ",
         after: (accessed: string) =>
           `, diambil dari FRED, Federal Reserve Bank of St. Louis, ${accessed}, `,

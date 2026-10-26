@@ -1,0 +1,166 @@
+/* The data and sources page at /data (docs/DESIGN.md): ledgers of feeds, imports and sources. */
+@layer sections {
+  /* The month on the site is the page's one focal figure; it gets two columns. */
+  @media (min-width: 56rem) {
+    #s1 .kf .lead {
+      grid-column: span 2;
+    }
+  }
+
+  .tbl--stack th,
+  .tbl--stack td {
+    vertical-align: top;
+  }
+
+  @media (min-width: 40.0625rem) {
+    .tbl--feeds tbody th {
+      width: 26%;
+    }
+  }
+
+  /* A second line under a cell's first words: a source id, a hash, a publisher. */
+  .sub-line {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--muted);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+  }
+
+  /* A timestamp stays on one line unless the row is stacked. */
+  @media (min-width: 40.0625rem) {
+    .tbl--stack .when {
+      white-space: nowrap;
+    }
+  }
+
+  .tbl--stack .terms {
+    min-width: 16rem;
+    max-width: 32rem;
+  }
+
+  .tbl--stack .pill .icon {
+    width: 1em;
+    height: 1em;
+  }
+
+  /* An import's checks: how they came out, opening to each check. */
+  .gates > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.75rem;
+    color: var(--ink);
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .gates > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .gates > summary::after {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-top: -0.2rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    rotate: 45deg;
+    transition: rotate 120ms;
+  }
+
+  .gates[open] > summary::after {
+    margin-top: 0.15rem;
+    rotate: -135deg;
+  }
+
+  .gate-list {
+    display: grid;
+    gap: var(--s-3);
+    min-width: 15rem;
+    margin: 0;
+    padding: var(--s-2) 0 var(--s-3);
+    list-style: none;
+    font-size: 0.875rem;
+  }
+
+  .gate-list li {
+    display: flex;
+    gap: var(--s-2);
+    margin: 0;
+  }
+
+  .gate-list .icon {
+    margin-top: 0.2rem;
+  }
+
+  /* On a phone each row becomes a small stack, a label before every value. */
+  @media (max-width: 40rem) {
+    .tbl--stack thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    .tbl--stack,
+    .tbl--stack tbody,
+    .tbl--stack tr,
+    .tbl--stack th {
+      display: block;
+    }
+
+    .tbl--stack tbody tr {
+      padding: var(--s-3) 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .tbl--stack tbody th,
+    .tbl--stack tbody td {
+      padding: 0.2rem 0;
+      border: 0;
+    }
+
+    .tbl--stack tbody td {
+      display: grid;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      column-gap: var(--s-3);
+    }
+
+    .tbl--stack tbody td > * {
+      grid-column: 2;
+    }
+
+    .tbl--stack tbody td > .pill {
+      justify-self: start;
+    }
+
+    .tbl--stack tbody td::before {
+      content: attr(data-label);
+      color: var(--muted);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .tbl--stack .hide-md {
+      display: none;
+    }
+
+    .tbl--stack .terms {
+      min-width: 0;
+      max-width: none;
+    }
+
+    .gate-list {
+      min-width: 0;
+    }
+
+    .sec .src > summary {
+      min-height: 2.75rem;
+    }
+  }
+}

@@ -3,21 +3,32 @@ import { EMPTY_ORIGIN, MONTHS } from "./world";
 
 const section = (page: Page, heading: string) =>
   page
-    .locator("section.panel")
+    .locator("section.sec")
     .filter({ has: page.getByRole("heading", { level: 2, name: heading }) });
 
 test.describe("data and sources page", () => {
-  test("shows the published month with its size and when the next file is due", async ({
+  test("summarises freshness first: the overall status, the published month, its size and when the next file is due", async ({
     page,
   }) => {
     await page.goto("/data");
+    // Two feeds failed their last check; the pill says so before any table.
+    await expect(page.locator(".page-head-aside .pill")).toHaveText(
+      "2 of 10 sources failed their last check",
+    );
     const s1 = section(page, "Holders above 1% (S1)");
     await expect(s1).toContainText("30 Sept 2026");
     await expect(
-      s1.locator("div", { hasText: "Rows · companies" }).last(),
-    ).toContainText("9 · 4");
-    await expect(s1).toContainText("Next file (end of October 2026)");
-    await expect(s1).toContainText("expected by 7 Nov 2026");
+      s1.locator(".kf > div").filter({ hasText: "Rows" }),
+    ).toContainText("9");
+    await expect(
+      s1.locator(".kf > div").filter({ hasText: "Companies" }),
+    ).toContainText("4");
+    await expect(s1).toContainText("Next file expected by");
+    await expect(s1).toContainText("7 Nov 2026");
+    await expect(s1).toContainText("Covers the end of October 2026");
+    await expect(section(page, "Checks of each source")).toContainText(
+      "7 of 10 sources passed their last check; 2 failed and 1 not yet checked.",
+    );
   });
 
   test("a file that failed a check is listed as rejected, with the check that failed", async ({
@@ -26,10 +37,9 @@ test.describe("data and sources page", () => {
     await page.goto("/data");
     const imports = section(page, "Imports");
     await expect(imports.getByRole("columnheader")).toHaveText([
-      "Run",
       "Imported",
       "File",
-      "Latest period",
+      "Period",
       "Rows",
       "Outcome",
       "Checks",
@@ -41,11 +51,18 @@ test.describe("data and sources page", () => {
     await expect(rejected).toContainText("1 of 8 failed");
     // The checks fold away; open them to read each verdict and its detail.
     await rejected.getByText("1 of 8 failed").click();
+    await expect(rejected).toContainText("Percent sum per company");
     await expect(rejected).toContainText(
-      "Percent sum per company: FAIL: AAAA totals 104.00% (limit 100%)",
+      "FAIL: AAAA totals 104.00% (limit 100%)",
     );
-    await expect(rejected.locator(".badge.fail")).toHaveText("fail");
-    await expect(rejected.locator(".badge.warn")).toHaveText("warn");
+    // Each verdict is a word in a pill, with an icon beside it.
+    await expect(
+      rejected.locator('.gate-list .pill[data-tone="negative"]'),
+    ).toHaveText("Fail");
+    await expect(
+      rejected.locator('.gate-list .pill[data-tone="warn"]'),
+    ).toHaveText("Warn");
+    await expect(rejected.locator(".gate-list svg.icon")).toHaveCount(8);
     await expect(
       rejected.getByRole("link", {
         name: "Pemegang Saham di Atas 1% 2026-10-30.xlsx",
@@ -118,25 +135,28 @@ test.describe("data and sources page", () => {
     const feeds = section(page, "Checks of each source");
     await expect(feeds.getByRole("columnheader")).toHaveText([
       "Feed",
-      "Source",
+      "Status",
       "Last checked",
       "Outcome",
+      "Next check",
       "Last new data",
     ]);
     // The exchange page, four BI tables' worth of feeds, the pink sheet, three FRED series and news.
     await expect(feeds.locator("tbody tr")).toHaveCount(10);
-    await expect(
-      feeds.getByRole("row", { name: /FRED DFEDTARU/ }),
-    ).toContainText("Failed: HTTP 503 from fred.stlouisfed.org");
+    const failed = feeds.getByRole("row", { name: /FRED DFEDTARU/ });
+    await expect(failed).toContainText("Failed");
+    await expect(failed).toContainText("HTTP 503 from fred.stlouisfed.org");
+    // A failed check is retried after three hours; an expected time is shown.
+    await expect(failed).toContainText("About");
     await expect(
       feeds.getByRole("row", { name: /Cadangan Devisa/ }),
-    ).toContainText("Not yet");
-    await expect(feeds.getByRole("row", { name: /BI-Rate/ })).toContainText(
-      "OK, 1 imported",
-    );
+    ).toContainText("Not yet checked");
+    const imported = feeds.getByRole("row", { name: /BI-Rate/ });
+    await expect(imported).toContainText("OK");
+    await expect(imported).toContainText("1 imported");
     await expect(
       feeds.getByRole("row", { name: /CNBC Indonesia/ }),
-    ).toContainText("Failed: feed timed out");
+    ).toContainText("feed timed out");
   });
 
   test("lists every source with its licence status and whether it is in use", async ({
@@ -178,12 +198,28 @@ test.describe("privacy page", () => {
     page,
   }) => {
     await page.goto("/privacy");
-    const prose = page.locator("section.prose");
-    await expect(prose.locator("p")).toHaveCount(4);
-    await expect(prose).toContainText("no analytics and no advertising");
+    // Four short readings, each under its own heading.
+    await expect(page.locator(".prose p")).toHaveCount(4);
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "Visitors",
+      "Cookies",
+      "TradingView",
+      "Personal data in the sources",
+    ]);
+    const main = page.locator("main");
+    await expect(main).toContainText("no analytics and no advertising");
     await expect(
-      prose.getByRole("link", { name: "privacy policy" }),
+      main.getByRole("link", { name: "privacy policy" }),
     ).toHaveAttribute("href", "https://www.tradingview.com/privacy-policy/");
+  });
+
+  test("names the language cookie plainly", async ({ page }) => {
+    await page.goto("/privacy");
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Cookies" }),
+    ).toBeVisible();
+    await expect(page.locator("code")).toHaveText("sigi-lang");
+    await expect(page.getByText("lasts a year")).toBeVisible();
   });
 });
 
@@ -198,7 +234,7 @@ test.describe("data page with nothing published yet", () => {
     ).toBeVisible();
     const feeds = section(page, "Checks of each source");
     await expect(
-      feeds.getByRole("row").filter({ hasText: "Not yet" }),
+      feeds.getByRole("row").filter({ hasText: "Not yet checked" }),
     ).toHaveCount(10);
   });
 });
