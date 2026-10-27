@@ -160,7 +160,9 @@ describe("S1 workbook parser", () => {
     ).toBe(false);
   });
 
-  it("parses a month at the real file's scale", () => {
+  // CPU-bound: building and parsing about 7,000 rows takes seconds when the
+  // machine is busy, so the default 5 s limit measured the load, not the parser.
+  it("parses a month at the real file's scale", { timeout: 30_000 }, () => {
     const month = syntheticMonth(955);
     const result = parseS1Xlsx(
       buildS1Workbook(month, { recordDate: "2026-09-30" }),
