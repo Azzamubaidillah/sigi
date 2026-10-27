@@ -465,8 +465,7 @@ review: 2030-06-30
 catalyst: 2030-03-31 First deadline for large caps
 catalyst: 2029-12-15 Board meeting`;
 
-const FLOAT_SUMMARY =
-  "The float rule forces a placement at AAAA within two years.";
+const FLOAT_SUMMARY = THESES.valid.summary;
 
 const CONDITIONS = `# what would show this wrong
 ownership AAAA "PT INDUK AAAA" below 50%

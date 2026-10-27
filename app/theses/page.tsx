@@ -14,15 +14,23 @@ import {
 import { PageHeader, Pill, Section } from "@/app/_components/ui";
 import { formatDate } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { loadConfig } from "@/src/config";
 import type { Lang } from "@/src/i18n/lang";
 import { thesesMessages } from "@/src/i18n/messages/theses";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import { loadTheses, type ThesisSummary } from "@/src/views/theses";
 
 import "../styles/theses.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: thesesMessages[await getLang()].metaTitle };
+  const lang = await getLang();
+  return pageMetadata({
+    lang,
+    title: thesesMessages[lang].metaTitle,
+    description: seoMessages[lang].theses,
+    path: "/theses",
+  });
 }
 
 /** The worked example's lines as a file would write them; code, so the same in both languages. */

@@ -13,9 +13,11 @@ import {
   formatSharesChange,
 } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { loadConfig } from "@/src/config";
 import { commonMessages } from "@/src/i18n/messages/common";
 import { holdersMessages } from "@/src/i18n/messages/holders";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import { loadHolder } from "@/src/views/holders";
 
 import "../../styles/holders.css";
@@ -23,12 +25,24 @@ import "../../styles/holders.css";
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const holder = loadHolder(loadConfig().databasePath, (await params).slug);
-  return {
-    title: holder
-      ? holder.name
-      : holdersMessages[await getLang()].page.notFound,
-  };
+  const lang = await getLang();
+  const slug = (await params).slug;
+  const holder = loadHolder(loadConfig().databasePath, slug);
+  if (!holder) return { title: holdersMessages[lang].page.notFound };
+  return pageMetadata({
+    lang,
+    title: holder.name,
+    description: seoMessages[lang].holder(
+      holder.name,
+      holdersMessages[lang].page.about(
+        holderTypeLabels(holder.types),
+        holder.domiciles.join(", "),
+      ),
+      holder.positions.length,
+      formatDate(holder.month.recordDate, lang),
+    ),
+    path: `/holders/${slug}`,
+  });
 }
 
 /** A figure that is not in a month's file: a dash for the eye, words for a screen reader. */

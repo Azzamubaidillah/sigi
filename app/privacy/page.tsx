@@ -2,11 +2,18 @@ import type { Metadata } from "next";
 
 import { PageHeader, Section } from "@/app/_components/ui";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { privacyMessages } from "@/src/i18n/messages/privacy";
+import { seoMessages } from "@/src/i18n/messages/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
-  return { title: privacyMessages[lang].metaTitle };
+  return pageMetadata({
+    lang,
+    title: privacyMessages[lang].metaTitle,
+    description: seoMessages[lang].privacy,
+    path: "/privacy",
+  });
 }
 
 export default async function PrivacyPage() {

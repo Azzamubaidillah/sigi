@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { S1Citation } from "@/app/_components/Citation";
 import { HolderName } from "@/app/_components/HolderName";
+import { JsonLd } from "@/app/_components/JsonLd";
 import { OwnershipBar } from "@/app/_components/OwnershipBar";
 import { TradingViewWidget } from "@/app/_components/TradingViewWidget";
 import {
@@ -23,11 +24,13 @@ import {
   formatSharesChange,
 } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { localForeignLabel, possibleDeadlines } from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
 import { localise } from "@/src/i18n/define";
 import type { Lang } from "@/src/i18n/lang";
 import { commonMessages } from "@/src/i18n/messages/common";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import { tickerMessages } from "@/src/i18n/messages/ticker";
 import {
   FREE_FLOAT_MINIMUM_HUNDREDTHS,
@@ -61,10 +64,47 @@ function shareCodeOf(raw: string): string | null {
   return /^[A-Z]{4}$/.test(code) ? code : null;
 }
 
+/** Aggregate figures only: a holder's name can be an individual's (PRD C6). */
+function companyDescription(
+  figures: CompanyFigures,
+  recordDate: string,
+  lang: Lang,
+): string {
+  const s = seoMessages[lang];
+  const date = formatDate(recordDate, lang);
+  const bound = figures.freeFloatUpperBoundHundredths;
+  return figures.registerIncomplete
+    ? s.companyIncomplete(figures.shareCode, figures.issuerName, date)
+    : s.company(
+        figures.shareCode,
+        figures.issuerName,
+        formatPercent(bound, lang),
+        date,
+        bound < FREE_FLOAT_MINIMUM_HUNDREDTHS,
+      );
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const m = tickerMessages[await getLang()];
+  const lang = await getLang();
+  const m = tickerMessages[lang];
   const code = shareCodeOf((await params).code);
-  return { title: code ? m.metaTitle(code) : m.notFound };
+  if (!code) return { title: m.notFound };
+  const ownership = loadTickerOwnership(loadConfig().databasePath, code);
+  // A code the register does not list answers 200 with an explanation; it is
+  // not a page to index.
+  if (ownership.kind === "absent") {
+    return { title: m.metaTitle(code), robots: { index: false, follow: true } };
+  }
+  return pageMetadata({
+    lang,
+    title: m.metaTitle(code),
+    description: companyDescription(
+      ownership.figures,
+      ownership.month.recordDate,
+      lang,
+    ),
+    path: `/t/${code}`,
+  });
 }
 
 function Move({ delta, lang }: { delta: number; lang: Lang }) {
@@ -495,7 +535,7 @@ export default async function TickerPage({ params }: Params) {
   if (!code) notFound();
   const lang = await getLang();
   const m = tickerMessages[lang];
-  const { databasePath } = loadConfig();
+  const { databasePath, origin } = loadConfig();
   const ownership = loadTickerOwnership(databasePath, code);
 
   if (ownership.kind === "absent") {
@@ -526,6 +566,26 @@ export default async function TickerPage({ params }: Params) {
   );
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          name: `${figures.shareCode} ${figures.issuerName}`,
+          url: `${origin}/t/${figures.shareCode}`,
+          description: companyDescription(
+            figures,
+            ownership.month.recordDate,
+            lang,
+          ),
+          inLanguage: lang,
+          isPartOf: { "@type": "WebSite", name: "Sigi", url: origin },
+          about: {
+            "@type": "Corporation",
+            name: figures.issuerName,
+            tickerSymbol: `XIDX ${figures.shareCode}`,
+          },
+        }}
+      />
       <PageHeader
         title={
           <span className="ticker-title">

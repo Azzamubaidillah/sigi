@@ -10,16 +10,24 @@ import {
 } from "@/app/_components/ui";
 import { formatDate, formatTimestamp } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { type BriefContext, CONTEXT_SECTIONS } from "@/src/brief/files";
 import { loadConfig } from "@/src/config";
 import type { Lang } from "@/src/i18n/lang";
 import { briefMessages } from "@/src/i18n/messages/brief";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import { loadBrief, type PassedOver } from "@/src/views/brief";
 
 import "../styles/brief.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: briefMessages[await getLang()].metaTitle };
+  const lang = await getLang();
+  return pageMetadata({
+    lang,
+    title: briefMessages[lang].metaTitle,
+    description: seoMessages[lang].brief,
+    path: "/brief",
+  });
 }
 
 /** Where an evidence key leads on this site; null when it has no page. */

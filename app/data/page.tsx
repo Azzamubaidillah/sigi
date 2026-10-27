@@ -13,6 +13,7 @@ import {
 } from "@/app/_components/ui";
 import { formatDate, formatMonth, formatTimestamp } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { loadConfig } from "@/src/config";
 import { S1_PAGE_URL } from "@/src/fetch/idx-listing";
 import { FEEDS, type FeedId, S1_FEED } from "@/src/macro/feeds";
@@ -20,6 +21,7 @@ import { NEWS_FEED, NEWS_SOURCE } from "@/src/news/feeds";
 import { localise } from "@/src/i18n/define";
 import type { Lang } from "@/src/i18n/lang";
 import { dataMessages } from "@/src/i18n/messages/data";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import { type SourceStatus, SOURCES } from "@/src/sources/register";
 import {
   loadFeedStatus,
@@ -70,7 +72,12 @@ function feedLabel(
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
-  return { title: dataMessages[lang].metaTitle };
+  return pageMetadata({
+    lang,
+    title: dataMessages[lang].metaTitle,
+    description: seoMessages[lang].data,
+    path: "/data",
+  });
 }
 
 export default async function DataPage() {

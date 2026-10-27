@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
+import { JsonLd } from "@/app/_components/JsonLd";
 import { OwnershipBar } from "@/app/_components/OwnershipBar";
 import { S1Citation } from "@/app/_components/Citation";
 import { TradingViewWidget } from "@/app/_components/TradingViewWidget";
@@ -12,6 +14,7 @@ import type { Lang } from "@/src/i18n/lang";
 import { briefMessages } from "@/src/i18n/messages/brief";
 import { commonMessages } from "@/src/i18n/messages/common";
 import { marketMessages } from "@/src/i18n/messages/market";
+import { shellMessages } from "@/src/i18n/messages/shell";
 import { FREE_FLOAT_MINIMUM_HUNDREDTHS } from "@/src/investability/rule";
 import { loadBrief } from "@/src/views/brief";
 import { loadEvents } from "@/src/views/events";
@@ -25,6 +28,9 @@ import {
 } from "@/src/views/ownership";
 
 import "./styles/market.css";
+
+// Filters and paging are views of this page, not pages of their own.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -253,6 +259,16 @@ export default async function MarketPage({ searchParams }: Props) {
 
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Sigi",
+          url: config.origin,
+          description: shellMessages[lang].siteDescription,
+          inLanguage: ["en", "id"],
+        }}
+      />
       <PageHeader
         title={m.title}
         lede={m.lede}

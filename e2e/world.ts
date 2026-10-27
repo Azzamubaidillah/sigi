@@ -56,6 +56,7 @@ export const THESES = {
   valid: {
     slug: "float-rule-aaaa",
     title: "Aldebaran and the float rule",
+    summary: "The float rule forces a placement at AAAA within two years.",
     versions: ["2026-10-20", "2026-09-15"],
   },
   /** A conditions block with a bad line: shown as "Conditions unreadable". */

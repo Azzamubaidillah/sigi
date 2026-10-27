@@ -12,11 +12,13 @@ import {
 } from "@/app/_components/ui";
 import { formatDate, formatTimestamp } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { loadConfig } from "@/src/config";
 import { localise } from "@/src/i18n/define";
 import type { Lang } from "@/src/i18n/lang";
 import { dataMessages } from "@/src/i18n/messages/data";
 import { macroMessages } from "@/src/i18n/messages/macro";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import { SOURCES } from "@/src/sources/register";
 import { formatPeriod, loadMacro, type SeriesCard } from "@/src/views/macro";
 
@@ -24,7 +26,12 @@ import "../styles/macro.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
-  return { title: macroMessages[lang].metaTitle };
+  return pageMetadata({
+    lang,
+    title: macroMessages[lang].metaTitle,
+    description: seoMessages[lang].macro,
+    path: "/macro",
+  });
 }
 
 function number(value: number, decimals: number, lang: Lang): string {

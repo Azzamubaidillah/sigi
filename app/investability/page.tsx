@@ -14,11 +14,13 @@ import {
 } from "@/app/_components/ui";
 import { formatDate, formatPercent } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { possibleDeadlines, trancheDeadlines } from "@/app/_lib/labels";
 import { loadConfig } from "@/src/config";
 import { localise } from "@/src/i18n/define";
 import { commonMessages } from "@/src/i18n/messages/common";
 import { investabilityMessages } from "@/src/i18n/messages/investability";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import {
   FREE_FLOAT_MINIMUM_HUNDREDTHS,
   RULE_SOURCES,
@@ -41,7 +43,13 @@ const LISTED = 25;
 const BELOW_REGISTER = "/?sort=float-asc&floatMax=15#register";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: investabilityMessages[await getLang()].metaTitle };
+  const lang = await getLang();
+  return pageMetadata({
+    lang,
+    title: investabilityMessages[lang].metaTitle,
+    description: seoMessages[lang].investability,
+    path: "/investability",
+  });
 }
 
 function Source({

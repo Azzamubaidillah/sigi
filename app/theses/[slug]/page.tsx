@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/app/_components/JsonLd";
 import { ThesisBody } from "@/app/_components/ThesisBody";
 import {
   ConditionTable,
@@ -22,6 +23,7 @@ import {
 } from "@/app/_components/ui";
 import { formatDate } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { loadConfig } from "@/src/config";
 import type { Lang } from "@/src/i18n/lang";
 import { thesesMessages } from "@/src/i18n/messages/theses";
@@ -44,11 +46,16 @@ async function load({ params, searchParams }: Props) {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const [thesis, lang] = await Promise.all([load(props), getLang()]);
-  return {
-    title: thesis
-      ? (thesis.summary.header?.title ?? thesis.summary.slug)
-      : thesesMessages[lang].notFoundTitle,
-  };
+  if (!thesis) return { title: thesesMessages[lang].notFoundTitle };
+  const { header, slug } = thesis.summary;
+  if (!header) return { title: slug };
+  // Every version of a thesis shares one canonical address, the current one.
+  return pageMetadata({
+    lang,
+    title: header.title,
+    description: header.summary,
+    path: `/theses/${slug}`,
+  });
 }
 
 function Diff({
@@ -167,6 +174,25 @@ export default async function ThesisPage(props: Props) {
 
   return (
     <>
+      {header ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: header.title,
+            url: `${loadConfig().origin}/theses/${summary.slug}`,
+            description: header.summary,
+            inLanguage: "en",
+            datePublished: summary.versions.at(-1),
+            dateModified: summary.versions[0],
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Sigi",
+              url: loadConfig().origin,
+            },
+          }}
+        />
+      ) : null}
       <PageHeader
         title={header?.title ?? summary.slug}
         lede={header?.stance}

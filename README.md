@@ -21,6 +21,7 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **Redesign** (2026-10-26, D-027): a new identity (the `sigi` wordmark with a flame on each i, the torch, nila indigo and obor amber, Plus Jakarta Sans and Newsreader) and one design system under every page; the register carries an ownership bar per company, with the free float lit and the 15% minimum marked.
 - **Launch** (2026-10-26, D-028): three theses published (`theses/`: BRIS and CIMB Niaga float steps, coal and the rupiah) and the `X-Robots-Tag: noindex, nofollow` line removed from the site's nginx server block. To take the site out of search engines again, put that header back and reload nginx.
 - **After launch** (2026-10-27, D-029): five or more macro series in every group, the repository made public, a trademark search in the WIPO Global Brand Database, and an IndexNow submission of the sitemap to Bing and the other IndexNow engines. Google Search Console and Bing Webmaster Tools need the owner's sign-in and are not done.
+- **Discovery** (2026-10-27, D-030): each page has its own description and canonical address, company and thesis pages carry structured data, and `/llms.txt` maps the site for AI assistants.
 
 | Doc | Purpose |
 |---|---|

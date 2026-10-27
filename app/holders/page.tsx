@@ -5,15 +5,23 @@ import { HolderTable } from "@/app/_components/HolderTable";
 import { PageHeader, Section } from "@/app/_components/ui";
 import { formatDate } from "@/app/_lib/format";
 import { getLang } from "@/app/_lib/lang";
+import { pageMetadata } from "@/app/_lib/seo";
 import { loadConfig } from "@/src/config";
 import { commonMessages } from "@/src/i18n/messages/common";
 import { holdersMessages } from "@/src/i18n/messages/holders";
+import { seoMessages } from "@/src/i18n/messages/seo";
 import { loadHolderIndex } from "@/src/views/holders";
 
 import "../styles/holders.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: holdersMessages[await getLang()].index.metaTitle };
+  const lang = await getLang();
+  return pageMetadata({
+    lang,
+    title: holdersMessages[lang].index.metaTitle,
+    description: seoMessages[lang].holders,
+    path: "/holders",
+  });
 }
 
 export default async function HoldersPage() {
