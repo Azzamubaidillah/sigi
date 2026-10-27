@@ -367,6 +367,10 @@ const FEEDS: Record<string, Feed> = {
     source: "S8",
     series: { "usd-broad": line(WEEKDAYS_PUBLISHED, 118, 0.01) },
   },
+  "bis-eer": {
+    source: "S11",
+    series: { "reer-idr": line(MONTHS_PUBLISHED, 98, -0.4) },
+  },
 };
 
 function publishMacro(sqlite: Database.Database): void {

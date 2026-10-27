@@ -63,7 +63,7 @@ flowchart LR
 |---|---|---|
 | Ownership (S1) | ~7,200 | One row per issuer–holder pair |
 | KSEI composition (S2) | ~3,750 | One row per security; not fetched until cleared |
-| Macro observations | ~8,000 stored | 13 series, each replaced whole by its latest file (daily series hold three years, monthly ones from 2016, the Pink Sheet from 1960) |
+| Macro observations | ~8,000 stored | 16 series, each replaced whole by its latest file (daily series hold three years, monthly ones from 2016, the Pink Sheet from 1960) |
 | Theses | Tens | Markdown plus typed conditions |
 
 That is tens of thousands of rows a year. **SQLite in WAL mode with Drizzle** (as in Sunrise) is enough for P1. Re-evaluate Postgres at P3, when reader accounts and concurrent writes arrive.

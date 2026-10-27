@@ -20,7 +20,8 @@
     "e2e": "playwright test",
     "lighthouse": "playwright test --config playwright.lighthouse.config.ts",
     "verify:clean": "tsx scripts/verify-clean.ts",
-    "holders:candidates": "tsx scripts/holder-candidates.ts"
+    "holders:candidates": "tsx scripts/holder-candidates.ts",
+    "indexnow": "tsx scripts/indexnow.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

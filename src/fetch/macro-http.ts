@@ -232,6 +232,13 @@ async function fetchFred(
   return { bytes: await sigiGet(url), url };
 }
 
+/** Monthly history of Indonesia's real broad effective exchange rate, from 2016 like the BI tables. */
+async function fetchBisEer(): Promise<{ bytes: Uint8Array; url: string }> {
+  const url =
+    "https://stats.bis.org/api/v2/data/dataflow/BIS/WS_EER/1.0/M.R.B.ID?format=csv&startPeriod=2016-01";
+  return { bytes: await sigiGet(url), url };
+}
+
 /** Fetches one macro feed's file, ready for `importMacroFile`. */
 export async function fetchMacroFeed(
   feed: FeedId,
@@ -260,10 +267,21 @@ export async function fetchMacroFeed(
     }
     case "fred-DFEDTARU":
     case "fred-DGS10":
-    case "fred-DTWEXBGS": {
+    case "fred-DTWEXBGS":
+    case "fred-DEXCHUS":
+    case "fred-DEXINUS": {
       const id = feed.slice("fred-".length);
       const { bytes, url } = await fetchFred(id, at);
       return { bytes, originalName: `${id}.csv`, sourceUrl: url, accessedOn };
+    }
+    case "bis-eer": {
+      const { bytes, url } = await fetchBisEer();
+      return {
+        bytes,
+        originalName: "bis-eer-id.csv",
+        sourceUrl: url,
+        accessedOn,
+      };
     }
   }
 }

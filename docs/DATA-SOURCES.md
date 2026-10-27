@@ -86,7 +86,7 @@ The API licence is non-sublicensable and forbids selling or *seeking revenue* fr
 | Content | Global series, e.g. US policy rate and Treasury yields |
 | Terms | Free API key; series from third parties keep their own copyright and may carry redistribution limits ([API terms](https://fred.stlouisfed.org/docs/api/terms_of_use.html), via [summary](https://freeapihub.com/apis/fred-api)) [M] |
 | Access | `fredgraph.csv?id=<ID>`, one series per request (several at once come back as a ZIP grouped by frequency), once a day, under Sigi's own user agent [H] |
-| Series in use | DFEDTARU, DGS10, DTWEXBGS: source "Board of Governors of the Federal Reserve System (US)"; their series notes carry no copyright statement, unlike third-party series, read 2026-10-24 [M] |
+| Series in use | DFEDTARU, DGS10, DTWEXBGS, DEXCHUS, DEXINUS: source "Board of Governors of the Federal Reserve System (US)"; their series notes carry no copyright statement, unlike third-party series, read 2026-10-24. DEXCHUS and DEXINUS (the H.10 noon buying rates for the yuan and the Indian rupee) are marked "Public Domain: Citation Requested" on FRED, read 2026-10-27 [M] |
 | Status | **cleared per series.** Only use series whose source note shows public-domain origin (e.g. Federal Reserve Board, US Treasury); record each series' licence in the registry |
 
 ## S9. IMF data
@@ -101,6 +101,16 @@ Commercial reuse requires permission (*"For any potential commercial reuse of IM
 | Publisher RSS feeds (e.g. Kontan, Bisnis, CNBC Indonesia) | Headline, publisher, time and link only; no article text | Portfolio phase: cleared [L]; product: re-check each publisher's terms. **In use since 2026-10-25: CNBC Indonesia's market feed only** (`https://www.cnbcindonesia.com/market/rss`, plain GET under Sigi's user agent, once a day, 30 days kept, never shown on a page). From the host on 2026-10-25, Kontan's feed URL answered with an HTML page, Kontan's investasi subdomain and Bisnis answered 403. The publisher's terms were not read in full [L] |
 | MSCI and IDX press releases | Cited and linked in editorial content | cleared (quotation with a link) |
 | Web pages the brief agent cites (PRD F12) | Link plus a short factual statement in the agent's own words; never quoted article text; only figures that carry a link | Portfolio phase: cleared [L]. The prompt requires a source URL for every figure that is not in the context. The validator checks that each source is an http(s) link and that no text reads as a recommendation; it cannot check that every figure has a source or that no article text was quoted |
+
+## S11. BIS effective exchange rate indices
+
+| Field | Value |
+|---|---|
+| Content | The real effective exchange rate of the rupiah against a broad basket of 64 economies, monthly, index 2020 = 100 (`WS_EER`, key `M.R.B.ID`). A rise means the rupiah got dearer against trading partners after adjusting for relative consumer prices |
+| Terms | [BIS terms and conditions](https://www.bis.org/terms_conditions.htm), copyright and permissions, read 2026-10-27: *"Users may download, display, print out, photocopy or redistribute any BIS Material for non-commercial purposes."* without written permission. The same page excludes the Data Portal's statistics from the clause on reproducing a limited extract in other publications; the clause above does not exclude them [M] |
+| Access | One plain GET of `https://stats.bis.org/api/v2/data/dataflow/BIS/WS_EER/1.0/M.R.B.ID?format=csv&startPeriod=2016-01` once a day, under Sigi's own user agent. The file has 13 fixed columns; the parser reads only a monthly, real, broad row for Indonesia and fails the whole file on any other row or a shifted column [H]. Fetched directly from the BIS rather than through FRED, whose copy ran two months behind on 2026-10-27 (July against September) |
+| Release | The BIS says monthly data are released around mid-month; Sigi shows the next date as expected, never announced [M] |
+| Status | **Portfolio phase: cleared** for non-commercial display with the BIS cited. **Product: requires the BIS's permission** |
 
 ## Excluded sources
 

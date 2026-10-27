@@ -4,6 +4,7 @@ import {
   type FredId,
   type MacroParseResult,
   parseBiExport,
+  parseBisEerCsv,
   parseFredCsv,
   parsePinkSheet,
 } from "./parse";
@@ -88,6 +89,17 @@ export const FEEDS = {
   "fred-DFEDTARU": fredFeed("DFEDTARU", "fed-funds"),
   "fred-DGS10": fredFeed("DGS10", "us-10y"),
   "fred-DTWEXBGS": fredFeed("DTWEXBGS", "usd-broad"),
+  "fred-DEXCHUS": fredFeed("DEXCHUS", "usd-cny"),
+  "fred-DEXINUS": fredFeed("DEXINUS", "usd-inr"),
+  "bis-eer": {
+    source: "S11",
+    title: "BIS effective exchange rates: Indonesia, real, broad basket",
+    pageUrl: "https://data.bis.org/topics/EER",
+    parserVersion: "bis-eer-csv/1",
+    extension: "csv",
+    series: ["reer-idr"],
+    parse: parseBisEerCsv,
+  },
 } as const satisfies Record<string, FeedDefinition>;
 export type FeedId = keyof typeof FEEDS;
 

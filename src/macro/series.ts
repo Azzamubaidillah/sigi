@@ -193,6 +193,37 @@ export const SERIES = {
       },
     ],
   },
+  "reer-idr": {
+    name: {
+      en: "Rupiah, real effective exchange rate",
+      id: "Kurs efektif riil rupiah",
+    },
+    group: "indonesia",
+    source: "S11",
+    sourceName: "Real effective exchange rate, broad basket (64 economies)",
+    unit: "index (2020 = 100)",
+    frequency: "monthly",
+    decimals: 2,
+    plausible: { min: 10, max: 500 },
+    derived: "yoy",
+    release: { kind: "monthly", aroundDay: 15 },
+    sectors: [
+      {
+        sector: "Basic Materials",
+        rationale: {
+          en: "Exporters of metals and chemicals lose price competitiveness against foreign rivals when the rupiah rises in real terms, and gain it when it falls.",
+          id: "Eksportir logam dan bahan kimia kehilangan daya saing harga terhadap pesaing asing ketika rupiah menguat secara riil, dan memperolehnya ketika rupiah melemah.",
+        },
+      },
+      {
+        sector: "Consumer Non-Cyclicals",
+        rationale: {
+          en: "Makers that import ingredients and packaging pay less for them when the rupiah is dearer in real terms.",
+          id: "Produsen yang mengimpor bahan baku dan kemasan membayar lebih murah untuknya ketika rupiah lebih mahal secara riil.",
+        },
+      },
+    ],
+  },
   brent: {
     name: { en: "Crude oil, Brent", id: "Minyak mentah, Brent" },
     group: "commodities",
@@ -409,6 +440,69 @@ export const SERIES = {
         rationale: {
           en: "Commodity exporters gain in rupiah when the dollar strengthens.",
           id: "Eksportir komoditas diuntungkan dalam rupiah ketika dolar menguat.",
+        },
+      },
+    ],
+  },
+  "usd-cny": {
+    name: {
+      en: "Chinese yuan per US dollar",
+      id: "Yuan China per dolar AS",
+    },
+    group: "global",
+    source: "S8",
+    sourceName:
+      "Chinese Yuan Renminbi to U.S. Dollar Spot Exchange Rate [DEXCHUS]",
+    unit: "CNY per USD",
+    frequency: "daily",
+    decimals: 4,
+    plausible: { min: 1, max: 20 },
+    derived: "yoy",
+    release: { kind: "weekly", weekday: 1 },
+    sectors: [
+      {
+        sector: "Energy",
+        rationale: {
+          en: "China is among the largest buyers of Indonesian coal, which is priced in dollars, so a weaker yuan makes it dearer for Chinese buyers.",
+          id: "China adalah salah satu pembeli batu bara Indonesia terbesar, yang dihargai dalam dolar, sehingga yuan yang melemah membuatnya lebih mahal bagi pembeli China.",
+        },
+      },
+      {
+        sector: "Basic Materials",
+        rationale: {
+          en: "Much of Indonesia's nickel goes to Chinese mills, so the yuan sets how dear it is for them.",
+          id: "Sebagian besar nikel Indonesia dikirim ke pabrik di China, sehingga yuan menentukan seberapa mahal nikel itu bagi mereka.",
+        },
+      },
+    ],
+  },
+  "usd-inr": {
+    name: {
+      en: "Indian rupees per US dollar",
+      id: "Rupee India per dolar AS",
+    },
+    group: "global",
+    source: "S8",
+    sourceName: "Indian Rupees to U.S. Dollar Spot Exchange Rate [DEXINUS]",
+    unit: "INR per USD",
+    frequency: "daily",
+    decimals: 2,
+    plausible: { min: 10, max: 500 },
+    derived: "yoy",
+    release: { kind: "weekly", weekday: 1 },
+    sectors: [
+      {
+        sector: "Energy",
+        rationale: {
+          en: "India is among the largest buyers of Indonesian coal, which is priced in dollars, so a weaker rupee makes it dearer for Indian buyers.",
+          id: "India adalah salah satu pembeli batu bara Indonesia terbesar, yang dihargai dalam dolar, sehingga rupee yang melemah membuatnya lebih mahal bagi pembeli India.",
+        },
+      },
+      {
+        sector: "Consumer Non-Cyclicals",
+        rationale: {
+          en: "India is among the largest buyers of Indonesian palm oil, so a weaker rupee makes it dearer there and can slow orders.",
+          id: "India adalah salah satu pembeli minyak sawit Indonesia terbesar, sehingga rupee yang melemah membuatnya lebih mahal di sana dan dapat memperlambat pesanan.",
         },
       },
     ],

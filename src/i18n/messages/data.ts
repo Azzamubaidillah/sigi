@@ -53,7 +53,7 @@ export const dataMessages = defineMessages({
       noteBefore: "A worker checks every source once a day. The exchange's ",
       noteLink: "share-ownership data page",
       noteAfter:
-        " is read in a browser and every monthly file of holders above 1% not yet imported is taken, oldest first (D-021). Bank Indonesia's tables are exported as a reader would export them (D-023); the World Bank and FRED files are downloaded as published.",
+        " is read in a browser and every monthly file of holders above 1% not yet imported is taken, oldest first (D-021). Bank Indonesia's tables are exported as a reader would export them (D-023); the World Bank, FRED and BIS files are downloaded as published.",
     },
     imports: {
       heading: "Imports",
@@ -173,7 +173,7 @@ export const dataMessages = defineMessages({
       noteBefore: "Sebuah worker memeriksa setiap sumber sekali sehari. ",
       noteLink: "Halaman data kepemilikan saham",
       noteAfter:
-        " milik bursa dibaca lewat peramban, dan setiap berkas bulanan pemegang saham di atas 1% yang belum diimpor diambil, dari yang terlama (D-021). Tabel Bank Indonesia diekspor seperti yang dilakukan pembaca (D-023); berkas Bank Dunia dan FRED diunduh sebagaimana diterbitkan.",
+        " milik bursa dibaca lewat peramban, dan setiap berkas bulanan pemegang saham di atas 1% yang belum diimpor diambil, dari yang terlama (D-021). Tabel Bank Indonesia diekspor seperti yang dilakukan pembaca (D-023); berkas Bank Dunia, FRED, dan BIS diunduh sebagaimana diterbitkan.",
     },
     imports: {
       heading: "Impor",

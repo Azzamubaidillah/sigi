@@ -37,7 +37,7 @@ export const shellMessages = defineMessages({
         "Sigi means a torch; menyigi, to light up and to investigate carefully (KBBI).",
       notAdvice: "A research site, not investment advice.",
       provenance:
-        "Ownership figures come from the monthly register of holders above 1% published by PT Bursa Efek Indonesia with data from PT Kustodian Sentral Efek Indonesia; macro figures from Bank Indonesia, the World Bank and FRED. Charts and the price screener are TradingView widgets.",
+        "Ownership figures come from the monthly register of holders above 1% published by PT Bursa Efek Indonesia with data from PT Kustodian Sentral Efek Indonesia; macro figures from Bank Indonesia, the World Bank, FRED and the Bank for International Settlements. Charts and the price screener are TradingView widgets.",
       links: {
         label: "About the site",
         sources: "Data & sources",
@@ -80,7 +80,7 @@ export const shellMessages = defineMessages({
         "Sigi berarti obor; menyigi berarti menerangi dan menyelidiki dengan cermat (KBBI).",
       notAdvice: "Situs riset, bukan nasihat investasi.",
       provenance:
-        "Data kepemilikan berasal dari daftar bulanan pemegang saham di atas 1% yang diterbitkan PT Bursa Efek Indonesia dengan data dari PT Kustodian Sentral Efek Indonesia; data makro dari Bank Indonesia, Bank Dunia, dan FRED. Grafik dan penyaring harga adalah widget TradingView.",
+        "Data kepemilikan berasal dari daftar bulanan pemegang saham di atas 1% yang diterbitkan PT Bursa Efek Indonesia dengan data dari PT Kustodian Sentral Efek Indonesia; data makro dari Bank Indonesia, Bank Dunia, FRED, dan Bank untuk Penyelesaian Internasional (BIS). Grafik dan penyaring harga adalah widget TradingView.",
       links: {
         label: "Tentang situs",
         sources: "Data & sumber",

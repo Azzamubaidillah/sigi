@@ -17,7 +17,12 @@ import {
 import { nextRelease, seriesFigures } from "../views/macro";
 import type { FeedId } from "./feeds";
 import { importMacroFile, type MacroImportResult } from "./import";
-import { parseBiExport, parseFredCsv, parsePinkSheet } from "./parse";
+import {
+  parseBiExport,
+  parseBisEerCsv,
+  parseFredCsv,
+  parsePinkSheet,
+} from "./parse";
 import { SERIES } from "./series";
 
 const MONTHS_ID = [
@@ -249,6 +254,38 @@ describe("macro parsers", () => {
     ).toBe(false);
     expect(
       parseFredCsv("DGS10", csv("observation_date,DGS10\n2026-10-21,n/a\n")).ok,
+    ).toBe(false);
+  });
+
+  it("reads the BIS CSV for Indonesia's real broad index, and refuses any other row or a shifted column", () => {
+    const header =
+      "FREQ,EER_TYPE,EER_BASKET,REF_AREA,UNIT_MEASURE,TIME_FORMAT,COLLECTION,TITLE_TS,TIME_PERIOD,OBS_VALUE,OBS_STATUS,OBS_CONF,OBS_PRE_BREAK";
+    const row = (period: string, value: string, area = "ID", type = "R") =>
+      `M,${type},B,${area},882,,A,Indonesia - Real - Broad (64 economies),${period},${value},A,F,`;
+    const csv = (...lines: string[]) =>
+      new TextEncoder().encode([header, ...lines].join("\n") + "\n");
+    const parsed = parseBisEerCsv(
+      csv(row("2026-09", "87.76"), row("2026-08", "87.74")),
+    );
+    expect(parsed.ok && parsed.series.get("reer-idr")).toEqual([
+      { period: "2026-08", value: 87.74 },
+      { period: "2026-09", value: 87.76 },
+    ]);
+    // A nominal index or another economy is not this series.
+    expect(parseBisEerCsv(csv(row("2026-09", "87.76", "ID", "N"))).ok).toBe(
+      false,
+    );
+    expect(parseBisEerCsv(csv(row("2026-09", "87.76", "TH"))).ok).toBe(false);
+    expect(parseBisEerCsv(csv(row("2026-13", "87.76"))).ok).toBe(false);
+    expect(parseBisEerCsv(csv(row("2026-09", "n/a"))).ok).toBe(false);
+    expect(
+      parseBisEerCsv(csv(row("2026-09", "87.76"), row("2026-09", "87.8"))).ok,
+    ).toBe(false);
+    // A quoted comma would shift every later column; it fails the file instead.
+    expect(
+      parseBisEerCsv(
+        csv('M,R,B,ID,882,,A,"Indonesia, Real",2026-09,87.76,A,F,'),
+      ).ok,
     ).toBe(false);
   });
 });

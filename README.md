@@ -14,12 +14,13 @@ A research site for Indonesian listed companies. It covers who owns each company
 - **M1** (deployed 2026-10-23): the monthly >1% holders import with validation gates and fail-closed publishing (PRD F1), data health and sources (F10), ownership per company (F2), and the Dokploy deployment.
 - **M2** (deployed 2026-10-23): the investability tracker against the 15% free-float rule (F3), the holder explorer for institutions (F4), and the market page with the ownership screen and TradingView widgets (F9).
 - **Automation** (2026-10-24): a worker fetches the monthly files from the exchange's site and imports them; there is no admin, upload or sign-in (D-021).
-- **M3** (deployed 2026-10-24): the macro dashboard (F6) at `/macro`, fed daily from Bank Indonesia, the World Bank Pink Sheet and FRED (D-023).
+- **M3** (deployed 2026-10-24): the macro dashboard (F6) at `/macro`, fed daily from Bank Indonesia, the World Bank Pink Sheet, FRED and, since D-029, the Bank for International Settlements; 16 series in three groups.
 - **M4** (deployed 2026-10-25): theses (F7) at `/theses`, files in `theses/` with typed invalidation conditions that the worker checks daily (D-024).
 - **M5** (deployed 2026-10-25): the daily brief (F12) at `/brief`: an agent reads Sigi's own readings each morning and writes one file that the page validates before showing (D-025).
 - **M6** (deployed 2026-10-25): the company page with its dates and TradingView sections (F8), English and Indonesian on every page (F11, D-026), Playwright and Lighthouse checks in CI.
 - **Redesign** (2026-10-26, D-027): a new identity (the `sigi` wordmark with a flame on each i, the torch, nila indigo and obor amber, Plus Jakarta Sans and Newsreader) and one design system under every page; the register carries an ownership bar per company, with the free float lit and the 15% minimum marked.
 - **Launch** (2026-10-26, D-028): three theses published (`theses/`: BRIS and CIMB Niaga float steps, coal and the rupiah) and the `X-Robots-Tag: noindex, nofollow` line removed from the site's nginx server block. To take the site out of search engines again, put that header back and reload nginx.
+- **After launch** (2026-10-27, D-029): five or more macro series in every group, the repository made public, a trademark search in the WIPO Global Brand Database, and an IndexNow submission of the sitemap to Bing and the other IndexNow engines. Google Search Console and Bing Webmaster Tools need the owner's sign-in and are not done.
 
 | Doc | Purpose |
 |---|---|
@@ -94,7 +95,7 @@ price BBRI below 3500
 ````
 
 - **Header:** status is `active`, `invalidated` or `closed`; `catalyst` may repeat. The stance describes the view: ratings, targets and a sentence opening with buy, sell or hold are refused.
-- **Conditions:** `ownership` names an institution as the register spells it and compares its position; `float` compares the free-float upper bound and takes only `below`, optionally from a date; `macro` takes a series id (`bi-rate`, `cpi-yoy`, `jisdor`, `fx-reserves`, `brent`, `coal`, `palm-oil`, `nickel`, `tin`, `gold`, `fed-funds`, `us-10y`, `usd-broad`) and a number in that series' unit on `/macro`; `date` is met on the day it names; `price` is always a manual check, since Sigi stores no prices.
+- **Conditions:** `ownership` names an institution as the register spells it and compares its position; `float` compares the free-float upper bound and takes only `below`, optionally from a date; `macro` takes a series id (`bi-rate`, `cpi-yoy`, `jisdor`, `fx-reserves`, `reer-idr`, `brent`, `coal`, `palm-oil`, `nickel`, `tin`, `gold`, `fed-funds`, `us-10y`, `usd-broad`, `usd-cny`, `usd-inr`) and a number in that series' unit on `/macro`; `date` is met on the day it names; `price` is always a manual check, since Sigi stores no prices.
 - **Comments:** a line starting with `#` is ignored in either block; a `#` later in a line is part of the value.
 
 One bad line in either block shows as "Header unreadable" or "Conditions unreadable", with the line and the reason; nothing is guessed. A closed thesis needs a `## Post-mortem` section. The worker records each condition as met, not met, unknown (with the reason) or manual each day; met conditions of active theses lead `/theses`.
@@ -107,5 +108,7 @@ Production is two Dokploy applications built from the one `Dockerfile` on the ho
 - **Data:** the host's data directory and its `.env` (owner `1000`, mode `600`) are bind-mounted into both containers. That `.env` sets `SIGI_PUBLIC_ORIGIN` and `SIGI_LOG_LEVEL`; Sigi holds no secrets.
 - **Start-up:** the web container migrates the database before it serves. The worker waits until the database is current, so only one process ever migrates.
 - **Daily brief:** `sh scripts/install-brief-schedule.sh` installs the runner, prompt and permissions in `/opt/sigi-brief` on the host and one cron line (hourly at :10; it acts at 06:00 Jakarta). It needs the unprivileged user `sunrise-agent` with Claude Code and its credential. The web app reads the files through one bind mount, `/opt/sigi-brief` at `/opt/sigi/data/brief`, added once to `sigi-web` in Dokploy. To run it by hand: `/opt/sigi-brief/brief-run.sh --any-hour`. To withdraw a brief, add its date and a reason to `src/brief/unpublished.ts` and deploy.
+
+No licence is granted yet: the code is public to read, and all rights are reserved until one is chosen.
 
 Not investment advice.

@@ -147,6 +147,20 @@ export const SOURCES = {
     },
     live: true,
   },
+  S11: {
+    name: {
+      en: "BIS effective exchange rate indices",
+      id: "Indeks kurs efektif BIS",
+    },
+    publisher: "Bank for International Settlements",
+    url: "https://data.bis.org/topics/EER",
+    status: "cleared-portfolio",
+    terms: {
+      en: "Non-commercial use is allowed without permission, with the BIS cited. Commercial use would need the BIS's permission.",
+      id: "Penggunaan nonkomersial boleh tanpa izin, dengan mencantumkan BIS sebagai sumber. Penggunaan komersial memerlukan izin BIS.",
+    },
+    live: true,
+  },
 } as const satisfies Record<string, SourceEntry>;
 
 export type SourceId = keyof typeof SOURCES;

@@ -76,7 +76,9 @@ function Tile({ card, lang }: { card: SeriesCard; lang: Lang }) {
   const values = card.history.map((o) => o.value);
   const next = card.nextRelease;
   const kind =
-    definition.source === "S6" || definition.source === "S7"
+    definition.source === "S6" ||
+    definition.source === "S7" ||
+    definition.source === "S11"
       ? definition.source
       : "S8";
   const citation = m.citation[kind];

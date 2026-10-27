@@ -13,7 +13,7 @@ test.describe("data and sources page", () => {
     await page.goto("/data");
     // Two feeds failed their last check; the pill says so before any table.
     await expect(page.locator(".page-head-aside .pill")).toHaveText(
-      "2 of 10 sources failed their last check",
+      "2 of 13 sources failed their last check",
     );
     const s1 = section(page, "Holders above 1% (S1)");
     await expect(s1).toContainText("30 Sept 2026");
@@ -27,7 +27,7 @@ test.describe("data and sources page", () => {
     await expect(s1).toContainText("7 Nov 2026");
     await expect(s1).toContainText("Covers the end of October 2026");
     await expect(section(page, "Checks of each source")).toContainText(
-      "7 of 10 sources passed their last check; 2 failed and 1 not yet checked.",
+      "8 of 13 sources passed their last check; 2 failed and 3 not yet checked.",
     );
   });
 
@@ -89,14 +89,14 @@ test.describe("data and sources page", () => {
     await page.goto("/data");
     const imports = section(page, "Imports");
     const published = imports.getByRole("row").filter({ hasText: "Published" });
-    // Two S1 months and five macro files are published; the S1 months are both there.
+    // Two S1 months and six macro files are published; the S1 months are both there.
     await expect(
       imports.getByRole("row").filter({ hasText: "2026-09-30.xlsx" }),
     ).toContainText("Published");
     await expect(
       imports.getByRole("row").filter({ hasText: "2026-08-31.xlsx" }),
     ).toContainText("Published");
-    await expect(published).toHaveCount(7);
+    await expect(published).toHaveCount(8);
     await expect(section(page, "Holders above 1% (S1)")).toContainText(
       "30 Sept 2026",
     );
@@ -141,8 +141,8 @@ test.describe("data and sources page", () => {
       "Next check",
       "Last new data",
     ]);
-    // The exchange page, four BI tables' worth of feeds, the pink sheet, three FRED series and news.
-    await expect(feeds.locator("tbody tr")).toHaveCount(10);
+    // The exchange page, four BI tables' worth of feeds, the pink sheet, five FRED series, the BIS and news.
+    await expect(feeds.locator("tbody tr")).toHaveCount(13);
     const failed = feeds.getByRole("row", { name: /FRED DFEDTARU/ });
     await expect(failed).toContainText("Failed");
     await expect(failed).toContainText("HTTP 503 from fred.stlouisfed.org");
@@ -171,7 +171,7 @@ test.describe("data and sources page", () => {
       "Terms",
       "In use",
     ]);
-    await expect(sources.locator("tbody tr")).toHaveCount(10);
+    await expect(sources.locator("tbody tr")).toHaveCount(11);
     const s1 = sources.getByRole("row", { name: /^S1 / });
     await expect(s1).toContainText("Cleared for non-commercial use");
     await expect(s1).toContainText("Yes");
@@ -235,6 +235,6 @@ test.describe("data page with nothing published yet", () => {
     const feeds = section(page, "Checks of each source");
     await expect(
       feeds.getByRole("row").filter({ hasText: "Not yet checked" }),
-    ).toHaveCount(10);
+    ).toHaveCount(13);
   });
 });

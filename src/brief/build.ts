@@ -216,9 +216,9 @@ function macroSection(
   return {
     key: "macro",
     asOf: today,
-    source: "S6, S7, S8",
+    source: "S6, S7, S8, S11",
     evidenceStatus:
-      "Values as published by Bank Indonesia, the World Bank and FRED. A release date is when Sigi first saw the value, at the resolution of a daily check; expected dates come from each source's usual cadence and are not announcements.",
+      "Values as published by Bank Indonesia, the World Bank, FRED and the Bank for International Settlements. A release date is when Sigi first saw the value, at the resolution of a daily check; expected dates come from each source's usual cadence and are not announcements.",
     released: published
       .filter((card) => options.now - card.latestSeenAt <= RELEASED_WITHIN_MS)
       .map((card) => ({
@@ -329,7 +329,7 @@ function thesesSection(
     key: "theses",
     asOf: lastChecked ?? "not checked yet",
     source:
-      "Theses in the repository; conditions checked by the worker against S1, S6, S7 and S8",
+      "Theses in the repository; conditions checked by the worker against S1, S6, S7, S8 and S11",
     evidenceStatus:
       "The author's own theses. Each condition is the worker's daily check against Sigi's published data: met, not met, unknown with its reason, or a manual check for prices.",
     items,

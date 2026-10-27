@@ -277,6 +277,8 @@ export const FRED_SERIES = {
   DFEDTARU: "fed-funds",
   DGS10: "us-10y",
   DTWEXBGS: "usd-broad",
+  DEXCHUS: "usd-cny",
+  DEXINUS: "usd-inr",
 } as const satisfies Record<string, SeriesId>;
 export type FredId = keyof typeof FRED_SERIES;
 
@@ -312,5 +314,68 @@ export function parseFredCsv(
     }
     const series = FRED_SERIES[fredId];
     return new Map([[series, sorted(observations, series)]]);
+  });
+}
+
+const BIS_COLUMNS = [
+  "FREQ",
+  "EER_TYPE",
+  "EER_BASKET",
+  "REF_AREA",
+  "UNIT_MEASURE",
+  "TIME_FORMAT",
+  "COLLECTION",
+  "TITLE_TS",
+  "TIME_PERIOD",
+  "OBS_VALUE",
+  "OBS_STATUS",
+  "OBS_CONF",
+  "OBS_PRE_BREAK",
+] as const;
+
+/**
+ * The BIS Data Portal's CSV for Indonesia's real effective exchange rate,
+ * broad basket, monthly (S11): one row per month, every column fixed. A field
+ * that holds a comma would be quoted and so change the column count, which
+ * fails the file instead of shifting a value.
+ */
+export function parseBisEerCsv(bytes: Uint8Array): MacroParseResult {
+  return attempt(() => {
+    const lines = new TextDecoder("utf-8", { fatal: true })
+      .decode(bytes)
+      .split(/\r?\n/)
+      .filter((line) => line.trim() !== "");
+    if (lines[0] !== BIS_COLUMNS.join(",")) {
+      throw new LayoutError(
+        `header is "${lines[0] ?? ""}"; expected "${BIS_COLUMNS.join(",")}"`,
+      );
+    }
+    const observations: Observation[] = [];
+    for (const [index, line] of lines.slice(1).entries()) {
+      const where = `line ${index + 2}`;
+      const fields = line.split(",");
+      if (fields.length !== BIS_COLUMNS.length) {
+        throw new LayoutError(
+          `${where}: ${fields.length} fields, expected ${BIS_COLUMNS.length}`,
+        );
+      }
+      const [freq, type, basket, area] = fields;
+      if (freq !== "M" || type !== "R" || basket !== "B" || area !== "ID") {
+        throw new LayoutError(
+          `${where}: the row is ${freq}/${type}/${basket}/${area}, not Indonesia's monthly real broad index (M/R/B/ID)`,
+        );
+      }
+      const period = fields[8];
+      const month = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(period);
+      if (!month) {
+        throw new LayoutError(`${where}: period "${period}" is not YYYY-MM`);
+      }
+      const raw = fields[9];
+      if (!/^-?\d+(\.\d+)?$/.test(raw)) {
+        throw new LayoutError(`${where}: "${raw}" is not a number`);
+      }
+      observations.push({ period, value: Number(raw) });
+    }
+    return new Map([["reer-idr", sorted(observations, "reer-idr")]]);
   });
 }

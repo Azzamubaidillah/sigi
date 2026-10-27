@@ -62,6 +62,11 @@ export const macroMessages = defineMessages({
         after: (accessed: string) =>
           `, retrieved from FRED, Federal Reserve Bank of St. Louis, ${accessed}, `,
       },
+      S11: {
+        name: "Bank for International Settlements",
+        publisher: "Bank for International Settlements, ",
+        after: (accessed: string) => `, ${accessed}, `,
+      },
     },
     units: {
       "IDR per USD": "IDR per USD",
@@ -70,6 +75,7 @@ export const macroMessages = defineMessages({
       "USD per tonne": "USD per tonne",
       "USD per troy ounce": "USD per troy ounce",
       "index (Jan 2006 = 100)": "index (Jan 2006 = 100)",
+      "index (2020 = 100)": "index (2020 = 100)",
     } as Record<string, string>,
   },
   id: {
@@ -134,6 +140,11 @@ export const macroMessages = defineMessages({
         after: (accessed: string) =>
           `, diambil dari FRED, Federal Reserve Bank of St. Louis, ${accessed}, `,
       },
+      S11: {
+        name: "Bank untuk Penyelesaian Internasional (BIS)",
+        publisher: "Bank untuk Penyelesaian Internasional (BIS), ",
+        after: (accessed: string) => `, ${accessed}, `,
+      },
     },
     units: {
       "IDR per USD": "IDR per USD",
@@ -142,6 +153,7 @@ export const macroMessages = defineMessages({
       "USD per tonne": "USD per ton",
       "USD per troy ounce": "USD per troy ons",
       "index (Jan 2006 = 100)": "indeks (Jan 2006 = 100)",
+      "index (2020 = 100)": "indeks (2020 = 100)",
     } as Record<string, string>,
   },
 });

@@ -19,8 +19,15 @@ test.describe("macro page", () => {
       "Global money",
       "Sector indices",
     ]);
-    // 4 + 6 + 3 series, each with a tile.
-    await expect(page.locator("article.tile")).toHaveCount(13);
+    // The launch bar (PRD §10): five or more series in each group, each with a tile.
+    for (const [group, count] of [
+      ["indonesia", 5],
+      ["commodities", 6],
+      ["global", 5],
+    ] as const) {
+      await expect(page.locator(`#${group} article.tile`)).toHaveCount(count);
+    }
+    await expect(page.locator("article.tile")).toHaveCount(16);
   });
 
   test("a published series shows its value, move, chart, range and, folded, its source and next release", async ({
@@ -53,6 +60,25 @@ test.describe("macro page", () => {
     await expect(
       source.getByRole("link", { name: "example.test" }),
     ).toHaveAttribute("href", "https://example.test/macro/bi-rate");
+  });
+
+  test("a series from the BIS cites the BIS, with its terms of use", async ({
+    page,
+  }) => {
+    await page.goto("/macro");
+    const reer = tile(page, "Rupiah, real effective exchange rate");
+    await expect(reer.locator(".tile-value")).toContainText(
+      "index (2020 = 100)",
+    );
+    const source = reer.locator("details.src").filter({
+      hasText: "Source: Bank for International Settlements",
+    });
+    await source.locator("summary").click();
+    await expect(source).toContainText(
+      "Real effective exchange rate, broad basket (64 economies)",
+    );
+    await expect(source).toContainText("accessed 24 Oct 2026");
+    await expect(source).toContainText("Licence: ");
   });
 
   test("a move is an icon, a signed number and a word, never green or red", async ({
@@ -135,8 +161,8 @@ test.describe("macro page with nothing fetched yet", () => {
 
   test("every series shows that it has not been fetched", async ({ page }) => {
     await page.goto("/macro");
-    await expect(page.locator("article.tile")).toHaveCount(13);
-    await expect(page.locator("article.tile p.absent")).toHaveCount(13);
+    await expect(page.locator("article.tile")).toHaveCount(16);
+    await expect(page.locator("article.tile p.absent")).toHaveCount(16);
     await expect(page.locator(".tile-value")).toHaveCount(0);
   });
 });
